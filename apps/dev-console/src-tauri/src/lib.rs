@@ -4,19 +4,32 @@ pub mod paths;
 pub mod save_origin;
 pub mod scan_registry;
 
+use std::sync::Arc;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let scan_registry: scan_registry::ScanRegistryState = Arc::new(Default::default());
+    let save_origin: save_origin::SaveOriginState = Arc::new(Default::default());
+    let watch_registry: commands::watcher::WatchRegistryState = Arc::new(Default::default());
+
     tauri::Builder::default()
-        .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
-            Ok(())
-        })
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
+        .manage(scan_registry)
+        .manage(save_origin)
+        .manage(watch_registry)
+        .invoke_handler(tauri::generate_handler![
+            commands::project::select_project_root,
+            commands::project::scan_project,
+            commands::fs_io::read_text_file,
+            commands::fs_io::write_text_file_with_confirmed_overwrite,
+            commands::watcher::watch_project,
+            commands::watcher::unwatch_project,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
