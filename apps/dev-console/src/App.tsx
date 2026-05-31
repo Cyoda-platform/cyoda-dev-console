@@ -6,12 +6,16 @@ import { useProjectStore } from "./state/projectStore.js";
 import { FirstRun } from "./routes/first-run.js";
 import { ProjectRoute } from "./routes/project.js";
 import { WorkflowRoute } from "./routes/workflow.js";
+import { EntityRoute } from "./routes/entity.js";
 import { readTextFile } from "./ipc/fsio.js";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
+
+type RouteKind = "workflow" | "entity";
 
 interface OpenedFile {
   path: string;
   contents: string;
+  kind: RouteKind;
 }
 
 export function App() {
@@ -21,21 +25,30 @@ export function App() {
 
   const handleOpenEntry = async (entry: WorkflowFileIndexEntry) => {
     const result = await readTextFile(entry.path);
-    setOpenedFile({ path: result.path, contents: result.contents });
+    const kind: RouteKind =
+      entry.status === "valid-workflow" || entry.status === "invalid-workflow"
+        ? "workflow"
+        : "entity";
+    setOpenedFile({ path: result.path, contents: result.contents, kind });
   };
 
-  const handleCloseWorkflow = () => setOpenedFile(null);
+  const handleClose = () => setOpenedFile(null);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AppFrame title="Cyoda Dev Console" navItems={[]}>
         {!active || !projectReady ? (
           <FirstRun onProjectReady={() => setProjectReady(true)} />
-        ) : openedFile ? (
+        ) : openedFile?.kind === "workflow" ? (
           <WorkflowRoute
             filePath={openedFile.path}
             initialContents={openedFile.contents}
-            onClose={handleCloseWorkflow}
+            onClose={handleClose}
+          />
+        ) : openedFile?.kind === "entity" ? (
+          <EntityRoute
+            filePath={openedFile.path}
+            onClose={handleClose}
           />
         ) : (
           <ProjectRoute onOpen={(entry) => void handleOpenEntry(entry)} />

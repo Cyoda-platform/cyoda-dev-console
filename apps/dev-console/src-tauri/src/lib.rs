@@ -14,6 +14,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_log::Builder::default()
                 .level(log::LevelFilter::Info)
@@ -29,6 +30,8 @@ pub fn run() {
             commands::fs_io::write_text_file_with_confirmed_overwrite,
             commands::watcher::watch_project,
             commands::watcher::unwatch_project,
+            commands::shell_ext::reveal_in_finder,
+            commands::shell_ext::open_in_ide,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

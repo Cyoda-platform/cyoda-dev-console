@@ -17,6 +17,7 @@
     "@cyoda/workflow-project-model": "workspace:*",
     "@cyoda/workflow-file-indexer": "workspace:*",
     "@cyoda/workflow-editor-host": "workspace:*",
+    "@cyoda/entity-model-viewer": "workspace:*",
     "@cyoda/workflow-core": "file:../../../cyoda-workflow-editor/packages/workflow-core",
     "@cyoda/workflow-react": "file:../../../cyoda-workflow-editor/packages/workflow-react",
     "@cyoda/workflow-monaco": "file:../../../cyoda-workflow-editor/packages/workflow-monaco",

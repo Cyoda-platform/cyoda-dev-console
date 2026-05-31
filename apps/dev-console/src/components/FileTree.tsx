@@ -1,7 +1,15 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { useTokens } from "@cyoda/console-design-system";
+import { ContextMenu } from "./ContextMenu.js";
+import { revealInFinder, openInIde } from "../ipc/shell.js";
+
+interface MenuState {
+  x: number;
+  y: number;
+  path: string;
+}
 
 export function FileTree({
   entries,
@@ -11,6 +19,7 @@ export function FileTree({
   onOpen?: (entry: WorkflowFileIndexEntry) => void;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState<MenuState | null>(null);
   const v = useVirtualizer({
     count: entries.length,
     getScrollElement: () => parentRef.current,
@@ -23,11 +32,15 @@ export function FileTree({
       <div style={{ height: v.getTotalSize(), position: "relative" }}>
         {v.getVirtualItems().map((vi) => {
           const e = entries[vi.index]!;
-          const clickable = e.status !== "json-not-workflow" && onOpen;
+          const clickable = onOpen;
           return (
             <div
               key={vi.key}
               onClick={clickable ? () => onOpen(e) : undefined}
+              onContextMenu={(evt) => {
+                evt.preventDefault();
+                setMenu({ x: evt.clientX, y: evt.clientY, path: e.path });
+              }}
               style={{
                 position: "absolute",
                 top: 0,
@@ -42,7 +55,9 @@ export function FileTree({
                 padding: `0 ${t.space.md}`,
                 cursor: clickable ? "pointer" : "default",
                 color:
-                  e.status === "valid-workflow" ? t.color.text : t.color.textMuted,
+                  e.status === "valid-workflow"
+                    ? t.color.text
+                    : t.color.textMuted,
               }}
             >
               <StatusDot status={e.status} />
@@ -52,6 +67,31 @@ export function FileTree({
           );
         })}
       </div>
+      {menu ? (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          onDismiss={() => setMenu(null)}
+          items={[
+            {
+              label: "Reveal in Finder",
+              onClick: () => void revealInFinder(menu.path),
+            },
+            {
+              label: "Open in Zed",
+              onClick: () => void openInIde(menu.path, "zed"),
+            },
+            {
+              label: "Open in IntelliJ",
+              onClick: () => void openInIde(menu.path, "intellij"),
+            },
+            {
+              label: "Open in VS Code",
+              onClick: () => void openInIde(menu.path, "vscode"),
+            },
+          ]}
+        />
+      ) : null}
     </div>
   );
 }
