@@ -1,5 +1,7 @@
 pub mod atomic_write;
+pub mod commands;
 pub mod paths;
+pub mod scan_registry;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
