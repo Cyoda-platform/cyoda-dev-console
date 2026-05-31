@@ -1,5 +1,5 @@
 {
-  "name": "@cyoda/console-design-system",
+  "name": "@cyoda/console-shell",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" },
-  "dependencies": { "@fontsource/ibm-plex-sans": "^5.1.0", "@fontsource/ibm-plex-mono": "^5.1.0" },
+  "dependencies": { "@cyoda/console-design-system": "workspace:*" },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
     "@testing-library/jest-dom": "^6.6.0",
