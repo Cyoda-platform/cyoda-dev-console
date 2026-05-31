@@ -27,20 +27,25 @@ export function ProjectRoute() {
   });
 
   useEffect(() => {
+    let aborted = false;
     let cleanup: (() => void) | null = null;
     void watchProject(active.rootPath)
-      .then(() =>
-        onFileChanged((evt) => {
+      .then(() => {
+        if (aborted) return;
+        return onFileChanged((evt) => {
           console.log("external change", evt);
-        }),
-      )
+        });
+      })
       .then((unlisten) => {
-        cleanup = unlisten;
+        if (unlisten) cleanup = unlisten;
       });
-    return () => cleanup?.();
+    return () => {
+      aborted = true;
+      cleanup?.();
+    };
   }, [active.rootPath]);
 
-  if (scan.isLoading) return <div>Scanning…</div>;
+  if (scan.isPending) return <div>Scanning…</div>;
   if (scan.isError) return <div>Scan failed: {String(scan.error)}</div>;
   return <FileTree entries={scan.data!.entries} />;
 }
