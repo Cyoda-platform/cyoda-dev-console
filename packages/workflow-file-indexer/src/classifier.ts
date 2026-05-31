@@ -24,12 +24,16 @@ export function classifyWorkflowFile(input: ClassifyInput): WorkflowFileIndexEnt
   ) {
     return makeEntry(input, "json-not-workflow", []);
   }
-  const result = parseImportPayload(input.contents);
+  let result;
+  try {
+    result = parseImportPayload(input.contents);
+  } catch (e) {
+    return makeEntry(input, "parse-error", [], (e as Error).message);
+  }
   if (result.ok && result.value) {
     const workflows = result.value.workflows.map((w) => ({
       name: w.name,
       version: w.version,
-      entity: undefined,
     }));
     return makeEntry(input, "valid-workflow", workflows);
   }

@@ -12,8 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cyoda/workflow-core": "file:../../../cyoda-workflow-editor/packages/workflow-core",
-    "minimatch": "^10.0.0"
+    "@cyoda/workflow-core": "file:../../../cyoda-workflow-editor/packages/workflow-core"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
