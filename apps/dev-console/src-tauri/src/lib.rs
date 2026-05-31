@@ -32,6 +32,8 @@ pub fn run() {
             commands::watcher::unwatch_project,
             commands::shell_ext::reveal_in_finder,
             commands::shell_ext::open_in_ide,
+            commands::config::load_app_config,
+            commands::config::save_app_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
