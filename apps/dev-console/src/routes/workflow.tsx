@@ -10,6 +10,8 @@ import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.j
 import { onFileChanged } from "../ipc/watcher.js";
 import { useProjectStore } from "../state/projectStore.js";
 import { getMonacoRuntime } from "../monacoRuntime.js";
+import { CompareView } from "../components/CompareView.js";
+import { serializeImportPayload } from "@cyoda/workflow-core";
 
 const jsonEditorConfig: WorkflowJsonEditorConfig = { monaco: getMonacoRuntime() };
 
@@ -27,6 +29,8 @@ export function WorkflowRoute({
   const projectId = useProjectStore((s) => s.active!.id);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [externalChange, setExternalChange] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [diskSnapshot, setDiskSnapshot] = useState<string | null>(null);
   const suppressNextChange = useRef(false);
 
   const session = useEditorSession({
@@ -82,12 +86,28 @@ export function WorkflowRoute({
     setExternalChange(false);
   };
 
+  const handleCompare = async () => {
+    try {
+      const r = await readTextFile(filePath);
+      setDiskSnapshot(r.contents);
+      setCompareOpen(true);
+    } catch (e) {
+      console.error("Failed to read file for comparison:", e);
+    }
+  };
+
+  const handleReloadAfterCompare = async () => {
+    setCompareOpen(false);
+    await handleReload();
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {externalChange ? (
         <ExternalChangeBanner
           onReload={handleReload}
           onIgnore={() => setExternalChange(false)}
+          onCompare={handleCompare}
           dirty={session.dirty}
         />
       ) : null}
@@ -126,6 +146,16 @@ export function WorkflowRoute({
           onCancel={() => setConfirmOpen(false)}
         />
       ) : null}
+      {compareOpen && diskSnapshot != null && (
+        <CompareView
+          diskContents={diskSnapshot}
+          editorContents={session.document ? serializeImportPayload(session.document) : ""}
+          filePath={filePath}
+          onKeepMine={() => { setCompareOpen(false); setExternalChange(false); }}
+          onReloadDisk={() => void handleReloadAfterCompare()}
+          onCancel={() => setCompareOpen(false)}
+        />
+      )}
     </div>
   );
 }
