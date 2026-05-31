@@ -1,0 +1,12 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1.0",
+      "name": "demo",
+      "initialState": "New",
+      "active": true,
+      "states": { "New": { "transitions": [] } }
+    }
+  ]
+}
