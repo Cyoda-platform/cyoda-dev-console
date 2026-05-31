@@ -10,5 +10,17 @@ export default defineConfig({
   test: {
     environment: "happy-dom",
     globals: true,
+    css: false,
+    server: {
+      deps: {
+        inline: [/@cyoda\/workflow-react/],
+      },
+    },
+    alias: [
+      {
+        find: /^monaco-editor(\/.*)?$/,
+        replacement: new URL("src/__tests__/stubs/monacoStub.ts", import.meta.url).pathname,
+      },
+    ],
   },
 });

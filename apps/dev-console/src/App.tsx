@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AppFrame } from "@cyoda/console-shell";
+import type { NavItem } from "@cyoda/console-shell";
 import { queryClient } from "./state/queryClient.js";
 import { useProjectStore } from "./state/projectStore.js";
 import { FirstRun } from "./routes/first-run.js";
@@ -15,6 +16,7 @@ import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
 type RouteKind = "workflow" | "entity";
+type ActiveSection = "workflows" | "entities" | "project" | "agent";
 
 interface OpenedFile {
   path: string;
@@ -27,6 +29,9 @@ export function App() {
   const [projectReady, setProjectReady] = useState(false);
   const [openedFile, setOpenedFile] = useState<OpenedFile | null>(null);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<ActiveSection>("workflows");
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [treeCollapsed, setTreeCollapsed] = useState(false);
 
   const handleOpenEntry = async (entry: WorkflowFileIndexEntry) => {
     const result = await readTextFile(entry.path);
@@ -40,9 +45,29 @@ export function App() {
 
   const handleClose = () => setOpenedFile(null);
 
-  const navItems = AGENT_FLAG
-    ? [{ id: "agent", label: "AI Agent", onSelect: () => { setAgentOpen(true); setOpenedFile(null); }, active: agentOpen }]
-    : [];
+  const navItems: NavItem[] = [
+    {
+      id: "workflows",
+      label: "Workflows",
+      onSelect: () => { setActiveSection("workflows"); setOpenedFile(null); setAgentOpen(false); },
+      active: activeSection === "workflows",
+    },
+    {
+      id: "entities",
+      label: "Entities",
+      onSelect: () => { setActiveSection("entities"); setOpenedFile(null); setAgentOpen(false); },
+      active: activeSection === "entities",
+    },
+    {
+      id: "project",
+      label: "Project",
+      onSelect: () => { setActiveSection("project"); setOpenedFile(null); setAgentOpen(false); },
+      active: activeSection === "project",
+    },
+    ...(AGENT_FLAG
+      ? [{ id: "agent", label: "AI Agent", onSelect: () => { setActiveSection("agent"); setAgentOpen(true); setOpenedFile(null); }, active: activeSection === "agent" }]
+      : []),
+  ];
 
   const workflowPath = openedFile?.kind === "workflow" ? openedFile.path : undefined;
   const entityPath = openedFile?.kind === "entity" ? openedFile.path : undefined;
