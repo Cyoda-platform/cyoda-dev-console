@@ -7,4 +7,8 @@ export default defineConfig({
   server: { port: 1420, strictPort: true },
   envPrefix: ["VITE_", "TAURI_"],
   build: { target: "esnext", sourcemap: true, outDir: "dist" },
+  test: {
+    environment: "happy-dom",
+    globals: true,
+  },
 });
