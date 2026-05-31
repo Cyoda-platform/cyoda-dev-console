@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AppFrame } from "@cyoda/console-shell";
 import type { NavItem } from "@cyoda/console-shell";
@@ -12,6 +12,7 @@ import { AgentRoute } from "./routes/agent.js";
 import { SettingsRoute } from "./routes/settings.js";
 import { AgentContextProvider } from "./agent/AgentContext.js";
 import { readTextFile } from "./ipc/fsio.js";
+import { loadAppConfig } from "./ipc/config.js";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import type { WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
 import { HeaderContext } from "./components/HeaderContext.js";
@@ -31,7 +32,17 @@ interface OpenedFile {
 
 export function App() {
   const active = useProjectStore((s) => s.active);
+  const setActive = useProjectStore((s) => s.setActive);
+  const setConfig = useProjectStore((s) => s.setConfig);
   const [projectReady, setProjectReady] = useState(false);
+
+  useEffect(() => {
+    void loadAppConfig().then((cfg) => {
+      setConfig(cfg);
+      const found = cfg.recentProjects.find((p) => p.id === cfg.activeProjectId);
+      if (found) setActive(found);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [openedFile, setOpenedFile] = useState<OpenedFile | null>(null);
   const [agentOpen, setAgentOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<ActiveSection>("workflows");
