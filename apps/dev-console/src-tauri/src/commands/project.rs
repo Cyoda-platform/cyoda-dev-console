@@ -44,8 +44,11 @@ pub async fn scan_project(
     options: ScanOptions,
     registry: State<'_, ScanRegistryState>,
 ) -> Result<ProjectScanResult, String> {
-    let cancel = registry.begin().await;
     let root = PathBuf::from(&root_path);
+    if !root.is_dir() {
+        return Err(format!("'{}' is not a directory", root_path));
+    }
+    let cancel = registry.begin().await;
 
     let mut exclude_globs = options.exclude_globs;
     for g in [
@@ -87,7 +90,7 @@ pub async fn scan_project(
         let mut out = Vec::new();
         for dent in walker.flatten() {
             if cancel.is_cancelled() {
-                return Err("cancelled".into());
+                break;
             }
             if !dent.file_type().map(|t| t.is_file()).unwrap_or(false) {
                 continue;
