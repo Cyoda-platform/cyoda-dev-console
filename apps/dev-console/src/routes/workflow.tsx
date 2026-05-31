@@ -17,10 +17,12 @@ export function WorkflowRoute({
   filePath,
   initialContents,
   onClose,
+  onDirtyChange,
 }: {
   filePath: string;
   initialContents: string;
   onClose: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const projectId = useProjectStore((s) => s.active!.id);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -42,6 +44,10 @@ export function WorkflowRoute({
       },
     },
   });
+
+  useEffect(() => {
+    onDirtyChange?.(session.dirty);
+  }, [session.dirty, onDirtyChange]);
 
   useEffect(() => {
     let unlisten: (() => void) | null = null;

@@ -43,7 +43,10 @@ export function App() {
     setAgentOpen(false);
   };
 
-  const handleClose = () => setOpenedFile(null);
+  const handleClose = () => {
+    setOpenedFile(null);
+    setEditorDirty(false);
+  };
 
   const navItems: NavItem[] = [
     {
@@ -88,6 +91,7 @@ export function App() {
               filePath={openedFile.path}
               initialContents={openedFile.contents}
               onClose={handleClose}
+              onDirtyChange={setEditorDirty}
             />
           ) : openedFile?.kind === "entity" ? (
             <EntityRoute
