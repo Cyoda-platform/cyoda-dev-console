@@ -20,5 +20,5 @@ export async function saveConfig(config: AppConfig): Promise<void> {
   const tmp = join(dir, `.config.${process.pid}.${Date.now()}.tmp`);
   await writeFile(tmp, JSON.stringify(AppConfigSchema.parse(config), null, 2), { mode: 0o600 });
   await rename(tmp, target);
-  await chmod(target, 0o600);
+  await chmod(target, 0o600); // belt-and-suspenders: writeFile sets mode, rename preserves it
 }

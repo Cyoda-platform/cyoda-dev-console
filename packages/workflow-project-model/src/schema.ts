@@ -18,8 +18,11 @@ export const AppConfigSchema = z.object({
 });
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 
-export const DEFAULT_APP_CONFIG: AppConfig = {
-  version: 1,
+const _defaultConfig = {
+  version: 1 as const,
   activeProjectId: null,
-  recentProjects: [],
-};
+  recentProjects: [] as AppConfig["recentProjects"],
+} satisfies AppConfig;
+Object.freeze(_defaultConfig.recentProjects);
+Object.freeze(_defaultConfig);
+export const DEFAULT_APP_CONFIG: AppConfig = _defaultConfig;

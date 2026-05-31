@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
