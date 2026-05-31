@@ -9,10 +9,14 @@ import { ProjectRoute } from "./routes/project.js";
 import { WorkflowRoute } from "./routes/workflow.js";
 import { EntityRoute } from "./routes/entity.js";
 import { AgentRoute } from "./routes/agent.js";
+import { SettingsRoute } from "./routes/settings.js";
 import { AgentContextProvider } from "./agent/AgentContext.js";
 import { readTextFile } from "./ipc/fsio.js";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
+import type { WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
 import { HeaderContext } from "./components/HeaderContext.js";
+import { SplitPane } from "./components/SplitPane.js";
+import { EmptyState } from "@cyoda/console-design-system";
 
 const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
@@ -93,25 +97,47 @@ export function App() {
         {...(entityPath !== undefined ? { selectedEntityPath: entityPath } : {})}
       >
         <AppFrame title="Cyoda Dev Console" navItems={navItems} headerRight={headerRight}>
-          {!active || !projectReady ? (
-            <FirstRun onProjectReady={() => setProjectReady(true)} />
-          ) : agentOpen ? (
-            <AgentRoute />
-          ) : openedFile?.kind === "workflow" ? (
-            <WorkflowRoute
-              filePath={openedFile.path}
-              initialContents={openedFile.contents}
-              onClose={handleClose}
-              onDirtyChange={setEditorDirty}
-            />
-          ) : openedFile?.kind === "entity" ? (
-            <EntityRoute
-              filePath={openedFile.path}
-              onClose={handleClose}
-            />
-          ) : (
-            <ProjectRoute onOpen={(entry) => void handleOpenEntry(entry)} />
-          )}
+          {(() => {
+            if (!active || !projectReady)
+              return <FirstRun onProjectReady={() => setProjectReady(true)} />;
+            if (agentOpen) return <AgentRoute />;
+            if (activeSection === "project") return <SettingsRoute />;
+
+            const statusFilter: WorkflowFileStatus[] =
+              activeSection === "entities"
+                ? ["json-not-workflow"]
+                : ["valid-workflow", "invalid-workflow"];
+
+            const editorPane = openedFile?.kind === "workflow" ? (
+              <WorkflowRoute
+                filePath={openedFile.path}
+                initialContents={openedFile.contents}
+                onClose={handleClose}
+                onDirtyChange={setEditorDirty}
+              />
+            ) : openedFile?.kind === "entity" ? (
+              <EntityRoute filePath={openedFile.path} onClose={handleClose} />
+            ) : (
+              <EmptyState
+                title={activeSection === "entities" ? "Select an entity file" : "Select a workflow"}
+                description="Choose a file from the tree on the left."
+              />
+            );
+
+            return (
+              <SplitPane
+                left={
+                  <ProjectRoute
+                    statusFilter={statusFilter}
+                    onOpen={(entry) => void handleOpenEntry(entry)}
+                  />
+                }
+                right={editorPane}
+                collapsed={treeCollapsed}
+                onToggleCollapse={() => setTreeCollapsed((c) => !c)}
+              />
+            );
+          })()}
         </AppFrame>
       </AgentContextProvider>
     </QueryClientProvider>

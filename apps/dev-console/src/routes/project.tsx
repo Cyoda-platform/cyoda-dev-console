@@ -2,11 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { scanProject } from "../ipc/project.js";
 import { watchProject, onFileChanged } from "../ipc/watcher.js";
-import { classifyWorkflowFile, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
+import { classifyWorkflowFile, type WorkflowFileIndexEntry, type WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
 import { FileTree } from "../components/FileTree.js";
 import { useProjectStore } from "../state/projectStore.js";
 
-export function ProjectRoute({ onOpen }: { onOpen?: (entry: WorkflowFileIndexEntry) => void }) {
+export function ProjectRoute({
+  onOpen,
+  statusFilter,
+}: {
+  onOpen?: (entry: WorkflowFileIndexEntry) => void;
+  statusFilter?: WorkflowFileStatus[];
+}) {
   const active = useProjectStore((s) => s.active)!;
 
   const scan = useQuery({
@@ -45,10 +51,14 @@ export function ProjectRoute({ onOpen }: { onOpen?: (entry: WorkflowFileIndexEnt
     };
   }, [active.rootPath]);
 
-  if (scan.isPending) return <div>Scanning…</div>;
-  if (scan.isError) return <div>Scan failed: {String(scan.error)}</div>;
-  const fileTree = onOpen
-    ? <FileTree entries={scan.data!.entries} onOpen={onOpen} />
-    : <FileTree entries={scan.data!.entries} />;
-  return fileTree;
+  if (scan.isPending) return <div style={{ padding: 8 }}>Scanning…</div>;
+  if (scan.isError) return <div style={{ padding: 8 }}>Scan failed: {String(scan.error)}</div>;
+
+  const entries = statusFilter
+    ? scan.data!.entries.filter((e) => statusFilter.includes(e.status))
+    : scan.data!.entries;
+
+  return onOpen
+    ? <FileTree entries={entries} onOpen={onOpen} />
+    : <FileTree entries={entries} />;
 }
