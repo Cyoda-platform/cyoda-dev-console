@@ -17,6 +17,7 @@ pub struct WatchRegistry {
 pub type WatchRegistryState = Arc<WatchRegistry>;
 
 #[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct FileChangedEvent {
     pub path: String,
     pub last_modified: String,

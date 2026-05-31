@@ -13,6 +13,7 @@ pub struct ScanOptions {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScannedFile {
     pub path: String,
     pub relative_path: String,
@@ -22,6 +23,7 @@ pub struct ScannedFile {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectScanResult {
     pub root: String,
     pub scanned_at: String,

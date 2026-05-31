@@ -6,6 +6,7 @@ use crate::paths::resolve_inside_root;
 use crate::save_origin::SaveOriginState;
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ReadResult {
     pub path: String,
     pub contents: String,
@@ -14,6 +15,7 @@ pub struct ReadResult {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WriteResult {
     pub path: String,
     pub last_modified: String,
