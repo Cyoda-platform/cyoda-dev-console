@@ -7,8 +7,12 @@ import { FirstRun } from "./routes/first-run.js";
 import { ProjectRoute } from "./routes/project.js";
 import { WorkflowRoute } from "./routes/workflow.js";
 import { EntityRoute } from "./routes/entity.js";
+import { AgentRoute } from "./routes/agent.js";
+import { AgentContextProvider } from "./agent/AgentContext.js";
 import { readTextFile } from "./ipc/fsio.js";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
+
+const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
 type RouteKind = "workflow" | "entity";
 
@@ -22,6 +26,7 @@ export function App() {
   const active = useProjectStore((s) => s.active);
   const [projectReady, setProjectReady] = useState(false);
   const [openedFile, setOpenedFile] = useState<OpenedFile | null>(null);
+  const [agentOpen, setAgentOpen] = useState(false);
 
   const handleOpenEntry = async (entry: WorkflowFileIndexEntry) => {
     const result = await readTextFile(entry.path);
@@ -30,30 +35,45 @@ export function App() {
         ? "workflow"
         : "entity";
     setOpenedFile({ path: result.path, contents: result.contents, kind });
+    setAgentOpen(false);
   };
 
   const handleClose = () => setOpenedFile(null);
 
+  const navItems = AGENT_FLAG
+    ? [{ id: "agent", label: "AI Agent", onSelect: () => { setAgentOpen(true); setOpenedFile(null); }, active: agentOpen }]
+    : [];
+
+  const workflowPath = openedFile?.kind === "workflow" ? openedFile.path : undefined;
+  const entityPath = openedFile?.kind === "entity" ? openedFile.path : undefined;
+
   return (
     <QueryClientProvider client={queryClient}>
-      <AppFrame title="Cyoda Dev Console" navItems={[]}>
-        {!active || !projectReady ? (
-          <FirstRun onProjectReady={() => setProjectReady(true)} />
-        ) : openedFile?.kind === "workflow" ? (
-          <WorkflowRoute
-            filePath={openedFile.path}
-            initialContents={openedFile.contents}
-            onClose={handleClose}
-          />
-        ) : openedFile?.kind === "entity" ? (
-          <EntityRoute
-            filePath={openedFile.path}
-            onClose={handleClose}
-          />
-        ) : (
-          <ProjectRoute onOpen={(entry) => void handleOpenEntry(entry)} />
-        )}
-      </AppFrame>
+      <AgentContextProvider
+        {...(workflowPath !== undefined ? { selectedWorkflowPath: workflowPath } : {})}
+        {...(entityPath !== undefined ? { selectedEntityPath: entityPath } : {})}
+      >
+        <AppFrame title="Cyoda Dev Console" navItems={navItems}>
+          {!active || !projectReady ? (
+            <FirstRun onProjectReady={() => setProjectReady(true)} />
+          ) : agentOpen ? (
+            <AgentRoute />
+          ) : openedFile?.kind === "workflow" ? (
+            <WorkflowRoute
+              filePath={openedFile.path}
+              initialContents={openedFile.contents}
+              onClose={handleClose}
+            />
+          ) : openedFile?.kind === "entity" ? (
+            <EntityRoute
+              filePath={openedFile.path}
+              onClose={handleClose}
+            />
+          ) : (
+            <ProjectRoute onOpen={(entry) => void handleOpenEntry(entry)} />
+          )}
+        </AppFrame>
+      </AgentContextProvider>
     </QueryClientProvider>
   );
 }

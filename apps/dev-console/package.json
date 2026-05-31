@@ -12,6 +12,7 @@
     "lint:rust": ". \"$HOME/.cargo/env\" && cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings"
   },
   "dependencies": {
+    "@cyoda/agent-bridge-contract": "workspace:*",
     "@cyoda/console-design-system": "workspace:*",
     "@cyoda/console-shell": "workspace:*",
     "@cyoda/workflow-project-model": "workspace:*",

@@ -168,6 +168,9 @@ importers:
 
   apps/dev-console:
     dependencies:
+      '@cyoda/agent-bridge-contract':
+        specifier: workspace:*
+        version: link:../../packages/agent-bridge-contract
       '@cyoda/console-design-system':
         specifier: workspace:*
         version: link:../../packages/console-design-system
@@ -262,6 +265,15 @@ importers:
       vite:
         specifier: ^5.4.0
         version: 5.4.21(@types/node@22.19.19)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
+
+  packages/agent-bridge-contract:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
       vitest:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
