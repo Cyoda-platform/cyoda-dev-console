@@ -12,6 +12,7 @@ import { AgentRoute } from "./routes/agent.js";
 import { AgentContextProvider } from "./agent/AgentContext.js";
 import { readTextFile } from "./ipc/fsio.js";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
+import { HeaderContext } from "./components/HeaderContext.js";
 
 const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
@@ -75,13 +76,23 @@ export function App() {
   const workflowPath = openedFile?.kind === "workflow" ? openedFile.path : undefined;
   const entityPath = openedFile?.kind === "entity" ? openedFile.path : undefined;
 
+  const headerRight =
+    active != null && projectReady ? (
+      <HeaderContext
+        projectName={active.name}
+        rootPath={active.rootPath}
+        dirty={editorDirty}
+        openFilePath={openedFile?.path ?? null}
+      />
+    ) : undefined;
+
   return (
     <QueryClientProvider client={queryClient}>
       <AgentContextProvider
         {...(workflowPath !== undefined ? { selectedWorkflowPath: workflowPath } : {})}
         {...(entityPath !== undefined ? { selectedEntityPath: entityPath } : {})}
       >
-        <AppFrame title="Cyoda Dev Console" navItems={navItems}>
+        <AppFrame title="Cyoda Dev Console" navItems={navItems} headerRight={headerRight}>
           {!active || !projectReady ? (
             <FirstRun onProjectReady={() => setProjectReady(true)} />
           ) : agentOpen ? (
