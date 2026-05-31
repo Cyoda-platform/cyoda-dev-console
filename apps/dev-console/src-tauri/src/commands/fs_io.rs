@@ -1,6 +1,7 @@
 use serde::Serialize;
 use std::path::PathBuf;
-use tauri::State;
+use tauri::{AppHandle, State};
+use tauri_plugin_dialog::DialogExt;
 use crate::atomic_write::write_atomic;
 use crate::paths::resolve_inside_root;
 use crate::save_origin::SaveOriginState;
@@ -71,4 +72,34 @@ pub async fn write_text_file_with_confirmed_overwrite(
         last_modified: lm,
         size_bytes: meta.len(),
     })
+}
+
+#[tauri::command]
+pub async fn save_file_as(
+    app: AppHandle,
+    contents: String,
+    save_origin: State<'_, SaveOriginState>,
+) -> Result<Option<WriteResult>, String> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.dialog()
+        .file()
+        .set_title("Save workflow as")
+        .add_filter("JSON", &["json"])
+        .save_file(move |path| {
+            let _ = tx.send(path);
+        });
+    let chosen = rx.await.map_err(|e| e.to_string())?;
+    let Some(file_path) = chosen else {
+        return Ok(None);
+    };
+    let p = PathBuf::from(file_path.to_string());
+    write_atomic(&p, contents.as_bytes()).map_err(|e| e.to_string())?;
+    let meta = std::fs::metadata(&p).map_err(|e| e.to_string())?;
+    let lm = lm_rfc3339(&meta);
+    save_origin.mark(&p, &lm).await;
+    Ok(Some(WriteResult {
+        path: p.to_string_lossy().into_owned(),
+        last_modified: lm,
+        size_bytes: meta.len(),
+    }))
 }

@@ -22,3 +22,7 @@ export function writeTextFileWithConfirmedOverwrite(
     activeRoot: activeRoot ?? null,
   });
 }
+
+export function saveFileAs(contents: string): Promise<WriteResult | null> {
+  return invoke<WriteResult | null>("save_file_as", { contents });
+}

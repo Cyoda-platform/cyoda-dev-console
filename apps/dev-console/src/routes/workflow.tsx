@@ -6,7 +6,7 @@ import {
   ExternalChangeBanner,
 } from "@cyoda/workflow-editor-host";
 import type { WorkflowJsonEditorConfig } from "@cyoda/workflow-react";
-import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
+import { readTextFile, writeTextFileWithConfirmedOverwrite, saveFileAs } from "../ipc/fsio.js";
 import { onFileChanged } from "../ipc/watcher.js";
 import { useProjectStore } from "../state/projectStore.js";
 import { getMonacoRuntime } from "../monacoRuntime.js";
@@ -46,6 +46,7 @@ export function WorkflowRoute({
         const r = await writeTextFileWithConfirmedOverwrite(p, contents);
         return { lastModified: r.lastModified, sizeBytes: r.sizeBytes };
       },
+      saveAs: saveFileAs,
     },
   });
 
@@ -120,6 +121,23 @@ export function WorkflowRoute({
       }}>
         {session.dirty && (
           <span style={{ color: "#F58220" }}>• Unsaved changes</span>
+        )}
+        {session.saveAs != null && (
+          <button
+            onClick={() => void session.saveAs?.()}
+            style={{
+              background: "none",
+              border: "1px solid #E0E0E0",
+              borderRadius: 2,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 12,
+              color: "#525252",
+              padding: "2px 8px",
+            }}
+          >
+            Save As…
+          </button>
         )}
         <button
           onClick={onClose}

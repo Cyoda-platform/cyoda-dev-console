@@ -28,6 +28,7 @@ pub fn run() {
             commands::project::scan_project,
             commands::fs_io::read_text_file,
             commands::fs_io::write_text_file_with_confirmed_overwrite,
+            commands::fs_io::save_file_as,
             commands::watcher::watch_project,
             commands::watcher::unwatch_project,
             commands::shell_ext::reveal_in_finder,

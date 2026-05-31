@@ -9,6 +9,7 @@ import {
 export interface EditorSessionIO {
   write: (path: string, contents: string) => Promise<{ lastModified: string; sizeBytes: number }>;
   read: (path: string) => Promise<{ contents: string; lastModified: string }>;
+  saveAs?: (contents: string) => Promise<{ path: string; lastModified: string; sizeBytes: number } | null>;
 }
 
 export interface EditorSessionParams {
@@ -28,6 +29,7 @@ export interface EditorSession {
   setDocument: (doc: WorkflowEditorDocument) => void;
   save: () => Promise<void>;
   revert: () => Promise<void>;
+  saveAs?: () => Promise<{ path: string; lastModified: string; sizeBytes: number } | null>;
   /** localStorage key for editor layout — exposed for the WorkflowEditor prop. */
   layoutKey: string;
 }
@@ -87,6 +89,18 @@ export function useEditorSession({
     setBaseline(result.document ? serializeImportPayload(result.document) : "");
   }, [filePath, io, document]);
 
+  const saveAsCallback = useCallback(async () => {
+    if (!document || !io.saveAs) return null;
+    const payload = serializeImportPayload(document);
+    const result = await io.saveAs(payload);
+    if (result) {
+      setBaseline(payload);
+    }
+    return result ?? null;
+  }, [document, io]);
+
+  const saveAs = io.saveAs != null ? saveAsCallback : undefined;
+
   const layoutKey = `${projectId}:${filePath}`;
   return {
     document,
@@ -98,6 +112,7 @@ export function useEditorSession({
     setDocument,
     save,
     revert,
+    saveAs,
     layoutKey,
   };
 }
