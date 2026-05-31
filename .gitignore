@@ -10,3 +10,9 @@ apps/dev-console/src-tauri/target/
 apps/dev-console/src-tauri/gen/
 coverage/
 .vite/
+
+# Local AI / planning files
+CLAUDE.md
+docs/BYO_AI-spec.md
+docs/phases/
+docs/superpowers/
