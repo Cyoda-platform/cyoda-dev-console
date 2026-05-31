@@ -68,14 +68,16 @@ pub async fn watch_project(
                     continue;
                 }
                 for path in &ev.paths {
-                    let Ok(meta) = std::fs::metadata(path) else {
-                        continue;
+                    let lm = match std::fs::metadata(path) {
+                        Ok(meta) => chrono::DateTime::<chrono::Utc>::from(
+                            meta.modified()
+                                .unwrap_or(std::time::SystemTime::UNIX_EPOCH),
+                        )
+                        .to_rfc3339(),
+                        // File gone — only happens on Remove; skip if any other error
+                        Err(_) if matches!(ev.kind, EventKind::Remove(_)) => String::new(),
+                        Err(_) => continue,
                     };
-                    let lm = chrono::DateTime::<chrono::Utc>::from(
-                        meta.modified()
-                            .unwrap_or(std::time::SystemTime::UNIX_EPOCH),
-                    )
-                    .to_rfc3339();
                     if save_origin.consume_if_match(path, &lm).await {
                         continue;
                     }
