@@ -7,22 +7,31 @@
     "build": "vite build",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "lint:rust": "cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings"
+    "tauri:dev": ". \"$HOME/.cargo/env\" && tauri dev",
+    "tauri:build": ". \"$HOME/.cargo/env\" && tauri build",
+    "lint:rust": ". \"$HOME/.cargo/env\" && cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings"
   },
   "dependencies": {
     "@cyoda/console-design-system": "workspace:*",
     "@cyoda/console-shell": "workspace:*",
     "@cyoda/workflow-project-model": "workspace:*",
     "@cyoda/workflow-file-indexer": "workspace:*",
+    "@cyoda/workflow-editor-host": "workspace:*",
+    "@cyoda/workflow-core": "file:../../../cyoda-workflow-editor/packages/workflow-core",
+    "@cyoda/workflow-react": "file:../../../cyoda-workflow-editor/packages/workflow-react",
+    "@cyoda/workflow-monaco": "file:../../../cyoda-workflow-editor/packages/workflow-monaco",
+    "@cyoda/workflow-layout": "file:../../../cyoda-workflow-editor/packages/workflow-layout",
+    "@cyoda/workflow-graph": "file:../../../cyoda-workflow-editor/packages/workflow-graph",
+    "@cyoda/workflow-viewer": "file:../../../cyoda-workflow-editor/packages/workflow-viewer",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-virtual": "^3.11.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@tauri-apps/api": "^2.1.0",
     "uuid": "^11.0.0",
-    "zustand": "^5.0.0"
+    "zustand": "^5.0.0",
+    "reactflow": "^11.11.4",
+    "monaco-editor": "0.52.2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.1.0",

@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { scanProject } from "../ipc/project.js";
 import { watchProject, onFileChanged } from "../ipc/watcher.js";
-import { classifyWorkflowFile } from "@cyoda/workflow-file-indexer";
+import { classifyWorkflowFile, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { FileTree } from "../components/FileTree.js";
 import { useProjectStore } from "../state/projectStore.js";
 
-export function ProjectRoute() {
+export function ProjectRoute({ onOpen }: { onOpen?: (entry: WorkflowFileIndexEntry) => void }) {
   const active = useProjectStore((s) => s.active)!;
 
   const scan = useQuery({
@@ -47,5 +47,8 @@ export function ProjectRoute() {
 
   if (scan.isPending) return <div>Scanning…</div>;
   if (scan.isError) return <div>Scan failed: {String(scan.error)}</div>;
-  return <FileTree entries={scan.data!.entries} />;
+  const fileTree = onOpen
+    ? <FileTree entries={scan.data!.entries} onOpen={onOpen} />
+    : <FileTree entries={scan.data!.entries} />;
+  return fileTree;
 }

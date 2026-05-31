@@ -1,5 +1,6 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "../cyoda-workflow-editor/packages/*"
 allowBuilds:
   esbuild: true

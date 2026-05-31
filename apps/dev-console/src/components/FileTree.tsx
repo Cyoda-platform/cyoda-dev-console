@@ -3,7 +3,13 @@ import { useRef } from "react";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { useTokens } from "@cyoda/console-design-system";
 
-export function FileTree({ entries }: { entries: WorkflowFileIndexEntry[] }) {
+export function FileTree({
+  entries,
+  onOpen,
+}: {
+  entries: WorkflowFileIndexEntry[];
+  onOpen?: (entry: WorkflowFileIndexEntry) => void;
+}) {
   const parentRef = useRef<HTMLDivElement>(null);
   const v = useVirtualizer({
     count: entries.length,
@@ -17,9 +23,11 @@ export function FileTree({ entries }: { entries: WorkflowFileIndexEntry[] }) {
       <div style={{ height: v.getTotalSize(), position: "relative" }}>
         {v.getVirtualItems().map((vi) => {
           const e = entries[vi.index]!;
+          const clickable = e.status !== "json-not-workflow" && onOpen;
           return (
             <div
               key={vi.key}
+              onClick={clickable ? () => onOpen(e) : undefined}
               style={{
                 position: "absolute",
                 top: 0,
@@ -32,6 +40,7 @@ export function FileTree({ entries }: { entries: WorkflowFileIndexEntry[] }) {
                 fontFamily: t.font.mono,
                 fontSize: t.font.sizes.sm,
                 padding: `0 ${t.space.md}`,
+                cursor: clickable ? "pointer" : "default",
                 color:
                   e.status === "valid-workflow" ? t.color.text : t.color.textMuted,
               }}

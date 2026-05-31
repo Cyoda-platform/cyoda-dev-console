@@ -15,6 +15,16 @@
     "tauri:dev": "pnpm --filter dev-console tauri:dev",
     "tauri:build": "pnpm --filter dev-console tauri:build"
   },
+  "pnpm": {
+    "overrides": {
+      "@cyoda/workflow-core": "file:../cyoda-workflow-editor/packages/workflow-core",
+      "@cyoda/workflow-react": "file:../cyoda-workflow-editor/packages/workflow-react",
+      "@cyoda/workflow-monaco": "file:../cyoda-workflow-editor/packages/workflow-monaco",
+      "@cyoda/workflow-layout": "file:../cyoda-workflow-editor/packages/workflow-layout",
+      "@cyoda/workflow-graph": "file:../cyoda-workflow-editor/packages/workflow-graph",
+      "@cyoda/workflow-viewer": "file:../cyoda-workflow-editor/packages/workflow-viewer"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
