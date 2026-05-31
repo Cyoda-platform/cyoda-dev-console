@@ -40,7 +40,10 @@ export function App() {
     void loadAppConfig().then((cfg) => {
       setConfig(cfg);
       const found = cfg.recentProjects.find((p) => p.id === cfg.activeProjectId);
-      if (found) setActive(found);
+      if (found) {
+        setActive(found);
+        setProjectReady(true);
+      }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [openedFile, setOpenedFile] = useState<OpenedFile | null>(null);
