@@ -33,6 +33,9 @@ export default [
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",
+      // TypeScript's compiler handles undefined-identifier checking; the core
+      // rule lacks DOM/Node global awareness under flat config and false-positives.
+      "no-undef": "off",
     },
   },
 
