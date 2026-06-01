@@ -1,0 +1,171 @@
+{
+  "importMode": "REPLACE",
+  "workflows": [
+    {
+      "version": "1.0",
+      "name": "shipment_workflow",
+      "desc": "Shipment workflow for the order fulfilment demo.",
+      "initialState": "CREATED",
+      "active": true,
+      "states": {
+        "CREATED": {
+          "transitions": [
+            {
+              "name": "created_to_labelled",
+              "next": "LABELLED",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "IsShipmentReadyCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "CreateShippingLabelProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "LABELLED": {
+          "transitions": [
+            {
+              "name": "labelled_to_dispatched",
+              "next": "DISPATCHED",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "IsShipmentReadyCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "DispatchShipmentProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "DISPATCHED": {
+          "transitions": [
+            {
+              "name": "dispatched_to_lost",
+              "next": "LOST",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "ShouldShipmentBeLostCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "MarkShipmentLostProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            },
+            {
+              "name": "dispatched_to_delivered",
+              "next": "DELIVERED",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "IsShipmentReadyCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "MarkShipmentDeliveredProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "LOST": {
+          "transitions": [
+            {
+              "name": "lost_to_dispatched",
+              "next": "DISPATCHED",
+              "manual": false,
+              "processors": [
+                {
+                  "name": "RetryLostShipmentProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "DELIVERED": {
+          "transitions": []
+        }
+      }
+    }
+  ]
+}

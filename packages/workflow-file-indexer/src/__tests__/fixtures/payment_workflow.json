@@ -1,0 +1,171 @@
+{
+  "importMode": "REPLACE",
+  "workflows": [
+    {
+      "version": "1.0",
+      "name": "payment_workflow",
+      "desc": "Payment workflow for deterministic authorisation, capture, failure, retry, and refund paths.",
+      "initialState": "INITIATED",
+      "active": true,
+      "states": {
+        "INITIATED": {
+          "transitions": [
+            {
+              "name": "initiated_to_failed",
+              "next": "FAILED",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "ShouldPaymentFailCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "FailPaymentProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            },
+            {
+              "name": "initiated_to_authorised",
+              "next": "AUTHORISED",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "ShouldPaymentSucceedCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "AuthorisePaymentProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "AUTHORISED": {
+          "transitions": [
+            {
+              "name": "authorised_to_captured",
+              "next": "CAPTURED",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "IsPaymentAuthorisedCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "CapturePaymentProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "CAPTURED": {
+          "transitions": [
+            {
+              "name": "captured_to_refunded",
+              "next": "REFUNDED",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "IsPaymentRefundableCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "RefundPaymentProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "FAILED": {
+          "transitions": [
+            {
+              "name": "failed_to_initiated",
+              "next": "INITIATED",
+              "manual": false,
+              "processors": [
+                {
+                  "name": "RetryPaymentProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "order-demo,workflow-demo,dev-console-demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "REFUNDED": {
+          "transitions": []
+        }
+      }
+    }
+  ]
+}

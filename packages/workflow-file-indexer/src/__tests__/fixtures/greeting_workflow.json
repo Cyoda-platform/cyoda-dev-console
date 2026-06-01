@@ -1,0 +1,147 @@
+{
+  "importMode": "REPLACE",
+  "workflows": [
+    {
+      "version": "1.0",
+      "name": "greeting_workflow",
+      "desc": "Greeting demo workflow with externalized Cyoda criteria and processors.",
+      "initialState": "START",
+      "active": true,
+      "states": {
+        "START": {
+          "transitions": [
+            {
+              "name": "start_to_morning",
+              "next": "MORNING",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "IsMorningCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "InitializeGreetingProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            },
+            {
+              "name": "start_to_afternoon",
+              "next": "AFTERNOON",
+              "manual": false,
+              "criterion": {
+                "type": "function",
+                "function": {
+                  "name": "IsAfternoonCriterion",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  }
+                }
+              },
+              "processors": [
+                {
+                  "name": "InitializeGreetingProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "MORNING": {
+          "transitions": [
+            {
+              "name": "morning_to_printed",
+              "next": "PRINTED",
+              "manual": false,
+              "processors": [
+                {
+                  "name": "SetMorningMessageProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                },
+                {
+                  "name": "PrintGreetingProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "AFTERNOON": {
+          "transitions": [
+            {
+              "name": "afternoon_to_printed",
+              "next": "PRINTED",
+              "manual": false,
+              "processors": [
+                {
+                  "name": "SetAfternoonMessageProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                },
+                {
+                  "name": "PrintGreetingProcessor",
+                  "executionMode": "SYNC",
+                  "config": {
+                    "attachEntity": true,
+                    "calculationNodesTags": "greeting,demo",
+                    "responseTimeoutMs": 5000,
+                    "retryPolicy": "FIXED"
+                  },
+                  "type": "externalized"
+                }
+              ]
+            }
+          ]
+        },
+        "PRINTED": {
+          "transitions": []
+        }
+      }
+    }
+  ]
+}
