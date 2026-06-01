@@ -27,6 +27,8 @@ export function FirstRun({ onProjectReady }: { onProjectReady: () => void }) {
                 rootPath: path,
                 workflowGlobs: ["**/*.json"],
                 entityGlobs: ["**/*.json"],
+                workflowRoot: null,
+                entityRoot: null,
                 createdAt: now,
                 lastOpenedAt: now,
               });

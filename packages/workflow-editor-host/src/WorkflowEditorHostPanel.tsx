@@ -15,7 +15,7 @@ export function WorkflowEditorHostPanel({
   onSaveRequest,
 }: WorkflowEditorHostPanelProps) {
   if (!session.parseOk || !session.document) {
-    return <ParseErrorView issues={session.issues} />;
+    return <ParseErrorView issues={session.issues} rawContent={session.rawContent} />;
   }
 
   const handleChange = (doc: WorkflowEditorDocument) => session.setDocument(doc);

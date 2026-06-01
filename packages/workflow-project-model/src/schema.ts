@@ -6,6 +6,8 @@ export const DevProjectSchema = z.object({
   rootPath: z.string().min(1),
   workflowGlobs: z.array(z.string()).min(1).default(["**/*.json"]),
   entityGlobs: z.array(z.string()).default(["**/*.json"]),
+  workflowRoot: z.string().nullable().default(null),
+  entityRoot: z.string().nullable().default(null),
   createdAt: z.string().datetime(),
   lastOpenedAt: z.string().datetime(),
 });

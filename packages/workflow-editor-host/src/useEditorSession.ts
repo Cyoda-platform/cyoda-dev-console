@@ -26,6 +26,7 @@ export interface EditorSession {
   dirty: boolean;
   saving: boolean;
   saveError: string | null;
+  rawContent: string;
   setDocument: (doc: WorkflowEditorDocument) => void;
   save: () => Promise<void>;
   revert: () => Promise<void>;
@@ -109,6 +110,7 @@ export function useEditorSession({
     dirty,
     saving,
     saveError,
+    rawContent: initialContents,
     setDocument,
     save,
     revert,

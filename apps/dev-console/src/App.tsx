@@ -16,6 +16,7 @@ import { loadAppConfig } from "./ipc/config.js";
 import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
 import { HeaderContext } from "./components/HeaderContext.js";
 import { SplitPane } from "./components/SplitPane.js";
+import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { EmptyState } from "@cyoda/console-design-system";
 
 const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
@@ -123,9 +124,21 @@ export function App() {
                 : ["valid-workflow", "invalid-workflow", "export-payload", "probable-workflow", "parse-error"];
 
             const ENTITY_PATH_RE = /(^|\/)(entit[a-z]*|models?)(\/|\.json$)/i;
-            const pathFilter = activeSection === "entities"
-              ? (e: WorkflowFileIndexEntry) => ENTITY_PATH_RE.test(e.relativePath)
+
+            const entityRoot = active.entityRoot;
+            const workflowRoot = active.workflowRoot;
+
+            const entityPathFilter = entityRoot != null
+              ? (e: WorkflowFileIndexEntry) =>
+                  e.relativePath.startsWith(entityRoot + "/") || e.relativePath === entityRoot
+              : (e: WorkflowFileIndexEntry) => ENTITY_PATH_RE.test(e.relativePath);
+
+            const workflowPathFilter = workflowRoot != null
+              ? (e: WorkflowFileIndexEntry) =>
+                  e.relativePath.startsWith(workflowRoot + "/") || e.relativePath === workflowRoot
               : undefined;
+
+            const pathFilter = activeSection === "entities" ? entityPathFilter : workflowPathFilter;
 
             const editorPane = openedFile?.kind === "workflow" ? (
               <WorkflowRoute
@@ -152,7 +165,7 @@ export function App() {
                     onOpen={(entry) => void handleOpenEntry(entry)}
                   />
                 }
-                right={editorPane}
+                right={<ErrorBoundary onReset={handleClose}>{editorPane}</ErrorBoundary>}
                 collapsed={treeCollapsed}
                 onToggleCollapse={() => setTreeCollapsed((c) => !c)}
               />
