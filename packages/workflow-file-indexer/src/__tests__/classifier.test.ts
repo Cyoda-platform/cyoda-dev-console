@@ -43,3 +43,20 @@ it("classifies a parse-error file and sets error", async () => {
   expect(e.status).toBe("parse-error");
   expect(e.error).toBeTruthy();
 });
+
+it("classifies an export-payload file", async () => {
+  const e = await classify("export-payload.json");
+  expect(e.status).toBe("export-payload");
+  expect(e.workflows).toHaveLength(1);
+  expect(e.workflows[0]?.name).toBe("order-flow");
+  expect(e.workflows[0]?.entity).toBe("Order");
+  expect(e.error).toBeUndefined();
+});
+
+it("classifies a probable-workflow file (build-skill format)", async () => {
+  const e = await classify("probable-workflow.json");
+  expect(e.status).toBe("probable-workflow");
+  expect(e.workflows).toHaveLength(1);
+  expect(e.workflows[0]?.name).toBe("task-flow");
+  expect(e.error).toBeUndefined();
+});

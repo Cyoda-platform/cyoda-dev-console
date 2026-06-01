@@ -1,4 +1,4 @@
-import { parseImportPayload } from "@cyoda/workflow-core";
+import { parseImportPayload, parseExportPayload } from "@cyoda/workflow-core";
 import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "./types.js";
 
 export interface ClassifyInput {
@@ -16,31 +16,78 @@ export function classifyWorkflowFile(input: ClassifyInput): WorkflowFileIndexEnt
   } catch (e) {
     return makeEntry(input, "parse-error", [], (e as Error).message);
   }
-  if (
-    !parsedJson ||
-    typeof parsedJson !== "object" ||
-    !("workflows" in parsedJson) ||
-    !("importMode" in parsedJson)
-  ) {
+
+  if (!isObj(parsedJson)) {
     return makeEntry(input, "json-not-workflow", []);
   }
-  let result;
-  try {
-    result = parseImportPayload(input.contents);
-  } catch (e) {
-    return makeEntry(input, "parse-error", [], (e as Error).message);
+
+  // Case 1: Import payload — has both importMode and workflows
+  if ("importMode" in parsedJson && "workflows" in parsedJson) {
+    let result;
+    try {
+      result = parseImportPayload(input.contents);
+    } catch (e) {
+      return makeEntry(input, "parse-error", [], (e as Error).message);
+    }
+    if (result.ok && result.value) {
+      const workflows = result.value.workflows.map((w) => ({
+        name: w.name,
+        version: w.version,
+      }));
+      return makeEntry(input, "valid-workflow", workflows);
+    }
+    const errMsg =
+      result.issues.map((i) => i.message).join("; ") ||
+      "parseImportPayload rejected the file";
+    return makeEntry(input, "invalid-workflow", [], errMsg);
   }
-  if (result.ok && result.value) {
-    const workflows = result.value.workflows.map((w) => ({
-      name: w.name,
-      version: w.version,
-    }));
-    return makeEntry(input, "valid-workflow", workflows);
+
+  // Case 2: Export payload — has entityName + modelVersion + workflows
+  if ("entityName" in parsedJson && "modelVersion" in parsedJson && "workflows" in parsedJson) {
+    let result;
+    try {
+      result = parseExportPayload(input.contents);
+    } catch (e) {
+      return makeEntry(input, "parse-error", [], (e as Error).message);
+    }
+    if (result.ok && result.value) {
+      const entityName = result.value.entityName;
+      const workflows = result.value.workflows.map((w) => ({
+        name: w.name,
+        version: w.version,
+        entity: entityName,
+      }));
+      return makeEntry(input, "export-payload", workflows);
+    }
+    const errMsg =
+      result.issues.map((i) => i.message).join("; ") ||
+      "parseExportPayload rejected the file";
+    return makeEntry(input, "invalid-workflow", [], errMsg);
   }
-  const errMsg =
-    result.issues.map((i) => i.message).join("; ") ||
-    "parseImportPayload rejected the file";
-  return makeEntry(input, "invalid-workflow", [], errMsg);
+
+  // Case 3: Probable workflow — bare { workflows: [...] } build-skill format
+  if ("workflows" in parsedJson) {
+    const wfs = parsedJson["workflows"];
+    if (Array.isArray(wfs) && wfs.length > 0 && wfs.every(isWorkflowShaped)) {
+      const workflows = wfs.filter(isObj).map((w) => {
+        const name = typeof w["name"] === "string" ? w["name"] : "unknown";
+        const ver = typeof w["version"] === "string" ? w["version"] : undefined;
+        return { name, ...(ver !== undefined ? { version: ver } : {}) };
+      });
+      return makeEntry(input, "probable-workflow", workflows);
+    }
+  }
+
+  return makeEntry(input, "json-not-workflow", []);
+}
+
+function isObj(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function isWorkflowShaped(v: unknown): boolean {
+  if (!isObj(v)) return false;
+  return typeof v["name"] === "string" && "initialState" in v && isObj(v["states"]);
 }
 
 function makeEntry(

@@ -9,9 +9,11 @@ import { useProjectStore } from "../state/projectStore.js";
 export function ProjectRoute({
   onOpen,
   statusFilter,
+  pathFilter,
 }: {
   onOpen?: (entry: WorkflowFileIndexEntry) => void;
   statusFilter?: WorkflowFileStatus[];
+  pathFilter?: (entry: WorkflowFileIndexEntry) => boolean;
 }) {
   const active = useProjectStore((s) => s.active)!;
 
@@ -54,9 +56,10 @@ export function ProjectRoute({
   if (scan.isPending) return <div style={{ padding: 8 }}>Scanning…</div>;
   if (scan.isError) return <div style={{ padding: 8 }}>Scan failed: {String(scan.error)}</div>;
 
-  const entries = statusFilter
+  let entries = statusFilter
     ? scan.data!.entries.filter((e) => statusFilter.includes(e.status))
     : scan.data!.entries;
+  if (pathFilter) entries = entries.filter(pathFilter);
 
   return onOpen
     ? <FileTree entries={entries} onOpen={onOpen} />

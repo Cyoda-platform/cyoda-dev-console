@@ -1,6 +1,8 @@
 export type WorkflowFileStatus =
   | "valid-workflow"
   | "invalid-workflow"
+  | "export-payload"
+  | "probable-workflow"
   | "json-not-workflow"
   | "parse-error";
 

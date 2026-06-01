@@ -55,7 +55,9 @@ export function FileTree({
                 padding: `0 ${t.space.md}`,
                 cursor: clickable ? "pointer" : "default",
                 color:
-                  e.status === "valid-workflow"
+                  e.status === "valid-workflow" ||
+                  e.status === "export-payload" ||
+                  e.status === "probable-workflow"
                     ? t.color.text
                     : t.color.textMuted,
               }}
@@ -103,9 +105,9 @@ function StatusDot({
 }) {
   const t = useTokens();
   const color =
-    status === "valid-workflow"
+    status === "valid-workflow" || status === "export-payload"
       ? t.color.success
-      : status === "invalid-workflow"
+      : status === "invalid-workflow" || status === "probable-workflow"
         ? t.color.warning
         : status === "parse-error"
           ? t.color.danger

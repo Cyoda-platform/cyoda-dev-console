@@ -13,8 +13,7 @@ import { SettingsRoute } from "./routes/settings.js";
 import { AgentContextProvider } from "./agent/AgentContext.js";
 import { readTextFile } from "./ipc/fsio.js";
 import { loadAppConfig } from "./ipc/config.js";
-import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
-import type { WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
+import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
 import { HeaderContext } from "./components/HeaderContext.js";
 import { SplitPane } from "./components/SplitPane.js";
 import { EmptyState } from "@cyoda/console-design-system";
@@ -52,12 +51,13 @@ export function App() {
   const [editorDirty, setEditorDirty] = useState(false);
   const [treeCollapsed, setTreeCollapsed] = useState(false);
 
+  const WORKFLOW_STATUSES: WorkflowFileStatus[] = [
+    "valid-workflow", "invalid-workflow", "export-payload", "probable-workflow", "parse-error",
+  ];
+
   const handleOpenEntry = async (entry: WorkflowFileIndexEntry) => {
     const result = await readTextFile(entry.path);
-    const kind: RouteKind =
-      entry.status === "valid-workflow" || entry.status === "invalid-workflow"
-        ? "workflow"
-        : "entity";
+    const kind: RouteKind = WORKFLOW_STATUSES.includes(entry.status) ? "workflow" : "entity";
     setOpenedFile({ path: result.path, contents: result.contents, kind });
     setAgentOpen(false);
   };
@@ -120,7 +120,12 @@ export function App() {
             const statusFilter: WorkflowFileStatus[] =
               activeSection === "entities"
                 ? ["json-not-workflow"]
-                : ["valid-workflow", "invalid-workflow"];
+                : ["valid-workflow", "invalid-workflow", "export-payload", "probable-workflow", "parse-error"];
+
+            const ENTITY_PATH_RE = /(^|\/)(entit[a-z]*|models?)(\/|\.json$)/i;
+            const pathFilter = activeSection === "entities"
+              ? (e: WorkflowFileIndexEntry) => ENTITY_PATH_RE.test(e.relativePath)
+              : undefined;
 
             const editorPane = openedFile?.kind === "workflow" ? (
               <WorkflowRoute
@@ -143,6 +148,7 @@ export function App() {
                 left={
                   <ProjectRoute
                     statusFilter={statusFilter}
+                    {...(pathFilter !== undefined ? { pathFilter } : {})}
                     onOpen={(entry) => void handleOpenEntry(entry)}
                   />
                 }

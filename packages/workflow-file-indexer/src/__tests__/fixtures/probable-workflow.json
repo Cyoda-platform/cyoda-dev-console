@@ -1,0 +1,13 @@
+{
+  "workflows": [
+    {
+      "version": "1.0",
+      "name": "task-flow",
+      "initialState": "Open",
+      "active": true,
+      "states": {
+        "Open": { "transitions": [] }
+      }
+    }
+  ]
+}

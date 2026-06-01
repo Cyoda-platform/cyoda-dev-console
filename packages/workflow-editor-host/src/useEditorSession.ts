@@ -112,7 +112,7 @@ export function useEditorSession({
     setDocument,
     save,
     revert,
-    saveAs,
+    ...(saveAs !== undefined ? { saveAs } : {}),
     layoutKey,
   };
 }

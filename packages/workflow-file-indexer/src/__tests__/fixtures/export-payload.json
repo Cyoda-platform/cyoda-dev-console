@@ -1,0 +1,15 @@
+{
+  "entityName": "Order",
+  "modelVersion": 2,
+  "workflows": [
+    {
+      "version": "1.0",
+      "name": "order-flow",
+      "initialState": "New",
+      "active": true,
+      "states": {
+        "New": { "transitions": [] }
+      }
+    }
+  ]
+}
