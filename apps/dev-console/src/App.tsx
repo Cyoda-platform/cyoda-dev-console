@@ -59,7 +59,23 @@ export function App() {
   const handleOpenEntry = async (entry: WorkflowFileIndexEntry) => {
     const result = await readTextFile(entry.path);
     const kind: RouteKind = WORKFLOW_STATUSES.includes(entry.status) ? "workflow" : "entity";
-    setOpenedFile({ path: result.path, contents: result.contents, kind });
+
+    // probable-workflow and export-payload files lack importMode, which parseImportPayload
+    // requires. Synthesize MERGE as a default so the editor can open the file. The file
+    // is immediately dirty, prompting the user to save and persist the normalized format.
+    let contents = result.contents;
+    if (entry.status === "probable-workflow" || entry.status === "export-payload") {
+      try {
+        const parsed = JSON.parse(contents) as Record<string, unknown>;
+        if (!("importMode" in parsed)) {
+          contents = JSON.stringify({ importMode: "MERGE", ...parsed }, null, 2);
+        }
+      } catch {
+        // leave contents unchanged; the editor will show the parse error
+      }
+    }
+
+    setOpenedFile({ path: result.path, contents, kind });
     setAgentOpen(false);
   };
 
