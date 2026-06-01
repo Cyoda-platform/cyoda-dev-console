@@ -5,7 +5,7 @@ import { AppFrame } from "../AppFrame";
 describe("AppFrame", () => {
   it("renders the title and children", () => {
     render(
-      <AppFrame title="Cyoda Dev Console" navItems={[]}>
+      <AppFrame title="Cyoda Dev Console">
         <div>Body content</div>
       </AppFrame>,
     );
@@ -13,15 +13,12 @@ describe("AppFrame", () => {
     expect(screen.getByText("Body content")).toBeInTheDocument();
   });
 
-  it("renders nav items as buttons", () => {
+  it("renders headerRight content", () => {
     render(
-      <AppFrame
-        title="App"
-        navItems={[{ id: "a", label: "Workflows", onSelect: () => {} }]}
-      >
+      <AppFrame title="App" headerRight={<span>Project Badge</span>}>
         <div />
       </AppFrame>,
     );
-    expect(screen.getByRole("button", { name: "Workflows" })).toBeInTheDocument();
+    expect(screen.getByText("Project Badge")).toBeInTheDocument();
   });
 });

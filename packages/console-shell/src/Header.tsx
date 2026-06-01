@@ -6,7 +6,7 @@ export function Header({ title, right }: { title: string; right?: ReactNode }) {
   return (
     <header
       style={{
-        gridColumn: "1 / 3", display: "flex", alignItems: "center", justifyContent: "space-between",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: `0 ${t.space.md}`, borderBottom: `1px solid ${t.color.border}`,
       }}
     >

@@ -15,15 +15,28 @@ import { serializeImportPayload } from "@cyoda/workflow-core";
 
 const jsonEditorConfig: WorkflowJsonEditorConfig = { monaco: getMonacoRuntime() };
 
+const toolbarBtn: React.CSSProperties = {
+  background: "none",
+  border: "1px solid #E0E0E0",
+  borderRadius: 2,
+  cursor: "pointer",
+  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+  fontSize: 12,
+  color: "#525252",
+  padding: "2px 8px",
+};
+
 export function WorkflowRoute({
   filePath,
+  relativePath,
+  displayName,
   initialContents,
-  onClose,
   onDirtyChange,
 }: {
   filePath: string;
+  relativePath: string;
+  displayName: string;
   initialContents: string;
-  onClose: () => void;
   onDirtyChange?: (dirty: boolean) => void;
 }) {
   const projectId = useProjectStore((s) => s.active!.id);
@@ -69,7 +82,6 @@ export function WorkflowRoute({
     return () => unlisten?.();
   }, [filePath]);
 
-  // Only open the confirm modal when there are actual structural changes.
   const handleSaveRequest = () => {
     if (!session.dirty) return;
     setConfirmOpen(true);
@@ -112,44 +124,53 @@ export function WorkflowRoute({
           dirty={session.dirty}
         />
       ) : null}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "0 16px", height: 36, flexShrink: 0,
-        borderBottom: "1px solid #E0E0E0",
-        fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-        fontSize: 12,
-      }}>
+
+      {/* Compact file header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "0 12px",
+          height: 36,
+          flexShrink: 0,
+          borderBottom: "1px solid #E0E0E0",
+          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontSize: 12,
+        }}
+      >
+        {/* Breadcrumb */}
+        <span style={{ color: "#525252", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+          <strong style={{ color: "#161616" }}>{displayName}</strong>
+          <span style={{ marginLeft: 6, color: "#8D8D8D" }} title={relativePath}>
+            {relativePath}
+          </span>
+        </span>
+
         {session.dirty && (
-          <span style={{ color: "#F58220" }}>• Unsaved changes</span>
+          <span style={{ color: "#F58220", flexShrink: 0 }}>● Unsaved</span>
         )}
+
+        <button
+          onClick={handleSaveRequest}
+          disabled={!session.dirty}
+          title="Save (⌘S)"
+          style={{ ...toolbarBtn, opacity: session.dirty ? 1 : 0.4 }}
+        >
+          Save
+        </button>
+
         {session.saveAs != null && (
-          <button
-            onClick={() => void session.saveAs?.()}
-            style={{
-              background: "none",
-              border: "1px solid #E0E0E0",
-              borderRadius: 2,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              fontSize: 12,
-              color: "#525252",
-              padding: "2px 8px",
-            }}
-          >
+          <button onClick={() => void session.saveAs?.()} style={toolbarBtn}>
             Save As…
           </button>
         )}
-        <button
-          onClick={onClose}
-          style={{
-            marginLeft: "auto", background: "none", border: "none",
-            cursor: "pointer", fontFamily: "inherit", fontSize: 12,
-            color: "#525252", padding: "2px 8px",
-          }}
-        >
-          ← Files
+
+        <button onClick={() => void handleReload()} style={toolbarBtn} title="Reload from disk">
+          Reload
         </button>
       </div>
+
       <div style={{ flex: 1, overflow: "hidden" }}>
         <WorkflowEditorHostPanel
           session={session}
@@ -157,6 +178,7 @@ export function WorkflowRoute({
           onSaveRequest={handleSaveRequest}
         />
       </div>
+
       {confirmOpen ? (
         <OverwriteConfirmModal
           path={filePath}
@@ -164,6 +186,7 @@ export function WorkflowRoute({
           onCancel={() => setConfirmOpen(false)}
         />
       ) : null}
+
       {compareOpen && diskSnapshot != null && (
         <CompareView
           diskContents={diskSnapshot}

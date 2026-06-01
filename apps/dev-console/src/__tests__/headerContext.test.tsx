@@ -9,23 +9,18 @@ function wrap(ui: React.ReactElement) {
 }
 
 describe("HeaderContext", () => {
-  it("shows the project name", () => {
-    wrap(<HeaderContext projectName="order-demo" rootPath="/home/user/order-demo" dirty={false} openFilePath={null} />);
+  it("shows the project name badge", () => {
+    wrap(<HeaderContext projectName="order-demo" dirty={false} />);
     expect(screen.getByText("order-demo")).toBeInTheDocument();
   });
 
   it("shows the dirty indicator when dirty", () => {
-    wrap(<HeaderContext projectName="demo" rootPath="/x" dirty={true} openFilePath={null} />);
+    wrap(<HeaderContext projectName="demo" dirty={true} />);
     expect(screen.getByText("●")).toBeInTheDocument();
   });
 
   it("hides the dirty indicator when clean", () => {
-    wrap(<HeaderContext projectName="demo" rootPath="/x" dirty={false} openFilePath={null} />);
+    wrap(<HeaderContext projectName="demo" dirty={false} />);
     expect(screen.queryByText("●")).not.toBeInTheDocument();
-  });
-
-  it("shows the open file basename", () => {
-    wrap(<HeaderContext projectName="demo" rootPath="/x" dirty={false} openFilePath="/projects/workflows/order.json" />);
-    expect(screen.getByText("order.json")).toBeInTheDocument();
   });
 });

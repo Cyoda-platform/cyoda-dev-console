@@ -10,12 +10,25 @@ interface MenuState {
   y: number;
 }
 
+const toolbarBtn: React.CSSProperties = {
+  background: "none",
+  border: "1px solid #E0E0E0",
+  borderRadius: 2,
+  cursor: "pointer",
+  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+  fontSize: 12,
+  color: "#525252",
+  padding: "2px 8px",
+};
+
 export function EntityRoute({
   filePath,
-  onClose,
+  relativePath,
+  displayName,
 }: {
   filePath: string;
-  onClose?: () => void;
+  relativePath: string;
+  displayName: string;
 }) {
   const [menu, setMenu] = useState<MenuState | null>(null);
   const q = useQuery({
@@ -24,29 +37,25 @@ export function EntityRoute({
   });
 
   const menuItems = [
-    {
-      label: "Reveal in Finder",
-      onClick: () => void revealInFinder(filePath),
-    },
+    { label: "Reveal in Finder", onClick: () => void revealInFinder(filePath) },
     { label: "Open in Zed", onClick: () => void openInIde(filePath, "zed") },
+    { label: "Open in IntelliJ", onClick: () => void openInIde(filePath, "intellij") },
+    { label: "Open in VS Code", onClick: () => void openInIde(filePath, "vscode") },
     {
-      label: "Open in IntelliJ",
-      onClick: () => void openInIde(filePath, "intellij"),
-    },
-    {
-      label: "Open in VS Code",
-      onClick: () => void openInIde(filePath, "vscode"),
+      label: "Copy relative path",
+      onClick: () => void navigator.clipboard.writeText(relativePath),
     },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Compact file header */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "0 16px",
+          padding: "0 12px",
           height: 36,
           flexShrink: 0,
           borderBottom: "1px solid #E0E0E0",
@@ -54,39 +63,23 @@ export function EntityRoute({
           fontSize: 12,
         }}
       >
+        {/* Breadcrumb */}
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <strong style={{ color: "#161616" }}>{displayName}</strong>
+          <span style={{ marginLeft: 6, color: "#8D8D8D" }} title={relativePath}>
+            {relativePath}
+          </span>
+        </span>
+
         <button
           onClick={(e) => setMenu({ x: e.clientX, y: e.clientY })}
-          style={{
-            background: "none",
-            border: "1px solid #E0E0E0",
-            borderRadius: 2,
-            cursor: "pointer",
-            fontFamily: "inherit",
-            fontSize: 12,
-            color: "#525252",
-            padding: "2px 8px",
-          }}
+          style={toolbarBtn}
+          title="File actions"
         >
           ⋯
         </button>
-        {onClose ? (
-          <button
-            onClick={onClose}
-            style={{
-              marginLeft: "auto",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              fontSize: 12,
-              color: "#525252",
-              padding: "2px 8px",
-            }}
-          >
-            ← Files
-          </button>
-        ) : null}
       </div>
+
       <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
         {q.isLoading ? (
           <div>Loading…</div>
@@ -96,6 +89,7 @@ export function EntityRoute({
           <EntityViewer contents={q.data!.contents} />
         )}
       </div>
+
       {menu ? (
         <ContextMenu
           x={menu.x}

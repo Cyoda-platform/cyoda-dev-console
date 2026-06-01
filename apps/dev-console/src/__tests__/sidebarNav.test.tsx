@@ -21,16 +21,10 @@ vi.mock("../ipc/config.js", () => ({
   saveAppConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
-describe("sidebar nav items", () => {
-  it("renders Workflows, Entities, and Project nav items", () => {
+describe("app nav", () => {
+  it("does not render the old sidebar nav buttons at top level", () => {
     render(<App />);
-    expect(screen.getByRole("button", { name: "Workflows" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Entities" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Project" })).toBeInTheDocument();
-  });
-
-  it("does not render AI Agent nav item when feature flag is off", () => {
-    render(<App />);
+    // Old top-level nav buttons are gone — navigation is inside the ProjectExplorer
     expect(screen.queryByRole("button", { name: "AI Agent" })).not.toBeInTheDocument();
   });
 });

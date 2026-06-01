@@ -1,1 +1,1 @@
-export { AppFrame, type NavItem } from "./AppFrame";
+export { AppFrame } from "./AppFrame";

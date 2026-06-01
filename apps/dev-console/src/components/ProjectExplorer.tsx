@@ -1,0 +1,511 @@
+import { useState, useEffect, useRef } from "react";
+import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
+import { useTokens } from "@cyoda/console-design-system";
+import { deriveDisplayName } from "../utils/displayName.js";
+import { revealInFinder, openInIde } from "../ipc/shell.js";
+import { ContextMenu } from "./ContextMenu.js";
+
+const WORKFLOW_STATUSES: WorkflowFileStatus[] = [
+  "valid-workflow",
+  "invalid-workflow",
+  "export-payload",
+  "probable-workflow",
+  "parse-error",
+];
+
+interface MenuState {
+  x: number;
+  y: number;
+  path: string;
+}
+
+export function ProjectExplorer({
+  allEntries,
+  selectedPath,
+  onOpen,
+  collapsed,
+  onToggleCollapse,
+  onRescan,
+  onOpenSettings,
+  projectRoot,
+  workflowRoot,
+  entityRoot,
+}: {
+  allEntries: WorkflowFileIndexEntry[];
+  selectedPath: string | null;
+  onOpen: (entry: WorkflowFileIndexEntry) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  onRescan: () => void;
+  onOpenSettings: () => void;
+  projectRoot: string;
+  workflowRoot?: string | null;
+  entityRoot?: string | null;
+}) {
+  const t = useTokens();
+  const [search, setSearch] = useState("");
+  const [workflowsExpanded, setWorkflowsExpanded] = useState(true);
+  const [entitiesExpanded, setEntitiesExpanded] = useState(true);
+  const [projectExpanded, setProjectExpanded] = useState(false);
+  const [menu, setMenu] = useState<MenuState | null>(null);
+  const [width, setWidth] = useState(280);
+  const draggingRef = useRef(false);
+  const dragStart = useRef({ x: 0, w: 0 });
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+      const delta = e.clientX - dragStart.current.x;
+      setWidth(Math.max(160, Math.min(480, dragStart.current.w + delta)));
+    };
+    const onUp = () => {
+      draggingRef.current = false;
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, []);
+
+  const workflowEntries = allEntries.filter(
+    (e) =>
+      WORKFLOW_STATUSES.includes(e.status) &&
+      (!workflowRoot || e.relativePath.startsWith(workflowRoot + "/")),
+  );
+  const entityEntries = allEntries.filter(
+    (e) =>
+      e.status === "json-not-workflow" &&
+      (!entityRoot || e.relativePath.startsWith(entityRoot + "/")),
+  );
+
+  const q = search.trim().toLowerCase();
+  const match = (e: WorkflowFileIndexEntry) =>
+    !q ||
+    deriveDisplayName(e).toLowerCase().includes(q) ||
+    e.relativePath.toLowerCase().includes(q);
+
+  const filteredWorkflows = workflowEntries.filter(match);
+  const filteredEntities = entityEntries.filter(match);
+
+  if (collapsed) {
+    return (
+      <button
+        onClick={onToggleCollapse}
+        aria-label="Expand explorer"
+        style={{
+          width: 20,
+          background: t.color.surfaceAlt,
+          border: "none",
+          borderRight: `1px solid ${t.color.border}`,
+          cursor: "pointer",
+          color: t.color.textMuted,
+          fontSize: 10,
+          flexShrink: 0,
+          padding: 0,
+        }}
+      >
+        ›
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <div
+        aria-label="Project Explorer"
+        style={{
+          width,
+          minWidth: width,
+          maxWidth: width,
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          borderRight: `1px solid ${t.color.border}`,
+          background: t.color.surface,
+          overflow: "hidden",
+        }}
+      >
+        {/* Search */}
+        <div
+          style={{
+            padding: "6px 8px",
+            borderBottom: `1px solid ${t.color.border}`,
+            flexShrink: 0,
+          }}
+        >
+          <label
+            htmlFor="explorer-search"
+            style={{
+              position: "absolute",
+              width: 1,
+              height: 1,
+              overflow: "hidden",
+              clip: "rect(0,0,0,0)",
+            }}
+          >
+            Search files
+          </label>
+          <input
+            id="explorer-search"
+            type="search"
+            placeholder="Search…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              height: 26,
+              padding: "0 6px",
+              fontFamily: t.font.sans,
+              fontSize: t.font.sizes.sm,
+              border: `1px solid ${t.color.border}`,
+              borderRadius: 2,
+              background: t.color.surfaceAlt,
+              color: t.color.text,
+              outline: "none",
+            }}
+          />
+        </div>
+
+        {/* Sections */}
+        <div style={{ flex: 1, overflow: "auto" }}>
+          <ExplorerSection
+            label="Workflows"
+            count={filteredWorkflows.length}
+            expanded={workflowsExpanded}
+            onToggle={() => setWorkflowsExpanded((v) => !v)}
+          >
+            {filteredWorkflows.length === 0 ? (
+              <EmptyRow text={q ? "No matches" : "No workflow files"} />
+            ) : (
+              filteredWorkflows.map((e) => (
+                <ExplorerItem
+                  key={e.path}
+                  entry={e}
+                  displayName={deriveDisplayName(e)}
+                  selected={e.path === selectedPath}
+                  onOpen={onOpen}
+                  onContextMenu={(x, y) => setMenu({ x, y, path: e.path })}
+                />
+              ))
+            )}
+          </ExplorerSection>
+
+          <ExplorerSection
+            label="Entities"
+            count={filteredEntities.length}
+            expanded={entitiesExpanded}
+            onToggle={() => setEntitiesExpanded((v) => !v)}
+          >
+            {filteredEntities.length === 0 ? (
+              <EmptyRow text={q ? "No matches" : "No entity files"} />
+            ) : (
+              filteredEntities.map((e) => (
+                <ExplorerItem
+                  key={e.path}
+                  entry={e}
+                  displayName={deriveDisplayName(e)}
+                  selected={e.path === selectedPath}
+                  onOpen={onOpen}
+                  onContextMenu={(x, y) => setMenu({ x, y, path: e.path })}
+                />
+              ))
+            )}
+          </ExplorerSection>
+
+          <ExplorerSection
+            label="Project"
+            expanded={projectExpanded}
+            onToggle={() => setProjectExpanded((v) => !v)}
+          >
+            <ProjectActions
+              onSettings={onOpenSettings}
+              onRescan={onRescan}
+              projectRoot={projectRoot}
+            />
+          </ExplorerSection>
+        </div>
+
+        {/* Collapse button */}
+        <button
+          onClick={onToggleCollapse}
+          aria-label="Collapse explorer"
+          style={{
+            height: 24,
+            flexShrink: 0,
+            background: t.color.surfaceAlt,
+            border: "none",
+            borderTop: `1px solid ${t.color.border}`,
+            cursor: "pointer",
+            fontFamily: t.font.sans,
+            fontSize: t.font.sizes.sm,
+            color: t.color.textMuted,
+          }}
+        >
+          ‹ Collapse
+        </button>
+      </div>
+
+      {/* Resize drag handle */}
+      <div
+        role="separator"
+        aria-label="Resize explorer"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          draggingRef.current = true;
+          dragStart.current = { x: e.clientX, w: width };
+        }}
+        style={{
+          width: 4,
+          cursor: "col-resize",
+          background: "transparent",
+          flexShrink: 0,
+        }}
+      />
+
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          onDismiss={() => setMenu(null)}
+          items={[
+            {
+              label: "Reveal in Finder",
+              onClick: () => void revealInFinder(menu.path),
+            },
+            {
+              label: "Open in Zed",
+              onClick: () => void openInIde(menu.path, "zed"),
+            },
+            {
+              label: "Open in IntelliJ",
+              onClick: () => void openInIde(menu.path, "intellij"),
+            },
+            {
+              label: "Open in VS Code",
+              onClick: () => void openInIde(menu.path, "vscode"),
+            },
+            {
+              label: "Copy relative path",
+              onClick: () => {
+                const entry = allEntries.find((e) => e.path === menu.path);
+                if (entry) void navigator.clipboard.writeText(entry.relativePath);
+              },
+            },
+          ]}
+        />
+      )}
+    </>
+  );
+}
+
+function ExplorerSection({
+  label,
+  count,
+  expanded,
+  onToggle,
+  children,
+}: {
+  label: string;
+  count?: number;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  const t = useTokens();
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        aria-expanded={expanded}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          width: "100%",
+          padding: "5px 8px",
+          background: "none",
+          border: "none",
+          borderBottom: `1px solid ${t.color.border}`,
+          cursor: "pointer",
+          fontFamily: t.font.sans,
+          fontSize: t.font.sizes.sm,
+          fontWeight: 600,
+          color: t.color.text,
+          textAlign: "left",
+        }}
+      >
+        <span aria-hidden style={{ fontSize: 10, width: 10 }}>
+          {expanded ? "▾" : "›"}
+        </span>
+        {label}
+        {count !== undefined && count > 0 && (
+          <span
+            style={{
+              marginLeft: "auto",
+              fontWeight: 400,
+              color: t.color.textMuted,
+              fontSize: t.font.sizes.sm,
+            }}
+          >
+            {count}
+          </span>
+        )}
+      </button>
+      {expanded && children}
+    </div>
+  );
+}
+
+function ExplorerItem({
+  entry,
+  displayName,
+  selected,
+  onOpen,
+  onContextMenu,
+}: {
+  entry: WorkflowFileIndexEntry;
+  displayName: string;
+  selected: boolean;
+  onOpen: (entry: WorkflowFileIndexEntry) => void;
+  onContextMenu: (x: number, y: number) => void;
+}) {
+  const t = useTokens();
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      title={entry.relativePath}
+      aria-pressed={selected}
+      onClick={() => onOpen(entry)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(entry);
+        }
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onContextMenu(e.clientX, e.clientY);
+      }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "3px 8px 3px 20px",
+        cursor: "pointer",
+        background: selected ? t.color.surfaceAlt : "transparent",
+        borderLeft: selected ? `2px solid ${t.color.cyodaGreen}` : "2px solid transparent",
+        fontFamily: t.font.sans,
+        fontSize: t.font.sizes.sm,
+        color: t.color.text,
+        userSelect: "none",
+        outline: "none",
+      }}
+      onFocus={(e) => {
+        (e.currentTarget as HTMLDivElement).style.outline = `2px solid ${t.color.cyodaGreen}`;
+      }}
+      onBlur={(e) => {
+        (e.currentTarget as HTMLDivElement).style.outline = "none";
+      }}
+    >
+      <StatusDot status={entry.status} />
+      <span
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {displayName}
+      </span>
+    </div>
+  );
+}
+
+function StatusDot({ status }: { status: WorkflowFileIndexEntry["status"] }) {
+  const t = useTokens();
+  const { color, label } =
+    status === "valid-workflow" || status === "export-payload"
+      ? { color: t.color.success, label: "valid" }
+      : status === "invalid-workflow" || status === "probable-workflow"
+        ? { color: t.color.warning, label: "warnings" }
+        : status === "parse-error"
+          ? { color: t.color.danger, label: "error" }
+          : { color: t.color.textMuted, label: "not a workflow" };
+
+  return (
+    <span
+      aria-label={label}
+      title={label}
+      style={{
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: color,
+        display: "inline-block",
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function EmptyRow({ text }: { text: string }) {
+  const t = useTokens();
+  return (
+    <div
+      style={{
+        padding: "4px 8px 4px 20px",
+        fontFamily: t.font.sans,
+        fontSize: t.font.sizes.sm,
+        color: t.color.textMuted,
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+function ProjectActions({
+  onSettings,
+  onRescan,
+  projectRoot,
+}: {
+  onSettings: () => void;
+  onRescan: () => void;
+  projectRoot: string;
+}) {
+  const t = useTokens();
+  const btn: React.CSSProperties = {
+    display: "block",
+    width: "100%",
+    padding: "4px 8px",
+    background: "none",
+    border: "none",
+    textAlign: "left",
+    cursor: "pointer",
+    fontFamily: t.font.sans,
+    fontSize: t.font.sizes.sm,
+    color: t.color.text,
+    borderRadius: 2,
+  };
+  return (
+    <div style={{ padding: "4px 0 4px 12px" }}>
+      <button style={btn} onClick={onSettings}>
+        Settings
+      </button>
+      <button style={btn} onClick={onRescan}>
+        Rescan
+      </button>
+      <button style={btn} onClick={() => void revealInFinder(projectRoot)}>
+        Reveal in Finder
+      </button>
+      <button style={btn} onClick={() => void openInIde(projectRoot, "vscode")}>
+        Open in VS Code
+      </button>
+    </div>
+  );
+}

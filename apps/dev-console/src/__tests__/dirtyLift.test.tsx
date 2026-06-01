@@ -31,8 +31,9 @@ describe("WorkflowRoute onDirtyChange", () => {
       <QueryClientProvider client={queryClient}>
         <WorkflowRoute
           filePath="/tmp/w.json"
+          relativePath="workflows/w.json"
+          displayName="demo"
           initialContents={FIXTURE}
-          onClose={() => undefined}
           onDirtyChange={onDirtyChange}
         />
       </QueryClientProvider>,
