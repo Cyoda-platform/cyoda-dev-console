@@ -158,13 +158,14 @@ export function App() {
 
             const editorPane = openedFile?.kind === "workflow" ? (
               <WorkflowRoute
+                key={openedFile.path}
                 filePath={openedFile.path}
                 initialContents={openedFile.contents}
                 onClose={handleClose}
                 onDirtyChange={setEditorDirty}
               />
             ) : openedFile?.kind === "entity" ? (
-              <EntityRoute filePath={openedFile.path} onClose={handleClose} />
+              <EntityRoute key={openedFile.path} filePath={openedFile.path} onClose={handleClose} />
             ) : (
               <EmptyState
                 title={activeSection === "entities" ? "Select an entity file" : "Select a workflow"}
