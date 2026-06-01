@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { scanProject } from "../ipc/project.js";
 import { watchProject, onFileChanged } from "../ipc/watcher.js";
@@ -16,6 +16,7 @@ export function ProjectRoute({
   pathFilter?: (entry: WorkflowFileIndexEntry) => boolean;
 }) {
   const active = useProjectStore((s) => s.active)!;
+  const qc = useQueryClient();
 
   const scan = useQuery({
     queryKey: ["scan", active.rootPath],
@@ -40,8 +41,8 @@ export function ProjectRoute({
     void watchProject(active.rootPath)
       .then(() => {
         if (aborted) return;
-        return onFileChanged((evt) => {
-          console.log("external change", evt);
+        return onFileChanged(() => {
+          void qc.invalidateQueries({ queryKey: ["scan", active.rootPath] });
         });
       })
       .then((unlisten) => {
