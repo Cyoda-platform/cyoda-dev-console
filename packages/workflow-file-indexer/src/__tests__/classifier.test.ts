@@ -60,3 +60,11 @@ it("classifies a probable-workflow file (build-skill format)", async () => {
   expect(e.workflows[0]?.name).toBe("task-flow");
   expect(e.error).toBeUndefined();
 });
+
+it("classifies a standalone workflow definition (block-portal format)", async () => {
+  const e = await classify("standalone-workflow.json");
+  expect(e.status).toBe("probable-workflow");
+  expect(e.workflows).toHaveLength(1);
+  expect(e.workflows[0]?.name).toBe("investor_workflow");
+  expect(e.error).toBeUndefined();
+});

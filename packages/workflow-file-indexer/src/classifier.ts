@@ -78,6 +78,19 @@ export function classifyWorkflowFile(input: ClassifyInput): WorkflowFileIndexEnt
     }
   }
 
+  // Case 4: Standalone workflow definition — the file itself is a single workflow object
+  // (e.g. Cyoda block-portal format: { version, name, initialState, states, ... })
+  if (isWorkflowShaped(parsedJson)) {
+    return makeEntry(input, "probable-workflow", [
+      {
+        name: typeof parsedJson["name"] === "string" ? parsedJson["name"] : "unknown",
+        ...(typeof parsedJson["version"] === "string"
+          ? { version: parsedJson["version"] }
+          : {}),
+      },
+    ]);
+  }
+
   return makeEntry(input, "json-not-workflow", []);
 }
 
