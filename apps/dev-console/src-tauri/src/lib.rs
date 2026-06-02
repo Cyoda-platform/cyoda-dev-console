@@ -35,6 +35,10 @@ pub fn run() {
             commands::shell_ext::open_in_ide,
             commands::config::load_app_config,
             commands::config::save_app_config,
+            commands::agent::read_cyoda_profile_config,
+            commands::agent::detect_agents,
+            commands::agent::write_project_text_file,
+            commands::llm::llm_complete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

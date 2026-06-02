@@ -166,6 +166,13 @@ function DevConsoleApp() {
                 setOpenedFile(null);
                 setViewKind("settings");
               }}
+              {...(AGENT_FLAG
+                ? {
+                    // Keep openedFile so the agent surface (Bundle/Assistant) still sees the
+                    // selected workflow/entity via AgentContext.
+                    onOpenAgent: () => setViewKind("agent"),
+                  }
+                : {})}
               projectRoot={active.rootPath}
               workflowRoot={active.workflowRoot}
               entityRoot={active.entityRoot}
@@ -206,14 +213,6 @@ function DevConsoleApp() {
                 )}
               </ErrorBoundary>
             </div>
-
-            {AGENT_FLAG && (
-              <button
-                onClick={() => setViewKind("agent")}
-                style={{ display: "none" }}
-                aria-hidden
-              />
-            )}
           </>
         )}
       </AgentContextProvider>

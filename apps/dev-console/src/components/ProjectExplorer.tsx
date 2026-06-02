@@ -27,6 +27,7 @@ export function ProjectExplorer({
   onToggleCollapse,
   onRescan,
   onOpenSettings,
+  onOpenAgent,
   projectRoot,
   workflowRoot,
   entityRoot,
@@ -38,6 +39,8 @@ export function ProjectExplorer({
   onToggleCollapse: () => void;
   onRescan: () => void;
   onOpenSettings: () => void;
+  /** Optional — only provided when the BYO AI feature flag is on. */
+  onOpenAgent?: () => void;
   projectRoot: string;
   workflowRoot?: string | null;
   entityRoot?: string | null;
@@ -130,6 +133,35 @@ export function ProjectExplorer({
           overflow: "hidden",
         }}
       >
+        {/* Top-level navigation (feature-flagged entries) */}
+        {onOpenAgent && (
+          <button
+            onClick={onOpenAgent}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              width: "100%",
+              padding: "8px 10px",
+              background: "none",
+              border: "none",
+              borderBottom: `1px solid ${t.color.border}`,
+              cursor: "pointer",
+              fontFamily: t.font.sans,
+              fontSize: t.font.sizes.md,
+              fontWeight: 600,
+              color: t.color.cyodaGreen,
+              textAlign: "left",
+              flexShrink: 0,
+            }}
+          >
+            <span aria-hidden style={{ fontFamily: t.font.mono }}>
+              ▸_
+            </span>
+            AI Agent
+          </button>
+        )}
+
         {/* Search */}
         <div
           style={{
