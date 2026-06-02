@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useCallback, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EntityViewer } from "@cyoda/entity-model-viewer";
-import { readTextFile } from "../ipc/fsio.js";
+import { useTokens } from "@cyoda/console-design-system";
+import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
 import { ContextMenu } from "../components/ContextMenu.js";
+import { MonacoJsonViewer } from "../components/MonacoJsonViewer.js";
 import { revealInFinder, openInIde } from "../ipc/shell.js";
 
 interface MenuState {
@@ -10,16 +12,7 @@ interface MenuState {
   y: number;
 }
 
-const toolbarBtn: React.CSSProperties = {
-  background: "none",
-  border: "1px solid #E0E0E0",
-  borderRadius: 2,
-  cursor: "pointer",
-  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-  fontSize: 12,
-  color: "#525252",
-  padding: "2px 8px",
-};
+type ViewMode = "tree" | "json";
 
 export function EntityRoute({
   filePath,
@@ -30,11 +23,42 @@ export function EntityRoute({
   relativePath: string;
   displayName: string;
 }) {
+  const t = useTokens();
+  const qc = useQueryClient();
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("tree");
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const editorValueRef = useRef<string | null>(null);
+
+  const handleSave = useCallback(async (value?: string) => {
+    const content = value ?? editorValueRef.current;
+    if (!content) return;
+    setSaving(true);
+    try {
+      await writeTextFileWithConfirmedOverwrite(filePath, content);
+      void qc.invalidateQueries({ queryKey: ["read", filePath] });
+      setDirty(false);
+    } finally {
+      setSaving(false);
+    }
+  }, [filePath, qc]);
+
   const q = useQuery({
     queryKey: ["read", filePath],
     queryFn: () => readTextFile(filePath),
   });
+
+  const toolbarBtn: React.CSSProperties = {
+    background: "none",
+    border: `1px solid ${t.color.border}`,
+    borderRadius: 2,
+    cursor: "pointer",
+    fontFamily: t.font.mono,
+    fontSize: t.font.sizes.sm,
+    color: t.color.textMuted,
+    padding: "2px 8px",
+  };
 
   const menuItems = [
     { label: "Reveal in Finder", onClick: () => void revealInFinder(filePath) },
@@ -49,7 +73,8 @@ export function EntityRoute({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* Compact file header */}
+
+      {/* File header */}
       <div
         style={{
           display: "flex",
@@ -58,18 +83,30 @@ export function EntityRoute({
           padding: "0 12px",
           height: 36,
           flexShrink: 0,
-          borderBottom: "1px solid #E0E0E0",
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-          fontSize: 12,
+          borderBottom: `1px solid ${t.color.border}`,
+          fontFamily: t.font.mono,
+          fontSize: t.font.sizes.sm,
         }}
       >
-        {/* Breadcrumb */}
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          <strong style={{ color: "#161616" }}>{displayName}</strong>
-          <span style={{ marginLeft: 6, color: "#8D8D8D" }} title={relativePath}>
+          <strong style={{ color: t.color.text }}>{displayName}</strong>
+          <span style={{ marginLeft: 6, color: t.color.textMuted }} title={relativePath}>
             {relativePath}
           </span>
         </span>
+
+        {viewMode === "json" && dirty && (
+          <span style={{ color: t.color.cyodaOrange, flexShrink: 0 }}>● Unsaved</span>
+        )}
+        {viewMode === "json" && (
+          <button
+            onClick={() => void handleSave()}
+            disabled={!dirty || saving}
+            style={{ ...toolbarBtn, opacity: dirty && !saving ? 1 : 0.4 }}
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        )}
 
         <button
           onClick={(e) => setMenu({ x: e.clientX, y: e.clientY })}
@@ -80,13 +117,45 @@ export function EntityRoute({
         </button>
       </div>
 
-      <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
+      {/* Surface tabs — same style as workflow editor */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "6px 12px",
+          borderBottom: "1px solid #E2E8F0",
+          background: "white",
+          flexShrink: 0,
+        }}
+      >
+        <SurfaceTab active={viewMode === "tree"} onClick={() => setViewMode("tree")}>
+          Tree
+        </SurfaceTab>
+        <SurfaceTab active={viewMode === "json"} onClick={() => setViewMode("json")}>
+          JSON
+        </SurfaceTab>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflow: "hidden", background: t.color.surface }}>
         {q.isLoading ? (
-          <div>Loading…</div>
+          <div style={{ padding: 16, fontFamily: t.font.sans, fontSize: t.font.sizes.md, color: t.color.textMuted }}>Loading…</div>
         ) : q.isError ? (
-          <div>Read failed: {String(q.error)}</div>
+          <div style={{ padding: 16, fontFamily: t.font.sans, fontSize: t.font.sizes.md, color: t.color.danger }}>Read failed: {String(q.error)}</div>
+        ) : viewMode === "json" ? (
+          <MonacoJsonViewer
+            contents={q.data!.contents}
+            onSave={(v) => void handleSave(v)}
+            onDirtyChange={(d, v) => {
+              setDirty(d);
+              editorValueRef.current = v ?? null;
+            }}
+          />
         ) : (
-          <EntityViewer contents={q.data!.contents} />
+          <div style={{ padding: 16, overflow: "auto", height: "100%", boxSizing: "border-box" }}>
+            <EntityViewer contents={q.data!.contents} />
+          </div>
         )}
       </div>
 
@@ -99,5 +168,34 @@ export function EntityRoute({
         />
       ) : null}
     </div>
+  );
+}
+
+function SurfaceTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: "6px 12px",
+        borderRadius: 999,
+        border: `1px solid ${active ? "#0F172A" : "#CBD5E1"}`,
+        background: active ? "#0F172A" : "white",
+        color: active ? "white" : "#0F172A",
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: "pointer",
+      }}
+    >
+      {children}
+    </button>
   );
 }

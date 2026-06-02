@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, useLayoutEffect, useState, type ReactNode } from "react";
 import { useTokens } from "@cyoda/console-design-system";
 
 export interface ContextMenuItem {
@@ -18,6 +18,20 @@ export function ContextMenu({
   onDismiss: () => void;
 }) {
   const t = useTokens();
+  const menuRef = useRef<HTMLUListElement>(null);
+  const [pos, setPos] = useState({ top: y, left: x });
+
+  useLayoutEffect(() => {
+    if (!menuRef.current) return;
+    const { width, height } = menuRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    setPos({
+      top:  y + height > vh ? Math.max(0, y - height) : y,
+      left: x + width  > vw ? Math.max(0, x - width)  : x,
+    });
+  }, [x, y]);
+
   return (
     <>
       {/* Invisible overlay to catch clicks outside */}
@@ -26,11 +40,12 @@ export function ContextMenu({
         onClick={onDismiss}
       />
       <ul
+        ref={menuRef}
         role="menu"
         style={{
           position: "fixed",
-          top: y,
-          left: x,
+          top: pos.top,
+          left: pos.left,
           zIndex: 1000,
           margin: 0,
           padding: `${t.space.xs} 0`,
