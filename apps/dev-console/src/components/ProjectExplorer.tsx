@@ -69,15 +69,18 @@ export function ProjectExplorer({
     };
   }, []);
 
+  const wfRoot = workflowRoot?.replace(/\/$/, "") || null;
+  const enRoot = entityRoot?.replace(/\/$/, "") || null;
+
   const workflowEntries = allEntries.filter(
     (e) =>
       WORKFLOW_STATUSES.includes(e.status) &&
-      (!workflowRoot || e.relativePath.startsWith(workflowRoot + "/")),
+      (!wfRoot || e.relativePath.startsWith(wfRoot + "/")),
   );
   const entityEntries = allEntries.filter(
     (e) =>
       e.status === "json-not-workflow" &&
-      (!entityRoot || e.relativePath.startsWith(entityRoot + "/")),
+      (!enRoot || e.relativePath.startsWith(enRoot + "/")),
   );
 
   const q = search.trim().toLowerCase();

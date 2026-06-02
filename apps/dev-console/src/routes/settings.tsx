@@ -8,8 +8,10 @@ import type { AppConfig, DevProject } from "@cyoda/workflow-project-model";
 import { Button, EmptyState, FilePath, Panel } from "@cyoda/console-design-system";
 import { useTokens } from "@cyoda/console-design-system";
 
-function toRelative(abs: string, rootPath: string): string {
-  return abs.startsWith(rootPath + "/") ? abs.slice(rootPath.length + 1) : abs;
+function toRelative(abs: string, rootPath: string): string | null {
+  const clean = abs.replace(/\/$/, "");
+  if (clean === rootPath) return null;
+  return clean.startsWith(rootPath + "/") ? clean.slice(rootPath.length + 1) : null;
 }
 
 export function SettingsRoute() {

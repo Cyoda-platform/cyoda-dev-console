@@ -34,7 +34,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
 
   ../cyoda-workflow-editor/packages/workflow-core:
     dependencies:
@@ -182,7 +182,7 @@ importers:
         version: link:../../packages/entity-model-viewer
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: file:../cyoda-workflow-editor/packages/workflow-core
+        version: link:../../../cyoda-workflow-editor/packages/workflow-core
       '@cyoda/workflow-editor-host':
         specifier: workspace:*
         version: link:../../packages/workflow-editor-host
@@ -270,7 +270,7 @@ importers:
         version: 5.4.21(@types/node@22.19.19)
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
 
   packages/agent-bridge-contract:
     devDependencies:
@@ -279,7 +279,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
 
   packages/console-design-system:
     dependencies:
@@ -387,7 +387,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
 
   packages/workflow-editor-host:
     dependencies:
@@ -396,7 +396,7 @@ importers:
         version: link:../console-design-system
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: file:../cyoda-workflow-editor/packages/workflow-core
+        version: link:../../../cyoda-workflow-editor/packages/workflow-core
       '@cyoda/workflow-react':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-react
         version: file:../cyoda-workflow-editor/packages/workflow-react(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(reactflow@11.11.4(@types/react@18.3.29)(immer@10.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
@@ -433,13 +433,13 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
 
   packages/workflow-file-indexer:
     dependencies:
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: file:../cyoda-workflow-editor/packages/workflow-core
+        version: link:../../../cyoda-workflow-editor/packages/workflow-core
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -449,7 +449,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
 
   packages/workflow-project-model:
     dependencies:
@@ -465,7 +465,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)
+        version: 2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3)
 
 packages:
 
@@ -589,9 +589,6 @@ packages:
   '@csstools/css-tokenizer@3.0.4':
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
     engines: {node: '>=18'}
-
-  '@cyoda/workflow-core@file:../cyoda-workflow-editor/packages/workflow-core':
-    resolution: {directory: ../cyoda-workflow-editor/packages/workflow-core, type: directory}
 
   '@cyoda/workflow-graph@file:../cyoda-workflow-editor/packages/workflow-graph':
     resolution: {directory: ../cyoda-workflow-editor/packages/workflow-graph, type: directory}
@@ -2945,12 +2942,6 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.4': {}
 
-  '@cyoda/workflow-core@file:../cyoda-workflow-editor/packages/workflow-core':
-    dependencies:
-      immer: 10.2.0
-      uuid: 14.0.0
-      zod: 3.25.76
-
   '@cyoda/workflow-graph@file:../cyoda-workflow-editor/packages/workflow-graph':
     dependencies:
       '@cyoda/workflow-core': link:../cyoda-workflow-editor/packages/workflow-core
@@ -5231,7 +5222,7 @@ snapshots:
       '@types/node': 22.19.19
       fsevents: 2.3.3
 
-  vitest@2.1.9(@types/node@22.19.19)(happy-dom@15.11.7):
+  vitest@2.1.9(@types/node@22.19.19)(happy-dom@15.11.7)(jsdom@24.1.3):
     dependencies:
       '@vitest/expect': 2.1.9
       '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@22.19.19))
@@ -5256,6 +5247,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.19.19
       happy-dom: 15.11.7
+      jsdom: 24.1.3
     transitivePeerDependencies:
       - less
       - lightningcss

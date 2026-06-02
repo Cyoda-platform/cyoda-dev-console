@@ -108,7 +108,13 @@ function DevConsoleApp() {
       try {
         const parsed = JSON.parse(contents) as Record<string, unknown>;
         if (!("importMode" in parsed)) {
-          contents = JSON.stringify({ importMode: "MERGE", ...parsed }, null, 2);
+          if ("workflows" in parsed) {
+            // Bare { workflows: [...] } or export-payload — promote to import payload
+            contents = JSON.stringify({ importMode: "MERGE", ...parsed }, null, 2);
+          } else {
+            // Standalone workflow object (bloc-portal format) — wrap into workflows array
+            contents = JSON.stringify({ importMode: "MERGE", workflows: [parsed] }, null, 2);
+          }
         }
       } catch {
         // leave as-is; editor will show the parse error
