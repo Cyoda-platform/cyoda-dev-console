@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppFrame } from "@cyoda/console-shell";
-import { EmptyState } from "@cyoda/console-design-system";
+import { EmptyState, Button } from "@cyoda/console-design-system";
 import { queryClient } from "./state/queryClient.js";
 import { useProjectStore } from "./state/projectStore.js";
 import { FirstRun } from "./routes/first-run.js";
@@ -133,6 +133,10 @@ function DevConsoleApp() {
   };
 
   const allEntries = scan.data ?? [];
+  const firstEntry =
+    allEntries.find((e) => e.status === "valid-workflow" || e.status === "export-payload" || e.status === "probable-workflow") ??
+    allEntries.find((e) => e.status === "invalid-workflow" || e.status === "json-not-workflow") ??
+    null;
   const workflowPath = openedFile?.kind === "workflow" ? openedFile.path : undefined;
   const entityPath = openedFile?.kind === "entity" ? openedFile.path : undefined;
 
@@ -193,6 +197,11 @@ function DevConsoleApp() {
                   <EmptyState
                     title="Select a file"
                     description="Choose a workflow or entity from the explorer on the left."
+                    action={firstEntry != null ? (
+                      <Button variant="secondary" onClick={() => void handleOpenEntry(firstEntry)}>
+                        Open first file
+                      </Button>
+                    ) : undefined}
                   />
                 )}
               </ErrorBoundary>

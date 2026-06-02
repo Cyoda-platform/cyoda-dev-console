@@ -4,6 +4,7 @@ import { useTokens } from "./ThemeProvider";
 export function FilePath({ path, copyable = false }: { path: string; copyable?: boolean }) {
   const t = useTokens();
   const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   async function copy() {
     try {
@@ -23,9 +24,18 @@ export function FilePath({ path, copyable = false }: { path: string; copyable?: 
           type="button"
           onClick={copy}
           aria-label="Copy path"
+          title="Copy path"
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
           style={{
-            border: "none", background: "transparent", cursor: "pointer",
-            fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.cyodaGreen, padding: 0,
+            border: "none",
+            background: hovered ? t.color.surfaceAlt : "transparent",
+            cursor: "pointer",
+            fontFamily: t.font.sans,
+            fontSize: t.font.sizes.sm,
+            color: t.color.cyodaGreen,
+            padding: "1px 6px",
+            borderRadius: t.radius.sm,
           }}
         >
           {copied ? "Copied" : "Copy"}

@@ -20,6 +20,7 @@ export function SettingsRoute() {
   const active = useProjectStore((s) => s.active);
   const setActive = useProjectStore((s) => s.setActive);
   const [configureOpenId, setConfigureOpenId] = useState<string | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const configQ = useQuery({ queryKey: ["app-config"], queryFn: loadAppConfig });
 
@@ -148,18 +149,36 @@ export function SettingsRoute() {
                     variant="secondary"
                     onClick={() => setConfigureOpenId(configOpen ? null : p.id)}
                   >
-                    {configOpen ? "Done" : "Configure"}
+                    {configOpen ? "Close" : "Configure"}
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="primary"
                     onClick={() => void handleSwitch(p)}
                     disabled={isActive}
                   >
                     Switch
                   </Button>
-                  <Button variant="danger" onClick={() => void handleRemove(p.id)}>
-                    Remove
-                  </Button>
+                  {confirmRemoveId === p.id ? (
+                    <>
+                      <Button variant="secondary" onClick={() => setConfirmRemoveId(null)}>
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => { void handleRemove(p.id); setConfirmRemoveId(null); }}
+                      >
+                        Yes, remove
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      style={{ color: t.color.danger }}
+                      onClick={() => setConfirmRemoveId(p.id)}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </div>
 
                 {configOpen && (
