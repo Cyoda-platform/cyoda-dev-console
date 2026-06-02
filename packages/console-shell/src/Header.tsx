@@ -7,7 +7,8 @@ export function Header({ title, right }: { title: string; right?: ReactNode }) {
     <header
       style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: `0 ${t.space.md}`, borderBottom: `1px solid ${t.color.border}`,
+        padding: `0 ${t.space.md}`, height: 40, flexShrink: 0,
+        borderBottom: `1px solid ${t.color.border}`,
       }}
     >
       <strong>{title}</strong>

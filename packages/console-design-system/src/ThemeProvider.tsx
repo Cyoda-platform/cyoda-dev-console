@@ -9,7 +9,7 @@ const ThemeContext = createContext<DesignTokens>(tokens);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeContext.Provider value={tokens}>
-      <div style={{ fontFamily: tokens.font.sans, color: tokens.color.text, background: tokens.color.surface }}>
+      <div style={{ fontFamily: tokens.font.sans, color: tokens.color.text, background: tokens.color.surface, height: "100%" }}>
         {children}
       </div>
     </ThemeContext.Provider>
