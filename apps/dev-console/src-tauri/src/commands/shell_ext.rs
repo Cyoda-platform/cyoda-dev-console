@@ -1,6 +1,6 @@
+use serde::Deserialize;
 use std::path::PathBuf;
 use std::process::Command;
-use serde::Deserialize;
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 
@@ -53,7 +53,10 @@ fn open_in_ide_impl(path: String, ide: Ide) -> Result<(), String> {
     let mut last_err = String::from("no app names configured");
     for &app_name in ide.macos_app_names() {
         // argv form — path is a separate argument, never shell-interpolated.
-        match Command::new("open").args(["-a", app_name, path.as_str()]).status() {
+        match Command::new("open")
+            .args(["-a", app_name, path.as_str()])
+            .status()
+        {
             Ok(s) if s.success() => return Ok(()),
             Ok(s) => last_err = format!("{app_name}: open -a exited with {s}"),
             Err(e) => last_err = e.to_string(),

@@ -10,8 +10,9 @@ import {
 export const gemini: LlmProvider = {
   id: "gemini",
   label: "Google Gemini",
-  models: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
-  defaultModel: "gemini-2.0-flash",
+  // Verified current via Gemini model list (June 2026). Update as the API evolves.
+  models: ["gemini-2.5-flash", "gemini-3.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+  defaultModel: "gemini-2.5-flash",
 
   // Model is carried in the request URL (see the Rust proxy), not the body.
   buildRequest({ system, messages }: BuildRequestInput) {

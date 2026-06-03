@@ -26,13 +26,18 @@ fn provider_base_url(provider: &str) -> Option<&'static str> {
     }
 }
 
-fn gemini_url(model: &str, api_key: &str) -> String {
-    format!(
-        "{}/models/{}:generateContent?key={}",
-        provider_base_url("gemini").expect("gemini base url"),
-        model,
-        api_key,
-    )
+/// Build the Gemini URL with the model as a single (percent-encoded) path segment and the
+/// key as a query parameter. Parsing from the fixed base guarantees the host cannot be
+/// changed by a crafted `model`, and segment/query encoding prevents path/query injection.
+fn gemini_url(model: &str, api_key: &str) -> Result<reqwest::Url, String> {
+    let mut url = reqwest::Url::parse(provider_base_url("gemini").expect("gemini base url"))
+        .map_err(|e| e.to_string())?;
+    url.path_segments_mut()
+        .map_err(|_| "invalid gemini base url".to_string())?
+        .push("models")
+        .push(&format!("{model}:generateContent"));
+    url.query_pairs_mut().append_pair("key", api_key);
+    Ok(url)
 }
 
 #[tauri::command]
@@ -42,7 +47,10 @@ pub async fn llm_complete(
     api_key: String,
     body: Value,
 ) -> Result<LlmResponse, String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .build()
+        .map_err(|e| e.to_string())?;
 
     let req = match provider.as_str() {
         "anthropic" => client
@@ -52,7 +60,7 @@ pub async fn llm_complete(
         "openai" => client
             .post(provider_base_url("openai").unwrap())
             .bearer_auth(api_key),
-        "gemini" => client.post(gemini_url(&model, &api_key)),
+        "gemini" => client.post(gemini_url(&model, &api_key)?),
         other => return Err(format!("unknown LLM provider: {other}")),
     };
 
@@ -82,10 +90,20 @@ mod tests {
 
     #[test]
     fn gemini_url_embeds_model_and_key() {
-        let url = gemini_url("gemini-2.0-flash", "KEY123");
+        let url = gemini_url("gemini-2.0-flash", "KEY123").unwrap();
         assert_eq!(
-            url,
+            url.as_str(),
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=KEY123"
         );
+    }
+
+    #[test]
+    fn gemini_url_cannot_be_redirected_to_another_host() {
+        // A crafted model must not escape the fixed Google host, and path-significant
+        // characters must be encoded rather than restructuring the URL.
+        let url = gemini_url("../../../evil?x=", "K").unwrap();
+        assert_eq!(url.host_str(), Some("generativelanguage.googleapis.com"));
+        // The single key query param is the only query; no injected params survive.
+        assert_eq!(url.query_pairs().count(), 1);
     }
 }

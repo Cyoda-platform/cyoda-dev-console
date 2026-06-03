@@ -22,7 +22,7 @@ describe("useAssistantConfig", () => {
   it("switching provider resets the model to that provider's default", () => {
     useAssistantConfig.getState().setProvider("openai");
     expect(useAssistantConfig.getState().provider).toBe("openai");
-    expect(useAssistantConfig.getState().model).toBe("gpt-4o");
+    expect(useAssistantConfig.getState().model).toBe("gpt-5.4");
   });
 
   it("stores per-provider keys and persists them to localStorage", () => {

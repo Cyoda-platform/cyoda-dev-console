@@ -10,8 +10,9 @@ import {
 export const openai: LlmProvider = {
   id: "openai",
   label: "OpenAI",
-  models: ["gpt-4o", "gpt-4o-mini", "gpt-4.1"],
-  defaultModel: "gpt-4o",
+  // Verified current via OpenAI model list (June 2026). Update as the API evolves.
+  models: ["gpt-5.4", "gpt-5.4-mini", "gpt-4.1", "gpt-4o"],
+  defaultModel: "gpt-5.4",
 
   buildRequest({ system, messages, model }: BuildRequestInput) {
     return {

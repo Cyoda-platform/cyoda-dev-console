@@ -1,13 +1,10 @@
+use crate::atomic_write::write_atomic;
 use serde_json::Value;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
-use crate::atomic_write::write_atomic;
 
 fn config_file(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_config_dir()
-        .map_err(|e| e.to_string())?;
+    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
     Ok(dir.join("config.json"))
 }
 

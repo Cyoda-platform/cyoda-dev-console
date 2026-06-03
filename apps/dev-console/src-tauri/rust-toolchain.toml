@@ -1,0 +1,6 @@
+# Pin the Rust toolchain so local `cargo fmt`/`clippy` match CI exactly.
+# Without this, a floating `stable` reformats the whole crate on version bumps,
+# breaking `cargo fmt --check`. rustup honours this file for cargo invocations.
+[toolchain]
+channel = "1.96.0"
+components = ["rustfmt", "clippy"]

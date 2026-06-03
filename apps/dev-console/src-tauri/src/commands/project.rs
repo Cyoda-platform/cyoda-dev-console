@@ -1,8 +1,8 @@
+use crate::scan_registry::ScanRegistryState;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
-use crate::scan_registry::ScanRegistryState;
 
 #[derive(Deserialize, Default)]
 pub struct ScanOptions {
@@ -107,8 +107,7 @@ pub async fn scan_project(
                 Err(_) => continue,
             };
             let last_modified = chrono::DateTime::<chrono::Utc>::from(
-                meta.modified()
-                    .unwrap_or(std::time::SystemTime::UNIX_EPOCH),
+                meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH),
             )
             .to_rfc3339();
             let relative_path = path

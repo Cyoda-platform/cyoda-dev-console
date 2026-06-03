@@ -27,5 +27,8 @@ async fn entry_is_consumed_only_once() {
     let lm = "2026-01-01T00:00:00Z";
     reg.mark(&path, lm).await;
     assert!(reg.consume_if_match(&path, lm).await);
-    assert!(!reg.consume_if_match(&path, lm).await, "second call must not suppress");
+    assert!(
+        !reg.consume_if_match(&path, lm).await,
+        "second call must not suppress"
+    );
 }

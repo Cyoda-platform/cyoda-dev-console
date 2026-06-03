@@ -1,7 +1,7 @@
+use app_lib::paths::{resolve_inside_root, PathError};
 use std::fs;
 use std::os::unix::fs as unix_fs;
 use tempfile::TempDir;
-use app_lib::paths::{resolve_inside_root, PathError};
 
 fn setup() -> TempDir {
     tempfile::tempdir().unwrap()

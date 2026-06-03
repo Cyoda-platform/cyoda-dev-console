@@ -6,9 +6,9 @@
 //!   - detect installed agent CLIs,
 //!   - write a generated text file (rule file / bundle file) inside the project.
 
+use serde::Serialize;
 use std::path::PathBuf;
 use std::process::Command;
-use serde::Serialize;
 use tauri::State;
 
 use crate::atomic_write::write_atomic;
