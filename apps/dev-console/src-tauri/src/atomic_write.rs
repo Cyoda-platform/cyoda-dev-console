@@ -12,16 +12,10 @@ pub fn write_atomic(target: &Path, contents: &[u8]) -> std::io::Result<()> {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    let stem = target
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("out");
+    let stem = target.file_name().and_then(|s| s.to_str()).unwrap_or("out");
     let tmp = parent.join(format!(".{}-{}.tmp", stem, nanos));
     {
-        let mut f: File = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&tmp)?;
+        let mut f: File = OpenOptions::new().create_new(true).write(true).open(&tmp)?;
         f.write_all(contents)?;
         f.sync_all()?;
     }

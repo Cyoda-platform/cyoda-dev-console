@@ -1,13 +1,13 @@
+use crate::save_origin::SaveOriginState;
+use notify::EventKind;
+use notify_debouncer_full::new_debouncer;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
-use notify::EventKind;
-use notify_debouncer_full::new_debouncer;
-use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 use tokio::sync::Mutex;
-use crate::save_origin::SaveOriginState;
 
 #[derive(Default)]
 pub struct WatchRegistry {
@@ -71,8 +71,7 @@ pub async fn watch_project(
                 for path in &ev.paths {
                     let lm = match std::fs::metadata(path) {
                         Ok(meta) => chrono::DateTime::<chrono::Utc>::from(
-                            meta.modified()
-                                .unwrap_or(std::time::SystemTime::UNIX_EPOCH),
+                            meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH),
                         )
                         .to_rfc3339(),
                         // File gone — only happens on Remove; skip if any other error
