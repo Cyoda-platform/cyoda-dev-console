@@ -1,32 +1,34 @@
-import { useState } from "react";
-import { Button, WarningBanner, useTokens } from "@cyoda/console-design-system";
+import { WarningBanner, useTokens } from "@cyoda/console-design-system";
 import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
 import { useAgentContext } from "./AgentContext.js";
-import { useAssistantConfig } from "../assistant/keyStore.js";
-import { complete } from "../assistant/llmClient.js";
-import { buildSystemPrompt } from "../assistant/systemPrompt.js";
-import { validateAndCanonicalize } from "../assistant/applyWorkflow.js";
+import { useAssistantChat } from "../assistant/useAssistantChat.js";
 import { AiSetup } from "../assistant/AiSetup.js";
 import { ProposedChange } from "../assistant/ProposedChange.js";
-import type { ChatMessage } from "../assistant/providers/index.js";
+import { ChatBubble, ChatComposer } from "../assistant/chatUi.js";
 
-interface Proposal {
-  current: string;
-  canonical: string;
-}
-
+/**
+ * Full-page assistant (kept for setup / general use, reachable from the AI route). Uses the
+ * shared {@link useAssistantChat} state machine; its context comes from disk and accepted
+ * proposals are written to disk — distinct from the in-editor workflow drawer, which applies
+ * to the editor session instead.
+ */
 export function AssistantTab() {
   const t = useTokens();
   const ctx = useAgentContext();
-  const { provider, model, keys } = useAssistantConfig();
+  const workflowPath = ctx?.selectedWorkflowPath;
+  const projectRoot = ctx?.projectRoot;
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [proposal, setProposal] = useState<Proposal | null>(null);
-  const [applying, setApplying] = useState(false);
-  const [applied, setApplied] = useState<string | null>(null);
+  const chat = useAssistantChat({
+    getCurrentJson: async () =>
+      workflowPath && projectRoot
+        ? (await readTextFile(workflowPath, projectRoot)).contents
+        : undefined,
+    ...(workflowPath && projectRoot ? { relPath: relativeOf(workflowPath, projectRoot) } : {}),
+    onApply: async (canonical) => {
+      if (!workflowPath || !projectRoot) return;
+      await writeTextFileWithConfirmedOverwrite(workflowPath, canonical, projectRoot);
+    },
+  });
 
   if (!ctx) {
     return (
@@ -34,78 +36,6 @@ export function AssistantTab() {
         Open a project to use the assistant.
       </div>
     );
-  }
-
-  const workflowPath = ctx.selectedWorkflowPath;
-  const apiKey = keys[provider] ?? "";
-  const canSend = apiKey.trim() !== "" && input.trim() !== "" && !sending;
-
-  async function send() {
-    if (!ctx) return;
-    const userText = input.trim();
-    if (!userText) return;
-    setInput("");
-    setError(null);
-    setApplied(null);
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: userText }];
-    setMessages(nextMessages);
-    setSending(true);
-    try {
-      const current = workflowPath
-        ? (await readTextFile(workflowPath, ctx.projectRoot)).contents
-        : undefined;
-      const system = buildSystemPrompt({
-        ...(workflowPath ? { workflowRelPath: relativeOf(workflowPath, ctx.projectRoot) } : {}),
-        ...(current !== undefined ? { currentJson: current } : {}),
-      });
-      const result = await complete({ provider, apiKey, model, system, messages: nextMessages });
-
-      if (result.text) {
-        setMessages((m) => [...m, { role: "assistant", content: result.text! }]);
-      }
-      if (result.toolCall) {
-        if (!workflowPath || current === undefined) {
-          setMessages((m) => [
-            ...m,
-            { role: "assistant", content: "Open a workflow file in the editor so I can apply this change." },
-          ]);
-        } else {
-          const validated = validateAndCanonicalize(result.toolCall.workflowJson);
-          if (validated.ok) {
-            setProposal({ current, canonical: validated.canonical });
-          } else {
-            setMessages((m) => [
-              ...m,
-              {
-                role: "assistant",
-                content: "I proposed a change but it failed validation:\n- " + validated.issues.join("\n- "),
-              },
-            ]);
-          }
-        }
-      } else if (!result.text) {
-        setMessages((m) => [...m, { role: "assistant", content: "(no response)" }]);
-      }
-    } catch (e) {
-      setError((e as Error).message ?? String(e));
-    } finally {
-      setSending(false);
-    }
-  }
-
-  async function applyProposal() {
-    if (!proposal || !workflowPath || !ctx) return;
-    setApplying(true);
-    setError(null);
-    try {
-      await writeTextFileWithConfirmedOverwrite(workflowPath, proposal.canonical, ctx.projectRoot);
-      setProposal(null);
-      setApplied(`Applied changes to ${relativeOf(workflowPath, ctx.projectRoot)}.`);
-    } catch (e) {
-      setError((e as Error).message ?? String(e));
-    } finally {
-      setApplying(false);
-    }
   }
 
   return (
@@ -120,81 +50,36 @@ export function AssistantTab() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: t.space.sm }}>
-        {messages.map((m, i) => (
+        {chat.messages.map((m, i) => (
           <ChatBubble key={i} role={m.role} content={m.content} />
         ))}
       </div>
 
-      {proposal && (
+      {chat.proposal && (
         <ProposedChange
-          current={proposal.current}
-          proposed={proposal.canonical}
-          applying={applying}
-          onApply={() => void applyProposal()}
-          onCancel={() => setProposal(null)}
+          current={chat.proposal.current}
+          proposed={chat.proposal.canonical}
+          applying={chat.applying}
+          onApply={() => void chat.applyProposal()}
+          onCancel={chat.discardProposal}
         />
       )}
 
-      {applied && <WarningBanner severity="warning">{applied}</WarningBanner>}
-      {error && (
-        <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.danger }}>{error}</div>
+      {chat.applied && <WarningBanner severity="warning">{chat.applied}</WarningBanner>}
+      {chat.error && (
+        <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.danger }}>{chat.error}</div>
       )}
 
-      <div style={{ display: "flex", gap: t.space.sm }}>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              if (canSend) void send();
-            }
-          }}
-          rows={2}
-          placeholder={apiKey ? "Ask about or change the workflow… (⌘/Ctrl+Enter to send)" : "Add an API key above to start"}
-          style={{ ...inputStyle(t), flex: 1, resize: "vertical" }}
-        />
-        <Button onClick={() => void send()} disabled={!canSend} style={{ alignSelf: "flex-end" }}>
-          {sending ? "Sending…" : "Send"}
-        </Button>
-      </div>
+      <ChatComposer
+        value={chat.input}
+        onChange={chat.setInput}
+        onSend={() => void chat.send()}
+        sending={chat.sending}
+        canSend={chat.canSend}
+        placeholder={chat.hasKey ? "Ask about or change the workflow… (⌘/Ctrl+Enter to send)" : "Add an API key above to start"}
+      />
     </div>
   );
-}
-
-function ChatBubble({ role, content }: { role: "user" | "assistant"; content: string }) {
-  const t = useTokens();
-  const isUser = role === "user";
-  return (
-    <div
-      style={{
-        alignSelf: isUser ? "flex-end" : "flex-start",
-        maxWidth: "85%",
-        background: isUser ? t.color.cyodaGreen : t.color.surfaceAlt,
-        color: isUser ? "#fff" : t.color.text,
-        borderRadius: t.radius.md,
-        padding: `${t.space.sm} ${t.space.md}`,
-        fontFamily: t.font.sans,
-        fontSize: t.font.sizes.md,
-        whiteSpace: "pre-wrap",
-      }}
-    >
-      {content}
-    </div>
-  );
-}
-
-function inputStyle(t: ReturnType<typeof useTokens>): React.CSSProperties {
-  return {
-    boxSizing: "border-box",
-    padding: "6px 8px",
-    border: `1px solid ${t.color.border}`,
-    borderRadius: t.radius.sm,
-    background: t.color.surface,
-    color: t.color.text,
-    fontSize: t.font.sizes.md,
-    fontFamily: t.font.sans,
-  };
 }
 
 function relativeOf(abs: string, root: string): string {

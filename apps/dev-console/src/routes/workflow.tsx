@@ -11,7 +11,11 @@ import { onFileChanged } from "../ipc/watcher.js";
 import { useProjectStore } from "../state/projectStore.js";
 import { getMonacoRuntime } from "../monacoRuntime.js";
 import { CompareView } from "../components/CompareView.js";
-import { serializeImportPayload } from "@cyoda/workflow-core";
+import { serializeImportPayload, parseImportPayload } from "@cyoda/workflow-core";
+import { useAssistantChat } from "../assistant/useAssistantChat.js";
+import { WorkflowAssistantPanel } from "../assistant/WorkflowAssistantPanel.js";
+
+const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
 const jsonEditorConfig: WorkflowJsonEditorConfig = { monaco: getMonacoRuntime() };
 
@@ -44,6 +48,7 @@ export function WorkflowRoute({
   const [externalChange, setExternalChange] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [diskSnapshot, setDiskSnapshot] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
   const suppressNextChange = useRef(false);
 
   const session = useEditorSession({
@@ -60,6 +65,18 @@ export function WorkflowRoute({
         return { lastModified: r.lastModified, sizeBytes: r.sizeBytes };
       },
       saveAs: saveFileAs,
+    },
+  });
+
+  // AI assistant scoped to this open file. Owned here (not in the panel) so the conversation
+  // survives the drawer being toggled closed/open. Proposals are applied to the in-memory
+  // editor session — not written to disk — so the existing dirty/Save flow stays in control.
+  const assistant = useAssistantChat({
+    getCurrentJson: () => (session.document ? serializeImportPayload(session.document) : undefined),
+    relPath: relativePath,
+    onApply: (canonical) => {
+      const result = parseImportPayload(canonical, session.document?.meta);
+      if (result.document) session.applyExternalDocument(result.document);
     },
   });
 
@@ -169,14 +186,43 @@ export function WorkflowRoute({
         <button onClick={() => void handleReload()} style={toolbarBtn} title="Reload from disk">
           Reload
         </button>
+
+        {AGENT_FLAG && (
+          <button
+            onClick={() => setAiOpen((o) => !o)}
+            title="AI Assistant"
+            aria-pressed={aiOpen}
+            style={
+              aiOpen
+                ? { ...toolbarBtn, background: "#004235", color: "#fff", borderColor: "#004235" }
+                : toolbarBtn
+            }
+          >
+            AI
+          </button>
+        )}
       </div>
 
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        <WorkflowEditorHostPanel
-          session={session}
-          jsonEditorConfig={jsonEditorConfig}
-          onSaveRequest={handleSaveRequest}
-        />
+      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "row" }}>
+        {/* Editor stays mounted regardless of the drawer, so the graph is never lost on toggle. */}
+        <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+          <WorkflowEditorHostPanel
+            session={session}
+            jsonEditorConfig={jsonEditorConfig}
+            onSaveRequest={handleSaveRequest}
+          />
+        </div>
+
+        {AGENT_FLAG && aiOpen && (
+          <WorkflowAssistantPanel
+            chat={assistant}
+            displayName={displayName}
+            relativePath={relativePath}
+            parseOk={session.parseOk}
+            dirty={session.dirty}
+            onClose={() => setAiOpen(false)}
+          />
+        )}
       </div>
 
       {confirmOpen ? (

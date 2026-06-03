@@ -11,12 +11,14 @@ export function ProposedChange({
   applying,
   onApply,
   onCancel,
+  applyLabel = "Apply to file",
 }: {
   current: string;
   proposed: string;
   applying: boolean;
   onApply: () => void;
   onCancel: () => void;
+  applyLabel?: string;
 }) {
   const t = useTokens();
   const pre: React.CSSProperties = {
@@ -64,7 +66,7 @@ export function ProposedChange({
       </div>
       <div style={{ display: "flex", gap: t.space.sm, marginTop: t.space.md }}>
         <Button onClick={onApply} disabled={applying}>
-          {applying ? "Applying…" : "Apply to file"}
+          {applying ? "Applying…" : applyLabel}
         </Button>
         <Button variant="secondary" onClick={onCancel} disabled={applying}>
           Cancel

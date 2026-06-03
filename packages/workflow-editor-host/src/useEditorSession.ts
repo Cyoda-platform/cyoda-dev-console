@@ -27,7 +27,16 @@ export interface EditorSession {
   saving: boolean;
   saveError: string | null;
   rawContent: string;
+  /** Internal edit path — used by the editor's own `onChange`. Does NOT force a remount. */
   setDocument: (doc: WorkflowEditorDocument) => void;
+  /**
+   * Replace the document from *outside* the editor (AI apply, programmatic edits). Bumps
+   * {@link EditorSession.externalRevision} so the host can remount the uncontrolled
+   * `WorkflowEditor`, which otherwise only reads `document` on first render.
+   */
+  applyExternalDocument: (doc: WorkflowEditorDocument) => void;
+  /** Increments whenever the document is replaced externally (apply/revert). */
+  externalRevision: number;
   save: () => Promise<void>;
   revert: () => Promise<void>;
   saveAs?: () => Promise<{ path: string; lastModified: string; sizeBytes: number } | null>;
@@ -55,6 +64,7 @@ export function useEditorSession({
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [externalRevision, setExternalRevision] = useState(0);
 
   const dirty = useMemo(
     () => (document ? serializeImportPayload(document) !== baseline : false),
@@ -63,6 +73,11 @@ export function useEditorSession({
 
   const setDocument = useCallback((doc: WorkflowEditorDocument) => {
     setDocumentState(doc);
+  }, []);
+
+  const applyExternalDocument = useCallback((doc: WorkflowEditorDocument) => {
+    setDocumentState(doc);
+    setExternalRevision((r) => r + 1);
   }, []);
 
   const save = useCallback(async () => {
@@ -88,6 +103,7 @@ export function useEditorSession({
     setIssues(result.issues);
     setParseOk(result.ok);
     setBaseline(result.document ? serializeImportPayload(result.document) : "");
+    setExternalRevision((r) => r + 1);
   }, [filePath, io, document]);
 
   const saveAsCallback = useCallback(async () => {
@@ -112,6 +128,8 @@ export function useEditorSession({
     saveError,
     rawContent: initialContents,
     setDocument,
+    applyExternalDocument,
+    externalRevision,
     save,
     revert,
     ...(saveAs !== undefined ? { saveAs } : {}),
