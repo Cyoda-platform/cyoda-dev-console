@@ -6,16 +6,18 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "scripts": { "build": "tsc -p .", "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "scripts": { "build": "vite build && tsc -p tsconfig.build.json", "test": "vitest run", "typecheck": "tsc --noEmit" },
   "peerDependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" },
   "dependencies": { "@cyoda/console-design-system": "workspace:*" },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
     "happy-dom": "^15.11.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "vite": "^5.4.0",
     "vitest": "^2.1.0",
     "typescript": "^5.7.0"
   }

@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   clearScreen: false,
   server: { port: 1420, strictPort: true },
+  optimizeDeps: { exclude: ["@cyoda/entity-model-viewer"] },
   envPrefix: ["VITE_", "TAURI_"],
   build: { target: "esnext", sourcemap: true, outDir: "dist" },
   test: {

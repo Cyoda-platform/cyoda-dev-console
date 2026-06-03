@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { EntityViewer } from "@cyoda/entity-model-viewer";
+import { EntityViewer } from "../components/EntityViewer.js";
 import { useTokens } from "@cyoda/console-design-system";
 import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
 import { ContextMenu } from "../components/ContextMenu.js";
