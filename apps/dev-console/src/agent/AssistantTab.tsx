@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Button, EmptyState, Panel, WarningBanner, useTokens } from "@cyoda/console-design-system";
+import { Button, WarningBanner, useTokens } from "@cyoda/console-design-system";
 import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
 import { useAgentContext } from "./AgentContext.js";
-import { PROVIDER_LIST, getProvider } from "../assistant/providers/index.js";
-import type { ChatMessage } from "../assistant/providers/index.js";
 import { useAssistantConfig } from "../assistant/keyStore.js";
 import { complete } from "../assistant/llmClient.js";
 import { buildSystemPrompt } from "../assistant/systemPrompt.js";
 import { validateAndCanonicalize } from "../assistant/applyWorkflow.js";
+import { AiSetup } from "../assistant/AiSetup.js";
 import { ProposedChange } from "../assistant/ProposedChange.js";
+import type { ChatMessage } from "../assistant/providers/index.js";
 
 interface Proposal {
   current: string;
@@ -18,7 +18,7 @@ interface Proposal {
 export function AssistantTab() {
   const t = useTokens();
   const ctx = useAgentContext();
-  const { provider, model, keys, setProvider, setModel, setKey } = useAssistantConfig();
+  const { provider, model, keys } = useAssistantConfig();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -29,23 +29,19 @@ export function AssistantTab() {
   const [applied, setApplied] = useState<string | null>(null);
 
   if (!ctx) {
-    return <PadNote>Open a project to use the assistant.</PadNote>;
-  }
-  const workflowPath = ctx.selectedWorkflowPath;
-  if (!workflowPath) {
     return (
-      <EmptyState
-        title="No workflow selected"
-        description="Open a workflow file in the editor first; the assistant proposes edits to the selected workflow."
-      />
+      <div style={{ padding: t.space.lg, fontFamily: t.font.sans, color: t.color.textMuted }}>
+        Open a project to use the assistant.
+      </div>
     );
   }
 
+  const workflowPath = ctx.selectedWorkflowPath;
   const apiKey = keys[provider] ?? "";
   const canSend = apiKey.trim() !== "" && input.trim() !== "" && !sending;
 
   async function send() {
-    if (!workflowPath || !ctx) return;
+    if (!ctx) return;
     const userText = input.trim();
     if (!userText) return;
     setInput("");
@@ -55,10 +51,12 @@ export function AssistantTab() {
     setMessages(nextMessages);
     setSending(true);
     try {
-      const current = (await readTextFile(workflowPath, ctx.projectRoot)).contents;
+      const current = workflowPath
+        ? (await readTextFile(workflowPath, ctx.projectRoot)).contents
+        : undefined;
       const system = buildSystemPrompt({
-        ...(ctx.selectedWorkflowPath ? { workflowRelPath: relativeOf(ctx.selectedWorkflowPath, ctx.projectRoot) } : {}),
-        currentJson: current,
+        ...(workflowPath ? { workflowRelPath: relativeOf(workflowPath, ctx.projectRoot) } : {}),
+        ...(current !== undefined ? { currentJson: current } : {}),
       });
       const result = await complete({ provider, apiKey, model, system, messages: nextMessages });
 
@@ -66,20 +64,24 @@ export function AssistantTab() {
         setMessages((m) => [...m, { role: "assistant", content: result.text! }]);
       }
       if (result.toolCall) {
-        const validated = validateAndCanonicalize(result.toolCall.workflowJson);
-        if (validated.ok) {
-          setProposal({ current, canonical: validated.canonical });
-        } else {
+        if (!workflowPath || current === undefined) {
           setMessages((m) => [
             ...m,
-            {
-              role: "assistant",
-              content:
-                "I proposed a change but it failed validation:\n- " +
-                validated.issues.join("\n- ") +
-                "\nAsk me to fix it.",
-            },
+            { role: "assistant", content: "Open a workflow file in the editor so I can apply this change." },
           ]);
+        } else {
+          const validated = validateAndCanonicalize(result.toolCall.workflowJson);
+          if (validated.ok) {
+            setProposal({ current, canonical: validated.canonical });
+          } else {
+            setMessages((m) => [
+              ...m,
+              {
+                role: "assistant",
+                content: "I proposed a change but it failed validation:\n- " + validated.issues.join("\n- "),
+              },
+            ]);
+          }
         }
       } else if (!result.text) {
         setMessages((m) => [...m, { role: "assistant", content: "(no response)" }]);
@@ -106,40 +108,16 @@ export function AssistantTab() {
     }
   }
 
-  const providerDef = getProvider(provider);
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: t.space.md, padding: t.space.lg, maxWidth: 820 }}>
-      <Panel title="Provider">
-        <div style={{ display: "flex", gap: t.space.md, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <Field label="Provider">
-            <select value={provider} onChange={(e) => setProvider(e.target.value as typeof provider)} style={selectStyle(t)}>
-              {PROVIDER_LIST.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Model">
-            <select value={model} onChange={(e) => setModel(e.target.value)} style={selectStyle(t)}>
-              {providerDef.models.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label={`API key (${providerDef.label})`}>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setKey(provider, e.target.value)}
-              placeholder="paste key — stored locally"
-              style={{ ...selectStyle(t), minWidth: 280 }}
-            />
-          </Field>
+      <AiSetup />
+
+      {!workflowPath && (
+        <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
+          Open a workflow file in the editor and I can propose & apply edits. You can still ask
+          general questions below.
         </div>
-        <div style={{ fontSize: t.font.sizes.sm, color: t.color.textMuted, marginTop: t.space.sm }}>
-          Keys are stored in local storage on this device only, and sent solely to the chosen provider.
-        </div>
-      </Panel>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: t.space.sm }}>
         {messages.map((m, i) => (
@@ -173,8 +151,8 @@ export function AssistantTab() {
             }
           }}
           rows={2}
-          placeholder={apiKey ? "Ask for a workflow change… (⌘/Ctrl+Enter to send)" : "Enter an API key above to start"}
-          style={{ ...selectStyle(t), flex: 1, resize: "vertical", fontFamily: t.font.sans }}
+          placeholder={apiKey ? "Ask about or change the workflow… (⌘/Ctrl+Enter to send)" : "Add an API key above to start"}
+          style={{ ...inputStyle(t), flex: 1, resize: "vertical" }}
         />
         <Button onClick={() => void send()} disabled={!canSend} style={{ alignSelf: "flex-end" }}>
           {sending ? "Sending…" : "Send"}
@@ -206,24 +184,7 @@ function ChatBubble({ role, content }: { role: "user" | "assistant"; content: st
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  const t = useTokens();
-  return (
-    <label style={{ display: "flex", flexDirection: "column", gap: t.space.xs }}>
-      <span style={{ fontSize: t.font.sizes.sm, fontWeight: 600, fontFamily: t.font.sans }}>{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function PadNote({ children }: { children: React.ReactNode }) {
-  const t = useTokens();
-  return (
-    <div style={{ padding: t.space.lg, fontFamily: t.font.sans, color: t.color.textMuted }}>{children}</div>
-  );
-}
-
-function selectStyle(t: ReturnType<typeof useTokens>): React.CSSProperties {
+function inputStyle(t: ReturnType<typeof useTokens>): React.CSSProperties {
   return {
     boxSizing: "border-box",
     padding: "6px 8px",

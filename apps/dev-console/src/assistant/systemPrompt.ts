@@ -1,12 +1,30 @@
-/** Build the system prompt: a Cyoda workflow-editing brief plus the current file's JSON. */
-export function buildSystemPrompt(args: { workflowRelPath?: string; currentJson: string }): string {
-  return [
-    "You are an assistant embedded in the Cyoda Dev Console. You help the developer edit a",
-    "single Cyoda workflow definition — an import payload shaped like",
+/**
+ * Build the system prompt. With a workflow open (`currentJson` present) the assistant can
+ * propose edits via the tool; without one it acts as a general Cyoda workflow assistant and
+ * asks the user to open a workflow before requesting changes.
+ */
+export function buildSystemPrompt(args: { workflowRelPath?: string; currentJson?: string }): string {
+  const intro = [
+    "You are an assistant embedded in the Cyoda Dev Console. You help the developer work with",
+    "Cyoda workflow definitions — import payloads shaped like",
     '`{ "importMode": "MERGE" | "REPLACE", "workflows": [ ... ] }`.',
     "",
     "Cyoda workflows model an entity moving through named states via transitions; processors",
-    "and criteria attach to transitions. Keep edits faithful to the existing structure.",
+    "and criteria attach to transitions.",
+  ];
+
+  if (!args.currentJson) {
+    return [
+      ...intro,
+      "",
+      "No workflow file is currently open. Answer questions about Cyoda workflows in plain text.",
+      "If the user asks you to create or modify a workflow, tell them to open a workflow file in",
+      "the editor first so you can propose and apply concrete edits. Do not call any tool yet.",
+    ].join("\n");
+  }
+
+  return [
+    ...intro,
     "",
     "Rules:",
     "- To change the workflow, call the `propose_workflow_update` tool with `workflow_json` set",

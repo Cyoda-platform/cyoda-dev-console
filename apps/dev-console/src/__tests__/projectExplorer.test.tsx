@@ -85,7 +85,7 @@ describe("ProjectExplorer", () => {
   it("shows a top-level AI Agent nav entry only when onOpenAgent is provided", async () => {
     const onOpenAgent = vi.fn();
     wrap(<ProjectExplorer {...baseProps} allEntries={[]} onOpenAgent={onOpenAgent} />);
-    const agentBtn = screen.getByRole("button", { name: "AI Agent" });
+    const agentBtn = screen.getByRole("button", { name: "AI Assistant" });
     expect(agentBtn).toBeInTheDocument();
     await userEvent.click(agentBtn);
     expect(onOpenAgent).toHaveBeenCalledTimes(1);
@@ -93,7 +93,7 @@ describe("ProjectExplorer", () => {
 
   it("hides the AI Agent nav entry when onOpenAgent is absent", () => {
     wrap(<ProjectExplorer {...baseProps} allEntries={[]} />);
-    expect(screen.queryByRole("button", { name: "AI Agent" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "AI Assistant" })).not.toBeInTheDocument();
   });
 
   it("shows workflow display name — not the full path", () => {

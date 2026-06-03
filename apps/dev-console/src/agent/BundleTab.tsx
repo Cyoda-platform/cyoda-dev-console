@@ -104,6 +104,11 @@ export function BundleTab() {
 
   return (
     <div style={{ padding: t.space.lg, maxWidth: 640, display: "flex", flexDirection: "column", gap: t.space.md }}>
+      <p style={{ margin: 0, fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
+        A <strong>task bundle</strong> is a folder of context files (a brief, the selected
+        workflow/entity, profile setup notes) that you hand to an external CLI agent. It is
+        optional — the in-app Assistant above does not need it.
+      </p>
       <Panel title="Task bundle">
         <div style={{ display: "flex", flexDirection: "column", gap: t.space.md }}>
           <div>

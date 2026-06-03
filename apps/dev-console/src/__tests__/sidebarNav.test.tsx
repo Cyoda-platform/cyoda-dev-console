@@ -25,6 +25,6 @@ describe("app nav", () => {
   it("does not render the old sidebar nav buttons at top level", () => {
     render(<App />);
     // Old top-level nav buttons are gone — navigation is inside the ProjectExplorer
-    expect(screen.queryByRole("button", { name: "AI Agent" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "AI Assistant" })).not.toBeInTheDocument();
   });
 });

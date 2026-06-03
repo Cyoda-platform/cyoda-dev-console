@@ -42,7 +42,9 @@ export function ProfilesTab() {
   return (
     <div style={{ padding: t.space.lg }}>
       <p style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.textMuted, marginTop: 0 }}>
-        Read-only view of <code style={{ fontFamily: t.font.mono }}>~/.config/cyoda/cyoda-plugin-config.json</code>.
+        Profiles are saved Cyoda <strong>backend</strong> connections used by external CLI agents,
+        not by the in-app Assistant. Read-only view of{" "}
+        <code style={{ fontFamily: t.font.mono }}>~/.config/cyoda/cyoda-plugin-config.json</code>.
       </p>
       <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 760 }}>
         <thead>

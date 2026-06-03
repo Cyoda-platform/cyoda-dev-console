@@ -158,7 +158,7 @@ export function ProjectExplorer({
             <span aria-hidden style={{ fontFamily: t.font.mono }}>
               ▸_
             </span>
-            AI Agent
+            AI Assistant
           </button>
         )}
 
