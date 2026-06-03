@@ -68,18 +68,4 @@ export default [
       ],
     },
   },
-
-  {
-    files: ["apps/dev-console/src/agent/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            { group: ["**/track-b/**", "**/agent-runtime/**"], message: "Phase 4 ships hooks only — no agent runtime." },
-          ],
-        },
-      ],
-    },
-  },
 ];

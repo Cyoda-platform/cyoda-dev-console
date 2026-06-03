@@ -23,7 +23,7 @@ pub struct WriteResult {
     pub size_bytes: u64,
 }
 
-fn lm_rfc3339(meta: &std::fs::Metadata) -> String {
+pub fn lm_rfc3339(meta: &std::fs::Metadata) -> String {
     chrono::DateTime::<chrono::Utc>::from(
         meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH),
     )

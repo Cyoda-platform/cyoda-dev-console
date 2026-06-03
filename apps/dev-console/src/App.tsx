@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppFrame } from "@cyoda/console-shell";
-import { EmptyState } from "@cyoda/console-design-system";
+import { EmptyState, Button } from "@cyoda/console-design-system";
 import { queryClient } from "./state/queryClient.js";
 import { useProjectStore } from "./state/projectStore.js";
 import { FirstRun } from "./routes/first-run.js";
@@ -108,7 +108,13 @@ function DevConsoleApp() {
       try {
         const parsed = JSON.parse(contents) as Record<string, unknown>;
         if (!("importMode" in parsed)) {
-          contents = JSON.stringify({ importMode: "MERGE", ...parsed }, null, 2);
+          if ("workflows" in parsed) {
+            // Bare { workflows: [...] } or export-payload — promote to import payload
+            contents = JSON.stringify({ importMode: "MERGE", ...parsed }, null, 2);
+          } else {
+            // Standalone workflow object (bloc-portal format) — wrap into workflows array
+            contents = JSON.stringify({ importMode: "MERGE", workflows: [parsed] }, null, 2);
+          }
         }
       } catch {
         // leave as-is; editor will show the parse error
@@ -127,6 +133,10 @@ function DevConsoleApp() {
   };
 
   const allEntries = scan.data ?? [];
+  const firstEntry =
+    allEntries.find((e) => e.status === "valid-workflow" || e.status === "export-payload" || e.status === "probable-workflow") ??
+    allEntries.find((e) => e.status === "invalid-workflow" || e.status === "json-not-workflow") ??
+    null;
   const workflowPath = openedFile?.kind === "workflow" ? openedFile.path : undefined;
   const entityPath = openedFile?.kind === "entity" ? openedFile.path : undefined;
 
@@ -156,6 +166,13 @@ function DevConsoleApp() {
                 setOpenedFile(null);
                 setViewKind("settings");
               }}
+              {...(AGENT_FLAG
+                ? {
+                    // Keep openedFile so the agent surface (Bundle/Assistant) still sees the
+                    // selected workflow/entity via AgentContext.
+                    onOpenAgent: () => setViewKind("agent"),
+                  }
+                : {})}
               projectRoot={active.rootPath}
               workflowRoot={active.workflowRoot}
               entityRoot={active.entityRoot}
@@ -187,18 +204,15 @@ function DevConsoleApp() {
                   <EmptyState
                     title="Select a file"
                     description="Choose a workflow or entity from the explorer on the left."
+                    action={firstEntry != null ? (
+                      <Button variant="secondary" onClick={() => void handleOpenEntry(firstEntry)}>
+                        Open first file
+                      </Button>
+                    ) : undefined}
                   />
                 )}
               </ErrorBoundary>
             </div>
-
-            {AGENT_FLAG && (
-              <button
-                onClick={() => setViewKind("agent")}
-                style={{ display: "none" }}
-                aria-hidden
-              />
-            )}
           </>
         )}
       </AgentContextProvider>
