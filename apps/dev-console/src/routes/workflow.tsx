@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { WorkflowUiMeta } from "@cyoda/workflow-core";
 import {
   useEditorSession,
   WorkflowEditorHostPanel,
@@ -45,6 +46,26 @@ export function WorkflowRoute({
   const [compareOpen, setCompareOpen] = useState(false);
   const [diskSnapshot, setDiskSnapshot] = useState<string | null>(null);
   const suppressNextChange = useRef(false);
+  const layoutFilePath = filePath.replace(/\.json$/, ".layout.json");
+  const layoutKey = `${projectId}:${filePath}`;
+  const layoutSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [layoutReady, setLayoutReady] = useState(false);
+
+  // On mount: load layout file → seed localStorage → let editor pick it up
+  useEffect(() => {
+    readTextFile(layoutFilePath)
+      .then(({ contents }) => { localStorage.setItem(layoutKey, contents); })
+      .catch(() => { /* no layout file yet — that's fine */ })
+      .finally(() => { setLayoutReady(true); });
+  }, [layoutFilePath, layoutKey]);
+
+  const handleWorkflowUiChange = useCallback((workflowUi: Record<string, WorkflowUiMeta>) => {
+    if (layoutSaveTimer.current) clearTimeout(layoutSaveTimer.current);
+    layoutSaveTimer.current = setTimeout(() => {
+      if (Object.keys(workflowUi).length === 0) return;
+      void writeTextFileWithConfirmedOverwrite(layoutFilePath, JSON.stringify(workflowUi, null, 2));
+    }, 800);
+  }, [layoutFilePath]);
 
   const session = useEditorSession({
     projectId,
@@ -172,11 +193,14 @@ export function WorkflowRoute({
       </div>
 
       <div style={{ flex: 1, overflow: "hidden" }}>
-        <WorkflowEditorHostPanel
-          session={session}
-          jsonEditorConfig={jsonEditorConfig}
-          onSaveRequest={handleSaveRequest}
-        />
+        {layoutReady && (
+          <WorkflowEditorHostPanel
+            session={session}
+            jsonEditorConfig={jsonEditorConfig}
+            onSaveRequest={handleSaveRequest}
+            onWorkflowUiChange={handleWorkflowUiChange}
+          />
+        )}
       </div>
 
       {confirmOpen ? (
