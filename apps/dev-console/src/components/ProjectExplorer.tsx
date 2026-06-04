@@ -265,7 +265,7 @@ export function ProjectExplorer({
             borderTop: `1px solid ${t.color.border}`,
             background: t.color.surface,
             flexShrink: 0,
-            height: 36,
+            height: 28,
           }}
         >
           <button
@@ -273,7 +273,7 @@ export function ProjectExplorer({
             aria-label="Collapse explorer"
             style={{
               flex: 1,
-              height: 36,
+              height: 28,
               background: "none",
               border: "none",
               cursor: "pointer",
@@ -541,7 +541,7 @@ function ExplorerHeader({
         display: "flex",
         alignItems: "center",
         padding: "0 10px",
-        height: 28,
+        height: 42,
         flexShrink: 0,
         borderBottom: `1px solid ${t.color.border}`,
       }}

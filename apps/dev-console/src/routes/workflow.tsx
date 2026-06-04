@@ -21,15 +21,23 @@ const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 const jsonEditorConfig: WorkflowJsonEditorConfig = { monaco: getMonacoRuntime() };
 
 const toolbarBtn: React.CSSProperties = {
-  background: "none",
+  background: "#fff",
   border: "1px solid #E2E8F0",
   borderRadius: 6,
   cursor: "pointer",
   fontFamily: "'Inter', system-ui, sans-serif",
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 500,
   color: "#64748B",
-  padding: "4px 10px",
+  padding: "5px 12px",
+};
+
+const toolbarBtnPrimary: React.CSSProperties = {
+  ...toolbarBtn,
+  background: "#2563EB",
+  border: "1px solid #2563EB",
+  color: "#fff",
+  fontWeight: 600,
 };
 
 export function WorkflowRoute({
@@ -171,9 +179,10 @@ export function WorkflowRoute({
           alignItems: "center",
           gap: 8,
           padding: "0 12px",
-          height: 36,
+          height: 42,
           flexShrink: 0,
-          borderBottom: "1px solid #E0E0E0",
+          background: "#fff",
+          borderBottom: "1px solid #CBD5E1",
           fontFamily: "'JetBrains Mono', ui-monospace, monospace",
           fontSize: 12,
         }}
@@ -194,7 +203,7 @@ export function WorkflowRoute({
           onClick={handleSaveRequest}
           disabled={!session.dirty}
           title="Save (⌘S)"
-          style={{ ...toolbarBtn, opacity: session.dirty ? 1 : 0.4 }}
+          style={session.dirty ? toolbarBtnPrimary : { ...toolbarBtn, opacity: 0.5, background: "#fff" }}
         >
           Save
         </button>
@@ -214,11 +223,13 @@ export function WorkflowRoute({
             onClick={() => setAiOpen((o) => !o)}
             title="AI Assistant"
             aria-pressed={aiOpen}
-            style={
-              aiOpen
-                ? { ...toolbarBtn, background: "#0D9488", color: "#fff", borderColor: "#0D9488" }
-                : toolbarBtn
-            }
+            style={{
+              ...toolbarBtn,
+              background: aiOpen ? "#0A7469" : "#0D9488",
+              color: "#fff",
+              border: "none",
+              fontWeight: 600,
+            }}
           >
             AI
           </button>

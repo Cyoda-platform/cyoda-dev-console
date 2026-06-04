@@ -41,6 +41,7 @@ export function WorkflowEditorHostPanel({
       localStorageKey={session.layoutKey}
       onChange={handleChange}
       onSave={handleSave}
+      showSaveButton={false}
       {...(onWorkflowUiChange ? { onWorkflowUiChange } : {})}
     />
   );
