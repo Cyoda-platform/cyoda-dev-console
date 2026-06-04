@@ -25,21 +25,21 @@ export function HeaderContext({
         onClick={onProjectClick}
         title="Switch project"
         style={{
-          background: "none",
-          color: t.color.text,
+          background: t.color.blue,
+          color: "#fff",
           padding: "4px 8px",
           borderRadius: 6,
           fontWeight: 500,
           fontFamily: t.font.sans,
           fontSize: t.font.sizes.md,
-          border: `1px solid ${t.color.border}`,
+          border: "none",
           cursor: onProjectClick ? "pointer" : "default",
           display: "flex",
           alignItems: "center",
           gap: 6,
         }}
       >
-        <FolderOpen size={14} color={t.color.textMuted} />
+        <FolderOpen size={14} color="#fff" />
         <span>{projectName}</span>
         {onProjectClick && <span style={{ color: t.color.textFaint, fontSize: 10 }}>▾</span>}
       </button>
