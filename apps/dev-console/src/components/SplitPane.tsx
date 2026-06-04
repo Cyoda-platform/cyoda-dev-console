@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTokens } from "@cyoda/console-design-system";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const PANEL_WIDTH = 240;
 
@@ -47,7 +48,7 @@ export function SplitPane({
           padding: 0,
         }}
       >
-        {collapsed ? "›" : "‹"}
+        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
       <div style={{ flex: 1, overflow: "hidden" }}>

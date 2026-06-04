@@ -1,5 +1,6 @@
 import { useState, useCallback, createContext, useContext, memo } from "react";
 import { useTokens } from "@cyoda/console-design-system";
+import { ChevronRight } from "lucide-react";
 
 // ── Context ──────────────────────────────────────────────────────────────────
 
@@ -252,7 +253,7 @@ function Collapsible({
             transition: "transform 0.12s",
           }}
         >
-          ›
+          <ChevronRight size={12} />
         </button>
 
         {label !== undefined && (

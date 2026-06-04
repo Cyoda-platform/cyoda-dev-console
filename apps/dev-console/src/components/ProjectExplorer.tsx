@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { RefreshCw, FolderOpen, Code2 } from "lucide-react";
+import { RefreshCw, FolderOpen, Code2, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react";
 import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
 import { useTokens } from "@cyoda/console-design-system";
 import { deriveDisplayName } from "../utils/displayName.js";
@@ -112,7 +112,7 @@ export function ProjectExplorer({
           padding: 0,
         }}
       >
-        ›
+        <ChevronRight size={12} />
       </button>
     );
   }
@@ -282,7 +282,7 @@ export function ProjectExplorer({
               color: t.color.textMuted,
             }}
           >
-            ‹ Collapse
+            <ChevronLeft size={12} /> Collapse
           </button>
         </div>
       </div>
@@ -376,8 +376,8 @@ function ExplorerSection({
           textAlign: "left",
         }}
       >
-        <span aria-hidden style={{ fontSize: 10, width: 10 }}>
-          {expanded ? "▾" : "›"}
+        <span aria-hidden style={{ display: "flex", alignItems: "center", width: 12, flexShrink: 0 }}>
+          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </span>
         {label}
         {count !== undefined && count > 0 && (
