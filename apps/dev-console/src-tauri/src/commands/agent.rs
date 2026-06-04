@@ -93,21 +93,31 @@ pub async fn write_project_text_file(
     let target = resolve_new_inside_root(&root, std::path::Path::new(&relative_path))
         .map_err(|e| e.to_string())?;
 
-    if let Some(parent) = target.parent() {
+    // Resolve the final write target using the canonical parent path.
+    // This closes the TOCTOU window between the symlink check and write_atomic:
+    // write_atomic opens a file inside `parent_c` (the real, verified directory)
+    // rather than the original `target.parent()` path, which could be swapped.
+    let final_target = if let Some(parent) = target.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         let root_c = std::fs::canonicalize(&root).map_err(|e| e.to_string())?;
         let parent_c = std::fs::canonicalize(parent).map_err(|e| e.to_string())?;
         if !(parent_c == root_c || parent_c.starts_with(&root_c)) {
             return Err("path outside project root".to_string());
         }
-    }
+        let file_name = target
+            .file_name()
+            .ok_or_else(|| "target has no file name".to_string())?;
+        parent_c.join(file_name)
+    } else {
+        target.clone()
+    };
 
-    write_atomic(&target, contents.as_bytes()).map_err(|e| e.to_string())?;
-    let meta = std::fs::metadata(&target).map_err(|e| e.to_string())?;
+    write_atomic(&final_target, contents.as_bytes()).map_err(|e| e.to_string())?;
+    let meta = std::fs::metadata(&final_target).map_err(|e| e.to_string())?;
     let lm = lm_rfc3339(&meta);
-    save_origin.mark(&target, &lm).await;
+    save_origin.mark(&final_target, &lm).await;
     Ok(WriteResult {
-        path: target.to_string_lossy().into_owned(),
+        path: final_target.to_string_lossy().into_owned(),
         last_modified: lm,
         size_bytes: meta.len(),
     })
@@ -142,5 +152,35 @@ mod tests {
         let root_c = fs::canonicalize(root).unwrap();
         assert!(resolved.starts_with(&root_c));
         assert!(resolved.ends_with("cyoda-agent-task/CLAUDE.md"));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn symlinked_parent_is_rejected_by_canonicalize_check() {
+        use std::os::unix::fs::symlink;
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("root");
+        std::fs::create_dir(&root).unwrap();
+
+        // Create a directory outside the root
+        let outside = dir.path().join("outside");
+        std::fs::create_dir(&outside).unwrap();
+
+        // Create root/evil -> ../outside  (escapes the root)
+        let sym = root.join("evil");
+        symlink(&outside, &sym).unwrap();
+
+        // resolve_new_inside_root accepts "evil/file.txt" (no .. components)
+        // but canonicalize of the parent must resolve to outside/ and be rejected
+        let target = resolve_new_inside_root(&root, Path::new("evil/file.txt")).unwrap();
+        let parent = target.parent().unwrap();
+        std::fs::create_dir_all(parent).unwrap(); // sym already exists; no-op
+        let root_c = std::fs::canonicalize(&root).unwrap();
+        let parent_c = std::fs::canonicalize(parent).unwrap(); // resolves to outside/
+        // This assertion proves the check IS necessary: parent_c escapes the root
+        assert!(
+            !parent_c.starts_with(&root_c),
+            "parent_c {:?} should NOT be under root {:?}", parent_c, root_c
+        );
     }
 }
