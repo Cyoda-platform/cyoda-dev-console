@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { CustomSelect } from "../components/CustomSelect.js";
 import type { CyodaProfile, TaskBundleRequest } from "@cyoda/agent-bridge-contract";
 import { Button, Panel, useTokens } from "@cyoda/console-design-system";
 import { readCyodaProfileConfig, writeProjectTextFile } from "../ipc/agent.js";
@@ -103,7 +104,7 @@ export function BundleTab() {
   };
 
   return (
-    <div style={{ padding: t.space.lg, maxWidth: 640, display: "flex", flexDirection: "column", gap: t.space.md }}>
+    <div style={{ padding: t.space.lg, display: "flex", flexDirection: "column", gap: t.space.md }}>
       <p style={{ margin: 0, fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
         A <strong>task bundle</strong> is a folder of context files (a brief, the selected
         workflow/entity, profile setup notes) that you hand to an external CLI agent. It is
@@ -113,33 +114,25 @@ export function BundleTab() {
         <div style={{ display: "flex", flexDirection: "column", gap: t.space.md }}>
           <div>
             <FieldLabel>Agent target</FieldLabel>
-            <select
+            <CustomSelect
               value={agent}
-              onChange={(e) => setAgent(e.target.value as AgentId)}
-              style={selectStyle(t)}
-            >
-              {AGENT_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setAgent(v as AgentId)}
+              options={AGENT_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+              style={{ width: "100%" }}
+            />
           </div>
 
           <div>
             <FieldLabel>Cyoda profile</FieldLabel>
-            <select
+            <CustomSelect
               value={profileName}
-              onChange={(e) => setProfileName(e.target.value)}
-              style={selectStyle(t)}
-            >
-              <option value="">No profile (local / unset)</option>
-              {Object.entries(profiles).map(([name, p]) => (
-                <option key={name} value={name}>
-                  {name} ({p.env})
-                </option>
-              ))}
-            </select>
+              onChange={setProfileName}
+              options={[
+                { value: "", label: "No profile (local / unset)" },
+                ...Object.entries(profiles).map(([name, p]) => ({ value: name, label: `${name} (${p.env})` })),
+              ]}
+              style={{ width: "100%" }}
+            />
           </div>
 
           <label style={label}>

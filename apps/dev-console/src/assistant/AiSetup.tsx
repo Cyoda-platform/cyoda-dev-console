@@ -1,21 +1,15 @@
 import { useState } from "react";
 import { Button, Panel, useTokens } from "@cyoda/console-design-system";
+import { CustomSelect } from "../components/CustomSelect.js";
 import { PROVIDER_LIST, getProvider } from "./providers/index.js";
 import { useAssistantConfig } from "./keyStore.js";
 
-/**
- * Always-visible AI setup: choose a provider + model and paste an API key. Renders an
- * expanded card until a key is set for the active provider, then collapses to a one-line
- * summary with a "Change" affordance. Deliberately independent of any project/workflow
- * selection so key setup is reachable from a cold start.
- */
 export function AiSetup() {
   const t = useTokens();
   const { provider, model, keys, setProvider, setModel, setKey } = useAssistantConfig();
   const providerDef = getProvider(provider);
   const apiKey = keys[provider] ?? "";
   const hasKey = apiKey.trim() !== "";
-  // Start expanded when there is no key yet; stay expanded while typing until "Done".
   const [editing, setEditing] = useState(!hasKey);
 
   if (hasKey && !editing) {
@@ -42,26 +36,20 @@ export function AiSetup() {
       </p>
       <div style={{ display: "flex", gap: t.space.md, flexWrap: "wrap", alignItems: "flex-end" }}>
         <Field label="Provider">
-          <select
+          <CustomSelect
             value={provider}
-            onChange={(e) => setProvider(e.target.value as typeof provider)}
-            style={selectStyle(t)}
-          >
-            {PROVIDER_LIST.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setProvider(v as typeof provider)}
+            options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.label }))}
+            style={{ width: 180 }}
+          />
         </Field>
         <Field label="Model">
-          <select value={model} onChange={(e) => setModel(e.target.value)} style={selectStyle(t)}>
-            {providerDef.models.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={model}
+            onChange={setModel}
+            options={providerDef.models.map((m) => ({ value: m, label: m }))}
+            style={{ width: 220 }}
+          />
         </Field>
         <Field label={`API key (${providerDef.label})`}>
           <input
@@ -69,7 +57,7 @@ export function AiSetup() {
             value={apiKey}
             onChange={(e) => setKey(provider, e.target.value)}
             placeholder="paste key — stored locally"
-            style={{ ...selectStyle(t), minWidth: 300 }}
+            style={inputStyle(t)}
           />
         </Field>
         {hasKey && (
@@ -85,6 +73,7 @@ export function AiSetup() {
   );
 }
 
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   const t = useTokens();
   return (
@@ -95,15 +84,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function selectStyle(t: ReturnType<typeof useTokens>): React.CSSProperties {
+function inputStyle(t: ReturnType<typeof useTokens>): React.CSSProperties {
   return {
     boxSizing: "border-box",
-    padding: "6px 8px",
+    padding: "0 10px",
+    height: 34,
     border: `1px solid ${t.color.border}`,
-    borderRadius: t.radius.sm,
+    borderRadius: t.radius.md,
     background: t.color.surface,
     color: t.color.text,
     fontSize: t.font.sizes.md,
     fontFamily: t.font.sans,
+    width: 320,
+    outline: "none",
   };
 }

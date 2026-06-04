@@ -1,4 +1,6 @@
-import { Button, useTokens } from "@cyoda/console-design-system";
+import { useState } from "react";
+import { Send } from "lucide-react";
+import { useTokens } from "@cyoda/console-design-system";
 
 /** One chat message bubble — user on the right (green), assistant on the left. */
 export function ChatBubble({ role, content }: { role: "user" | "assistant"; content: string }) {
@@ -40,35 +42,60 @@ export function ChatComposer({
   placeholder: string;
 }) {
   const t = useTokens();
+  const [focused, setFocused] = useState(false);
   return (
-    <div style={{ display: "flex", gap: t.space.sm }}>
+    <div style={{ position: "relative" }}>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
             if (canSend) onSend();
           }
         }}
-        rows={2}
+        rows={3}
         placeholder={placeholder}
         style={{
           boxSizing: "border-box",
-          padding: "6px 8px",
-          border: `1px solid ${t.color.border}`,
-          borderRadius: t.radius.sm,
+          padding: "8px 40px 8px 10px",
+          border: `1px solid ${focused ? t.color.teal : t.color.border}`,
+          borderRadius: t.radius.md,
           background: t.color.surface,
           color: t.color.text,
           fontSize: t.font.sizes.md,
           fontFamily: t.font.sans,
-          flex: 1,
           resize: "vertical",
+          outline: "none",
+          width: "100%",
         }}
       />
-      <Button onClick={onSend} disabled={!canSend} style={{ alignSelf: "flex-end" }}>
-        {sending ? "Sending…" : "Send"}
-      </Button>
+      <button
+        type="button"
+        onClick={onSend}
+        disabled={!canSend}
+        title="Send (⌘Enter)"
+        style={{
+          position: "absolute",
+          bottom: 8,
+          right: 8,
+          width: 28,
+          height: 28,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "none",
+          border: "none",
+          borderRadius: t.radius.md,
+          cursor: canSend ? "pointer" : "default",
+          color: focused || canSend ? t.color.teal : t.color.textFaint,
+          transition: "color 0.15s",
+        }}
+      >
+        {sending ? "…" : <Send size={14} />}
+      </button>
     </div>
   );
 }

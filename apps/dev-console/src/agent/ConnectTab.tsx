@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Panel, WarningBanner, useTokens } from "@cyoda/console-design-system";
 import { detectAgents, writeProjectTextFile } from "../ipc/agent.js";
@@ -194,51 +195,60 @@ function CommandBlock({ lines, pending }: { lines: string[]; pending?: boolean }
         background: t.color.surfaceAlt,
         border: `1px solid ${t.color.border}`,
         borderRadius: t.radius.sm,
-        padding: t.space.sm,
         fontFamily: t.font.mono,
         fontSize: t.font.sizes.sm,
-        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {pending && (
-        <span
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 6,
+      {/* Header row */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        gap: t.space.sm,
+        padding: "4px 8px",
+        borderBottom: `1px solid ${t.color.border}`,
+        background: t.color.surface,
+      }}>
+        {pending && (
+          <span style={{
             background: t.color.cyodaOrange,
             color: "#fff",
             borderRadius: 10,
             padding: "1px 8px",
             fontFamily: t.font.sans,
             fontSize: 11,
+            marginRight: "auto",
+          }}>
+            Pending verification
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => void copyAll()}
+          aria-label="Copy commands"
+          title={copied ? "Copied!" : "Copy commands"}
+          style={{
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            color: copied ? t.color.success : t.color.textMuted,
+            padding: 2,
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          Pending verification
-        </span>
-      )}
-      {lines.map((line) => (
-        <div key={line} style={{ whiteSpace: "pre-wrap", color: t.color.text }}>
-          {line}
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={() => void copyAll()}
-        aria-label="Copy commands"
-        style={{
-          marginTop: t.space.xs,
-          border: "none",
-          background: "transparent",
-          cursor: "pointer",
-          fontFamily: t.font.sans,
-          fontSize: t.font.sizes.sm,
-          color: t.color.teal,
-          padding: 0,
-        }}
-      >
-        {copied ? "Copied" : "Copy"}
-      </button>
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+        </button>
+      </div>
+      {/* Code lines */}
+      <div style={{ padding: t.space.sm }}>
+        {lines.map((line) => (
+          <div key={line} style={{ whiteSpace: "pre-wrap", color: t.color.text }}>
+            {line}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

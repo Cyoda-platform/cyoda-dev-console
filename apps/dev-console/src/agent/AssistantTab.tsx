@@ -39,7 +39,7 @@ export function AssistantTab() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: t.space.md, padding: t.space.lg, maxWidth: 820 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: t.space.md, padding: t.space.lg }}>
       <AiSetup />
 
       {!workflowPath && (
