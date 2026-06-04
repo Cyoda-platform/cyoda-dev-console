@@ -111,45 +111,48 @@ export function SettingsRoute() {
   const { recentProjects } = configQ.data;
 
   return (
-    <div style={{ padding: t.space.lg, maxWidth: 640, fontFamily: t.font.sans }}>
-      <h2 style={{ fontSize: t.font.sizes.xl, marginTop: 0, marginBottom: t.space.md }}>Projects</h2>
-      <Button onClick={() => void handleOpenProject()} style={{ marginBottom: t.space.lg }}>
-        Open project…
-      </Button>
+    <div style={{ padding: t.space.lg, maxWidth: 800, fontFamily: t.font.sans }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: t.space.lg }}>
+        <h2 style={{ fontSize: t.font.sizes.xl, margin: 0, color: t.color.text }}>Projects</h2>
+        <Button onClick={() => void handleOpenProject()}>Open project…</Button>
+      </div>
       {recentProjects.length === 0 ? (
         <EmptyState title="No recent projects" description="Open a project folder to get started." />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: t.space.sm }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: t.space.md }}>
           {recentProjects.map((p) => {
             const isActive = active?.id === p.id;
             const configOpen = configureOpenId === p.id;
             return (
               <Panel key={p.id} style={isActive ? { borderLeft: `3px solid ${t.color.success}` } : undefined}>
-                <div style={{ display: "flex", alignItems: "center", gap: t.space.md }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: t.space.sm, fontWeight: 600, fontSize: t.font.sizes.md, marginBottom: t.space.xs }}>
-                      {p.name}
-                      {isActive && (
-                        <span style={{
-                          background: t.color.success,
-                          color: "#fff",
-                          borderRadius: 10,
-                          padding: "1px 8px",
-                          fontSize: t.font.sizes.sm,
-                          fontWeight: 600,
-                          lineHeight: "18px",
-                        }}>
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <FilePath path={p.rootPath} copyable />
+                {/* Project name + path */}
+                <div style={{ marginBottom: t.space.sm }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: t.space.sm, fontWeight: 600, fontSize: t.font.sizes.lg, marginBottom: t.space.xs }}>
+                    {p.name}
+                    {isActive && (
+                      <span style={{
+                        background: t.color.success,
+                        color: "#fff",
+                        borderRadius: 10,
+                        padding: "1px 8px",
+                        fontSize: t.font.sizes.sm,
+                        fontWeight: 600,
+                        lineHeight: "18px",
+                      }}>
+                        Active
+                      </span>
+                    )}
                   </div>
+                  <FilePath path={p.rootPath} copyable />
+                </div>
+
+                {/* Actions row */}
+                <div style={{ display: "flex", alignItems: "center", gap: t.space.sm, flexWrap: "wrap" }}>
                   <Button
                     variant="secondary"
                     onClick={() => setConfigureOpenId(configOpen ? null : p.id)}
                   >
-                    {configOpen ? "Close" : "Configure"}
+                    {configOpen ? "Close config" : "Configure"}
                   </Button>
                   <Button
                     variant="primary"
@@ -173,7 +176,7 @@ export function SettingsRoute() {
                   ) : (
                     <Button
                       variant="secondary"
-                      style={{ color: t.color.danger }}
+                      style={{ color: t.color.danger, marginLeft: "auto" }}
                       onClick={() => setConfirmRemoveId(p.id)}
                     >
                       Remove
@@ -268,7 +271,7 @@ function ScanRootRow({
           </span>
         )}
       </div>
-      <Button variant="secondary" onClick={onBrowse} style={{ flexShrink: 0, marginTop: 18 }}>
+      <Button variant="secondary" onClick={onBrowse} style={{ flexShrink: 0, alignSelf: "flex-end" }}>
         Browse…
       </Button>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { RefreshCw, FolderOpen, Code2 } from "lucide-react";
 import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
 import { useTokens } from "@cyoda/console-design-system";
 import { deriveDisplayName } from "../utils/displayName.js";
@@ -49,7 +50,6 @@ export function ProjectExplorer({
   const [search, setSearch] = useState("");
   const [workflowsExpanded, setWorkflowsExpanded] = useState(true);
   const [entitiesExpanded, setEntitiesExpanded] = useState(true);
-  const [projectExpanded, setProjectExpanded] = useState(false);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [width, setWidth] = useState(280);
   const draggingRef = useRef(false);
@@ -133,39 +133,43 @@ export function ProjectExplorer({
           overflow: "hidden",
         }}
       >
+        {/* Explorer header with hover actions — VS Code style */}
+        <ExplorerHeader
+          onRescan={onRescan}
+          projectRoot={projectRoot}
+        />
+
         {/* Top-level navigation (feature-flagged entries) */}
         {onOpenAgent && (
-          <button
-            onClick={onOpenAgent}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              width: "100%",
-              padding: "8px 10px",
-              background: "none",
-              border: "none",
-              borderBottom: `1px solid ${t.color.border}`,
-              cursor: "pointer",
-              fontFamily: t.font.sans,
-              fontSize: t.font.sizes.md,
-              fontWeight: 600,
-              color: t.color.teal,
-              textAlign: "left",
-              flexShrink: 0,
-            }}
-          >
-            <span aria-hidden style={{ fontFamily: t.font.mono }}>
-              ▸_
-            </span>
-            AI Assistant
-          </button>
+          <div style={{ padding: "10px 10px 6px", flexShrink: 0 }}>
+            <button
+              onClick={onOpenAgent}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                width: "100%",
+                padding: "7px 12px",
+                background: t.color.teal,
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontFamily: t.font.sans,
+                fontSize: t.font.sizes.md,
+                fontWeight: 600,
+                color: "#fff",
+              }}
+            >
+              ✦ AI Assistant
+            </button>
+          </div>
         )}
 
         {/* Search */}
         <div
           style={{
-            padding: "6px 8px",
+            padding: "0 10px 8px",
             borderBottom: `1px solid ${t.color.border}`,
             flexShrink: 0,
           }}
@@ -191,13 +195,13 @@ export function ProjectExplorer({
             style={{
               width: "100%",
               boxSizing: "border-box",
-              height: 26,
-              padding: "0 6px",
+              height: 30,
+              padding: "0 10px",
               fontFamily: t.font.sans,
-              fontSize: t.font.sizes.sm,
+              fontSize: t.font.sizes.md,
               border: `1px solid ${t.color.border}`,
-              borderRadius: 2,
-              background: t.color.surfaceAlt,
+              borderRadius: 6,
+              background: t.color.surface,
               color: t.color.text,
               outline: "none",
             }}
@@ -245,42 +249,42 @@ export function ProjectExplorer({
                   selected={e.path === selectedPath}
                   onOpen={onOpen}
                   onContextMenu={(x, y) => setMenu({ x, y, path: e.path })}
+                  dotColor="#0D9488"
                 />
               ))
             )}
           </ExplorerSection>
 
-          <ExplorerSection
-            label="Project"
-            expanded={projectExpanded}
-            onToggle={() => setProjectExpanded((v) => !v)}
-          >
-            <ProjectActions
-              onSettings={onOpenSettings}
-              onRescan={onRescan}
-              projectRoot={projectRoot}
-            />
-          </ExplorerSection>
         </div>
 
-        {/* Collapse button */}
-        <button
-          onClick={onToggleCollapse}
-          aria-label="Collapse explorer"
+        {/* Bottom bar: gear + collapse */}
+        <div
           style={{
-            height: 24,
-            flexShrink: 0,
-            background: t.color.surfaceAlt,
-            border: "none",
+            display: "flex",
+            alignItems: "center",
             borderTop: `1px solid ${t.color.border}`,
-            cursor: "pointer",
-            fontFamily: t.font.sans,
-            fontSize: t.font.sizes.sm,
-            color: t.color.textMuted,
+            background: t.color.surface,
+            flexShrink: 0,
+            height: 36,
           }}
         >
-          ‹ Collapse
-        </button>
+          <button
+            onClick={onToggleCollapse}
+            aria-label="Collapse explorer"
+            style={{
+              flex: 1,
+              height: 36,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: t.font.sans,
+              fontSize: t.font.sizes.sm,
+              color: t.color.textMuted,
+            }}
+          >
+            ‹ Collapse
+          </button>
+        </div>
       </div>
 
       {/* Resize drag handle */}
@@ -400,12 +404,14 @@ function ExplorerItem({
   selected,
   onOpen,
   onContextMenu,
+  dotColor,
 }: {
   entry: WorkflowFileIndexEntry;
   displayName: string;
   selected: boolean;
   onOpen: (entry: WorkflowFileIndexEntry) => void;
   onContextMenu: (x: number, y: number) => void;
+  dotColor?: string;
 }) {
   const t = useTokens();
   return (
@@ -446,7 +452,7 @@ function ExplorerItem({
         (e.currentTarget as HTMLDivElement).style.outline = "none";
       }}
     >
-      <StatusDot status={entry.status} />
+      <StatusDot status={entry.status} colorOverride={dotColor} />
       <span
         style={{
           flex: 1,
@@ -461,10 +467,11 @@ function ExplorerItem({
   );
 }
 
-function StatusDot({ status }: { status: WorkflowFileIndexEntry["status"] }) {
+function StatusDot({ status, colorOverride }: { status: WorkflowFileIndexEntry["status"]; colorOverride?: string }) {
   const t = useTokens();
-  const { color, label } =
-    status === "valid-workflow" || status === "export-payload"
+  const { color, label } = colorOverride
+    ? { color: colorOverride, label: "entity" }
+    : status === "valid-workflow" || status === "export-payload"
       ? { color: t.color.success, label: "valid" }
       : status === "invalid-workflow" || status === "probable-workflow"
         ? { color: t.color.warning, label: "warnings" }
@@ -500,6 +507,67 @@ function EmptyRow({ text }: { text: string }) {
       }}
     >
       {text}
+    </div>
+  );
+}
+
+function ExplorerHeader({
+  onRescan,
+  projectRoot,
+}: {
+  onRescan: () => void;
+  projectRoot: string;
+}) {
+  const t = useTokens();
+  const iconBtn: React.CSSProperties = {
+    width: 22,
+    height: 22,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "none",
+    border: "none",
+    borderRadius: 4,
+    cursor: "pointer",
+    color: t.color.textMuted,
+    fontSize: 13,
+    padding: 0,
+    flexShrink: 0,
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "0 10px",
+        height: 28,
+        flexShrink: 0,
+        borderBottom: `1px solid ${t.color.border}`,
+      }}
+    >
+      <span style={{
+        fontSize: 11,
+        fontWeight: 600,
+        color: t.color.textFaint,
+        letterSpacing: "0.6px",
+        textTransform: "uppercase",
+        flex: 1,
+        userSelect: "none",
+      }}>
+        Explorer
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <button style={iconBtn} title="Rescan project" onClick={onRescan}>
+            <RefreshCw size={13} />
+          </button>
+          <button style={iconBtn} title="Reveal in Finder" onClick={() => void revealInFinder(projectRoot)}>
+            <FolderOpen size={13} />
+          </button>
+          <button style={iconBtn} title="Open in VS Code" onClick={() => void openInIde(projectRoot, "vscode")}>
+            <Code2 size={13} />
+          </button>
+        </div>
     </div>
   );
 }

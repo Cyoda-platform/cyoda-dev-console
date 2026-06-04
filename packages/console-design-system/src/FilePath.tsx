@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { useTokens } from "./ThemeProvider";
 
 export function FilePath({ path, copyable = false }: { path: string; copyable?: boolean }) {
   const t = useTokens();
   const [copied, setCopied] = useState(false);
-  const [hovered, setHovered] = useState(false);
 
   async function copy() {
     try {
@@ -17,28 +17,38 @@ export function FilePath({ path, copyable = false }: { path: string; copyable?: 
   }
 
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: t.space.xs }}>
-      <code style={{ fontFamily: t.font.mono, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>{path}</code>
+    <span style={{ display: "flex", alignItems: "center", gap: t.space.xs, minWidth: 0 }}>
+      <code style={{
+        fontFamily: t.font.mono,
+        fontSize: t.font.sizes.sm,
+        color: t.color.textMuted,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        minWidth: 0,
+        flex: 1,
+      }}>
+        {path}
+      </code>
       {copyable && (
         <button
           type="button"
           onClick={copy}
           aria-label="Copy path"
-          title="Copy path"
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
+          title={copied ? "Copied!" : "Copy path"}
           style={{
             border: "none",
-            background: hovered ? t.color.surfaceAlt : "transparent",
+            background: "transparent",
             cursor: "pointer",
-            fontFamily: t.font.sans,
-            fontSize: t.font.sizes.sm,
-            color: t.color.teal,
-            padding: "1px 6px",
+            color: copied ? t.color.success : t.color.textFaint,
+            padding: "1px 2px",
             borderRadius: t.radius.sm,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          {copied ? "Copied" : "Copy"}
+          {copied ? <Check size={12} /> : <Copy size={12} />}
         </button>
       )}
     </span>

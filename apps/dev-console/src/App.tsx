@@ -142,7 +142,11 @@ function DevConsoleApp() {
 
   const headerRight =
     active != null && projectReady ? (
-      <HeaderContext projectName={active.name} dirty={editorDirty} />
+      <HeaderContext
+        projectName={active.name}
+        dirty={editorDirty}
+        onProjectClick={() => { setOpenedFile(null); setViewKind("settings"); }}
+      />
     ) : undefined;
 
   return (
