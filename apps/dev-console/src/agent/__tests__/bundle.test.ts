@@ -120,7 +120,9 @@ describe("template injection safety", () => {
     expect(match).not.toBeNull();
     // Strip jsonc comments and trailing commas, then parse as JSON
     const cleaned = (match![1] as string)
-      .replace(/\/\/.*/g, "")
+      .split('\n')
+      .filter(line => !line.trimStart().startsWith('//'))
+      .join('\n')
       .replace(/,(\s*[}\]])/g, "$1");
     expect(() => JSON.parse(cleaned)).not.toThrow();
   });

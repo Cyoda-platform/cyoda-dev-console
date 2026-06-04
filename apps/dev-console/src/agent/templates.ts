@@ -49,14 +49,6 @@ function safeForCodeFence(value: string): string {
   return value.replace(/`/g, "ˋ");
 }
 
-/**
- * Like JSON.stringify but additionally escapes forward slashes as `\/`.
- * This is valid per RFC 8259 and prevents the `//` sequence from being
- * interpreted as a JSONC line-comment when the block is post-processed.
- */
-function jsonStringify(value: string): string {
-  return JSON.stringify(value).replace(/\//g, "\\/");
-}
 
 /**
  * Shared body describing how an agent should work against a Cyoda project. The tool list
@@ -212,11 +204,11 @@ export function generateProfileInstructionsMd(input: TemplateInput): string {
     "",
     "```jsonc",
     "{",
-    `  "active": ${jsonStringify(name)},`,
+    `  "active": ${JSON.stringify(name)},`,
     '  "profiles": {',
-    `    ${jsonStringify(name)}: {`,
-    `      "endpoint": ${jsonStringify(endpoint)},`,
-    `      "env": ${jsonStringify(env)},`,
+    `    ${JSON.stringify(name)}: {`,
+    `      "endpoint": ${JSON.stringify(endpoint)},`,
+    `      "env": ${JSON.stringify(env)},`,
     '      "token": "<JWT or empty for local cyoda-go>"',
     "    }",
     "  }",
