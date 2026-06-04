@@ -64,14 +64,20 @@ pub async fn llm_complete(
         other => return Err(format!("unknown LLM provider: {other}")),
     };
 
-    // without_url() strips the request URL from the error string. For Gemini, the
-    // URL contains the API key as a ?key= query parameter; without this, a network
-    // failure would return the key verbatim to the frontend.
     let resp = req
         .json(&body)
         .send()
         .await
-        .map_err(|e| e.without_url().to_string())?;
+        .map_err(|e| {
+            // Gemini embeds the API key in the URL as ?key=; strip the URL to avoid leaking
+            // it in error messages. Anthropic and OpenAI use request headers, so their URLs
+            // are safe to include and useful for debugging.
+            if provider == "gemini" {
+                e.without_url().to_string()
+            } else {
+                e.to_string()
+            }
+        })?;
     let status = resp.status().as_u16();
     // Providers return JSON for both success and error; fall back to Null if not JSON.
     let body = resp.json::<Value>().await.unwrap_or(Value::Null);
