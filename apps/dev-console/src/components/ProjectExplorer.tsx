@@ -364,16 +364,18 @@ function ExplorerSection({
           alignItems: "center",
           gap: 4,
           width: "100%",
-          padding: "5px 8px",
-          background: "none",
+          padding: "4px 8px",
+          background: t.color.surfaceAlt,
           border: "none",
           borderBottom: `1px solid ${t.color.border}`,
           cursor: "pointer",
           fontFamily: t.font.sans,
-          fontSize: t.font.sizes.sm,
+          fontSize: 11,
           fontWeight: 600,
-          color: t.color.text,
+          color: t.color.textFaint,
           textAlign: "left",
+          textTransform: "uppercase",
+          letterSpacing: "0.5px",
         }}
       >
         <span aria-hidden style={{ display: "flex", alignItems: "center", width: 12, flexShrink: 0 }}>
@@ -437,19 +439,14 @@ function ExplorerItem({
         gap: 6,
         padding: "3px 8px 3px 20px",
         cursor: "pointer",
-        background: selected ? t.color.surfaceAlt : "transparent",
-        borderLeft: selected ? `2px solid ${t.color.teal}` : "2px solid transparent",
+        background: selected ? t.color.blueSoft : "transparent",
+        borderLeft: selected ? `2px solid ${t.color.blue}` : "2px solid transparent",
         fontFamily: t.font.sans,
         fontSize: t.font.sizes.sm,
-        color: t.color.text,
+        color: selected ? t.color.blue : t.color.text,
+        fontWeight: selected ? 500 : 400,
         userSelect: "none",
         outline: "none",
-      }}
-      onFocus={(e) => {
-        (e.currentTarget as HTMLDivElement).style.outline = `2px solid ${t.color.teal}`;
-      }}
-      onBlur={(e) => {
-        (e.currentTarget as HTMLDivElement).style.outline = "none";
       }}
     >
       <StatusDot status={entry.status} colorOverride={dotColor} />
