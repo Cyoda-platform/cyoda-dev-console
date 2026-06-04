@@ -9,9 +9,18 @@ import { tokens, type DesignTokens } from "./tokens";
 
 const ThemeContext = createContext<DesignTokens>(tokens);
 
+const scrollbarStyles = `
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.3); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.55); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+`;
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeContext.Provider value={tokens}>
+      <style>{scrollbarStyles}</style>
       <div
         style={{
           fontFamily: tokens.font.sans,

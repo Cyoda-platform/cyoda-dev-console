@@ -183,7 +183,7 @@ function DevConsoleApp() {
             />
 
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <ErrorBoundary onReset={() => { setOpenedFile(null); setViewKind(null); }}>
+              <ErrorBoundary key={openedFile?.path ?? viewKind ?? "empty"} onReset={() => { setOpenedFile(null); setViewKind(null); }}>
                 {viewKind === "settings" ? (
                   <SettingsRoute />
                 ) : viewKind === "agent" && AGENT_FLAG ? (

@@ -111,7 +111,7 @@ export function SettingsRoute() {
   const { recentProjects } = configQ.data;
 
   return (
-    <div style={{ padding: t.space.lg, maxWidth: 800, fontFamily: t.font.sans }}>
+    <div style={{ padding: t.space.lg, maxWidth: 900, margin: "0 auto", fontFamily: t.font.sans }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: t.space.lg }}>
         <h2 style={{ fontSize: t.font.sizes.xl, margin: 0, color: t.color.text }}>Projects</h2>
         <Button onClick={() => void handleOpenProject()}>Open project…</Button>
