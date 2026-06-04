@@ -22,13 +22,14 @@ const jsonEditorConfig: WorkflowJsonEditorConfig = { monaco: getMonacoRuntime() 
 
 const toolbarBtn: React.CSSProperties = {
   background: "none",
-  border: "1px solid #E0E0E0",
-  borderRadius: 2,
+  border: "1px solid #E2E8F0",
+  borderRadius: 6,
   cursor: "pointer",
-  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+  fontFamily: "'Inter', system-ui, sans-serif",
   fontSize: 12,
-  color: "#525252",
-  padding: "2px 8px",
+  fontWeight: 500,
+  color: "#64748B",
+  padding: "4px 10px",
 };
 
 export function WorkflowRoute({
@@ -173,7 +174,7 @@ export function WorkflowRoute({
           height: 36,
           flexShrink: 0,
           borderBottom: "1px solid #E0E0E0",
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontFamily: "'JetBrains Mono', ui-monospace, monospace",
           fontSize: 12,
         }}
       >
@@ -186,7 +187,7 @@ export function WorkflowRoute({
         </span>
 
         {session.dirty && (
-          <span style={{ color: "#F58220", flexShrink: 0 }}>● Unsaved</span>
+          <span style={{ color: "#D97706", flexShrink: 0 }}>● Unsaved</span>
         )}
 
         <button
@@ -215,7 +216,7 @@ export function WorkflowRoute({
             aria-pressed={aiOpen}
             style={
               aiOpen
-                ? { ...toolbarBtn, background: "#004235", color: "#fff", borderColor: "#004235" }
+                ? { ...toolbarBtn, background: "#0D9488", color: "#fff", borderColor: "#0D9488" }
                 : toolbarBtn
             }
           >
