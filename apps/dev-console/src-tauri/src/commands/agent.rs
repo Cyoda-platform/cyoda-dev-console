@@ -109,7 +109,8 @@ pub async fn write_project_text_file(
             .ok_or_else(|| "target has no file name".to_string())?;
         parent_c.join(file_name)
     } else {
-        target.clone()
+        // A target with no parent would be the root itself — reject it.
+        return Err("target path must have a parent directory".to_string());
     };
 
     write_atomic(&final_target, contents.as_bytes()).map_err(|e| e.to_string())?;
