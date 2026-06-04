@@ -182,7 +182,7 @@ export function WorkflowRoute({
           height: 42,
           flexShrink: 0,
           background: "#fff",
-          borderBottom: "1px solid #CBD5E1",
+          borderBottom: "1px solid #E2E8F0",
           fontFamily: "'JetBrains Mono', ui-monospace, monospace",
           fontSize: 12,
         }}
