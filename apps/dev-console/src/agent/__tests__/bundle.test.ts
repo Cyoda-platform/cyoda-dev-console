@@ -106,3 +106,32 @@ describe("generateRuleFile", () => {
     expect(content).toContain("Gemini CLI");
   });
 });
+
+describe("template injection safety", () => {
+  it("F-04: an endpoint with a double-quote does not break the JSON code block", () => {
+    const md = generateProfileInstructionsMd({
+      projectRoot: "/proj",
+      profileName: "dev",
+      endpoint: 'http://host/path","token":"injected',
+      env: "development",
+    });
+    // Extract the jsonc block
+    const match = md.match(/```jsonc\n([\s\S]*?)\n```/);
+    expect(match).not.toBeNull();
+    // Strip jsonc comments and trailing commas, then parse as JSON
+    const cleaned = (match![1] as string)
+      .replace(/\/\/.*/g, "")
+      .replace(/,(\s*[}\]])/g, "$1");
+    expect(() => JSON.parse(cleaned)).not.toThrow();
+  });
+
+  it("F-05: a backtick in projectRoot does not break a code fence", () => {
+    const rule = generateRuleFile("CLAUDE.md", {
+      projectRoot: "/proj/foo`bar",
+      workflowRelPath: "wf/`evil.json",
+    });
+    // The raw backtick-wrapped path must not appear verbatim (would close the fence)
+    expect(rule).not.toContain("`/proj/foo`bar`");
+    expect(rule).not.toContain("`wf/`evil.json`");
+  });
+});
