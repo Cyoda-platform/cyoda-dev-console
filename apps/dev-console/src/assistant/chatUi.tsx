@@ -9,7 +9,7 @@ export function ChatBubble({ role, content }: { role: "user" | "assistant"; cont
       style={{
         alignSelf: isUser ? "flex-end" : "flex-start",
         maxWidth: "85%",
-        background: isUser ? t.color.cyodaGreen : t.color.surfaceAlt,
+        background: isUser ? t.color.teal : t.color.surfaceAlt,
         color: isUser ? "#fff" : t.color.text,
         borderRadius: t.radius.md,
         padding: `${t.space.sm} ${t.space.md}`,

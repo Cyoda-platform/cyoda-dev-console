@@ -51,13 +51,14 @@ export function EntityRoute({
 
   const toolbarBtn: React.CSSProperties = {
     background: "none",
-    border: `1px solid ${t.color.border}`,
-    borderRadius: 2,
+    border: "1px solid #E2E8F0",
+    borderRadius: 6,
     cursor: "pointer",
-    fontFamily: t.font.mono,
-    fontSize: t.font.sizes.sm,
-    color: t.color.textMuted,
-    padding: "2px 8px",
+    fontFamily: "'Inter', system-ui, sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#64748B",
+    padding: "4px 10px",
   };
 
   const menuItems = [

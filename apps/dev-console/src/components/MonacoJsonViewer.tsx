@@ -31,7 +31,7 @@ export function MonacoJsonViewer({
       scrollBeyondLastLine: false,
       fontSize: 13,
       lineHeight: 20,
-      fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+      fontFamily: "'JetBrains Mono', ui-monospace, monospace",
       renderLineHighlight: "line",
       wordWrap: "off",
       folding: true,

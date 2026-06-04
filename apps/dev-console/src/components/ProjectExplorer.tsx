@@ -150,7 +150,7 @@ export function ProjectExplorer({
               fontFamily: t.font.sans,
               fontSize: t.font.sizes.md,
               fontWeight: 600,
-              color: t.color.cyodaGreen,
+              color: t.color.teal,
               textAlign: "left",
               flexShrink: 0,
             }}
@@ -432,7 +432,7 @@ function ExplorerItem({
         padding: "3px 8px 3px 20px",
         cursor: "pointer",
         background: selected ? t.color.surfaceAlt : "transparent",
-        borderLeft: selected ? `2px solid ${t.color.cyodaGreen}` : "2px solid transparent",
+        borderLeft: selected ? `2px solid ${t.color.teal}` : "2px solid transparent",
         fontFamily: t.font.sans,
         fontSize: t.font.sizes.sm,
         color: t.color.text,
@@ -440,7 +440,7 @@ function ExplorerItem({
         outline: "none",
       }}
       onFocus={(e) => {
-        (e.currentTarget as HTMLDivElement).style.outline = `2px solid ${t.color.cyodaGreen}`;
+        (e.currentTarget as HTMLDivElement).style.outline = `2px solid ${t.color.teal}`;
       }}
       onBlur={(e) => {
         (e.currentTarget as HTMLDivElement).style.outline = "none";

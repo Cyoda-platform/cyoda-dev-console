@@ -45,7 +45,7 @@ export function ProposedChange({
   return (
     <div
       style={{
-        border: `1px solid ${t.color.cyodaGreen}`,
+        border: `1px solid ${t.color.teal}`,
         borderRadius: t.radius.md,
         padding: t.space.md,
         background: t.color.surface,
@@ -61,7 +61,7 @@ export function ProposedChange({
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={heading}>Proposed</div>
-          <pre style={{ ...pre, borderColor: t.color.cyodaGreen }}>{proposed}</pre>
+          <pre style={{ ...pre, borderColor: t.color.teal }}>{proposed}</pre>
         </div>
       </div>
       <div style={{ display: "flex", gap: t.space.sm, marginTop: t.space.md }}>

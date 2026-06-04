@@ -233,7 +233,7 @@ function CommandBlock({ lines, pending }: { lines: string[]; pending?: boolean }
           cursor: "pointer",
           fontFamily: t.font.sans,
           fontSize: t.font.sizes.sm,
-          color: t.color.cyodaGreen,
+          color: t.color.teal,
           padding: 0,
         }}
       >

@@ -26,7 +26,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div style={{
           padding: 24,
-          fontFamily: "'IBM Plex Sans', sans-serif",
+          fontFamily: "'Inter', system-ui, sans-serif",
           display: "flex",
           flexDirection: "column",
           gap: 12,
@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
             Something went wrong rendering this file.
           </div>
           <div style={{
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "'JetBrains Mono', ui-monospace, monospace",
             fontSize: 12,
             color: "#525252",
             background: "#F4F4F4",

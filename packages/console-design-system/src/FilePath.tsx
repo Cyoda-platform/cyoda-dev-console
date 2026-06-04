@@ -33,7 +33,7 @@ export function FilePath({ path, copyable = false }: { path: string; copyable?: 
             cursor: "pointer",
             fontFamily: t.font.sans,
             fontSize: t.font.sizes.sm,
-            color: t.color.cyodaGreen,
+            color: t.color.teal,
             padding: "1px 6px",
             borderRadius: t.radius.sm,
           }}

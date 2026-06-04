@@ -48,7 +48,7 @@ export function Tabs({
               color: active ? t.color.text : t.color.textMuted,
               fontWeight: active ? 600 : 400,
               borderBottom: active
-                ? `2px solid ${t.color.cyodaGreen}`
+                ? `2px solid ${t.color.teal}`
                 : "2px solid transparent",
               marginBottom: -1,
             }}

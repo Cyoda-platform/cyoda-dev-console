@@ -20,7 +20,7 @@ export function HeaderContext({
     >
       <span
         style={{
-          background: t.color.cyodaGreen,
+          background: t.color.teal,
           color: "#FFFFFF",
           padding: "1px 8px",
           borderRadius: 2,
