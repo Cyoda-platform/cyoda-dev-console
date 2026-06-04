@@ -62,6 +62,30 @@ describe("useAssistantChat", () => {
     expect(result.current.applied).toContain("workflows/w.json");
   });
 
+  it("surfaces an onApply error as chat error and keeps the proposal visible", async () => {
+    completeMock.mockResolvedValue({ toolCall: { workflowJson: WORKFLOW } });
+    const onApply = vi.fn().mockRejectedValue(
+      new Error("You have unsaved changes. Save or discard them first.")
+    );
+
+    const { result } = renderHook(() =>
+      useAssistantChat({ getCurrentJson: () => WORKFLOW, relPath: "wf.json", onApply }),
+    );
+
+    act(() => result.current.setInput("add state"));
+    await act(async () => { await result.current.send(); });
+    expect(result.current.proposal).not.toBeNull();
+
+    await act(async () => { await result.current.applyProposal(); });
+
+    // Error is shown, proposal is NOT cleared so user can retry after saving
+    expect(result.current.error).toBe(
+      "You have unsaved changes. Save or discard them first."
+    );
+    expect(result.current.proposal).not.toBeNull();
+    expect(result.current.applied).toBeNull();
+  });
+
   it("declines to propose when there is no workflow context", async () => {
     completeMock.mockResolvedValue({ toolCall: { workflowJson: WORKFLOW } });
     const onApply = vi.fn();

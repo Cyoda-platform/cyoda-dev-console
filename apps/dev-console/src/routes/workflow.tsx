@@ -105,8 +105,18 @@ export function WorkflowRoute({
     getCurrentJson: () => (session.document ? serializeImportPayload(session.document) : undefined),
     relPath: relativePath,
     onApply: (canonical) => {
+      // F-09: guard against silently discarding unsaved graph-editor edits.
+      if (session.dirty) {
+        throw new Error(
+          "You have unsaved changes. Save or discard them before applying an AI suggestion."
+        );
+      }
+      // F-06: throw so applyProposal() shows an error instead of a false-positive success banner.
       const result = parseImportPayload(canonical, session.document?.meta);
-      if (result.document) session.applyExternalDocument(result.document);
+      if (!result.document) {
+        throw new Error("Failed to apply: the proposed workflow JSON could not be parsed.");
+      }
+      session.applyExternalDocument(result.document);
     },
   });
 
