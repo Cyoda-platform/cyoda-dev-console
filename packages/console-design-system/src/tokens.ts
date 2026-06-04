@@ -1,22 +1,38 @@
 export const tokens = {
   color: {
-    cyodaGreen: "#004235",
-    cyodaOrange: "#F58220",
+    // Brand
+    teal: "#0D9488",
+    tealSoft: "#CCFBF1",
+    // Primary actions
+    blue: "#2563EB",
+    blueHover: "#1D4ED8",
+    blueSoft: "#EFF6FF",
+    // Surfaces
     surface: "#FFFFFF",
-    surfaceAlt: "#F4F4F4",
-    border: "#E0E0E0",
-    text: "#161616",
-    textMuted: "#525252",
-    danger: "#DA1E28",
-    warning: "#F1C21B",
-    success: "#198038",
+    surfaceAlt: "#F8FAFC",
+    surfaceMuted: "#F1F5F9",
+    // Borders
+    border: "#E2E8F0",
+    borderStrong: "#CBD5E1",
+    // Text
+    text: "#0F172A",
+    textSecondary: "#334155",
+    textMuted: "#64748B",
+    textFaint: "#94A3B8",
+    // Semantic
+    danger: "#DC2626",
+    warning: "#D97706",
+    success: "#059669",
+    // Brand orange (kept)
+    cyodaOrange: "#F58220",
   },
-  radius: { sm: "2px", md: "4px", lg: "8px" },
+  radius: { sm: "4px", md: "6px", lg: "8px" },
   space: { xs: "4px", sm: "8px", md: "16px", lg: "24px", xl: "32px" },
   font: {
-    sans: "'IBM Plex Sans', system-ui, sans-serif",
-    mono: "'IBM Plex Mono', ui-monospace, monospace",
-    sizes: { sm: "12px", md: "14px", lg: "16px", xl: "20px" },
+    sans: "'Inter', system-ui, sans-serif",
+    mono: "'JetBrains Mono', ui-monospace, monospace",
+    sizes: { sm: "12px", md: "13px", lg: "15px", xl: "20px" },
+    weights: { normal: 400, medium: 500, semibold: 600, bold: 700 },
   },
 } as const;
 

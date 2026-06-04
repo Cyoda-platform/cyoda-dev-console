@@ -190,7 +190,7 @@ importers:
         version: link:../../packages/entity-model-viewer
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: link:../../../cyoda-workflow-editor/packages/workflow-core
+        version: file:../cyoda-workflow-editor/packages/workflow-core
       '@cyoda/workflow-editor-host':
         specifier: workspace:*
         version: link:../../packages/workflow-editor-host
@@ -291,11 +291,11 @@ importers:
 
   packages/console-design-system:
     dependencies:
-      '@fontsource/ibm-plex-mono':
-        specifier: ^5.1.0
-        version: 5.2.7
-      '@fontsource/ibm-plex-sans':
-        specifier: ^5.1.0
+      '@fontsource/inter':
+        specifier: ^5
+        version: 5.2.8
+      '@fontsource/jetbrains-mono':
+        specifier: ^5
         version: 5.2.8
     devDependencies:
       '@testing-library/jest-dom':
@@ -410,7 +410,7 @@ importers:
         version: link:../console-design-system
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: link:../../../cyoda-workflow-editor/packages/workflow-core
+        version: file:../cyoda-workflow-editor/packages/workflow-core
       '@cyoda/workflow-react':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-react
         version: file:../cyoda-workflow-editor/packages/workflow-react(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(reactflow@11.11.4(@types/react@18.3.29)(immer@10.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)
@@ -453,7 +453,7 @@ importers:
     dependencies:
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: link:../../../cyoda-workflow-editor/packages/workflow-core
+        version: file:../cyoda-workflow-editor/packages/workflow-core
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -603,6 +603,9 @@ packages:
   '@csstools/css-tokenizer@3.0.4':
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
     engines: {node: '>=18'}
+
+  '@cyoda/workflow-core@file:../cyoda-workflow-editor/packages/workflow-core':
+    resolution: {directory: ../cyoda-workflow-editor/packages/workflow-core, type: directory}
 
   '@cyoda/workflow-graph@file:../cyoda-workflow-editor/packages/workflow-graph':
     resolution: {directory: ../cyoda-workflow-editor/packages/workflow-graph, type: directory}
@@ -820,11 +823,11 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@fontsource/ibm-plex-mono@5.2.7':
-    resolution: {integrity: sha512-MKAb8qV+CaiMQn2B0dIi1OV3565NYzp3WN5b4oT6LTkk+F0jR6j0ZN+5BKJiIhffDC3rtBULsYZE65+0018z9w==}
+  '@fontsource/inter@5.2.8':
+    resolution: {integrity: sha512-P6r5WnJoKiNVV+zvW2xM13gNdFhAEpQ9dQJHt3naLvfg+LkF2ldgSLiF4T41lf1SQCM9QmkqPTn4TH568IRagg==}
 
-  '@fontsource/ibm-plex-sans@5.2.8':
-    resolution: {integrity: sha512-eztSXjDhPhcpxNIiGTgMebdLP9qS4rWkysuE1V7c+DjOR0qiezaiDaTwQE7bTnG5HxAY/8M43XKDvs3cYq6ZYQ==}
+  '@fontsource/jetbrains-mono@5.2.8':
+    resolution: {integrity: sha512-6w8/SG4kqvIMu7xd7wt6x3idn1Qux3p9N62s6G3rfldOUYHpWcc2FKrqf+Vo44jRvqWj2oAtTHrZXEP23oSKwQ==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -2938,6 +2941,12 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.4': {}
 
+  '@cyoda/workflow-core@file:../cyoda-workflow-editor/packages/workflow-core':
+    dependencies:
+      immer: 10.2.0
+      uuid: 14.0.0
+      zod: 3.25.76
+
   '@cyoda/workflow-graph@file:../cyoda-workflow-editor/packages/workflow-graph':
     dependencies:
       '@cyoda/workflow-core': file:../cyoda-workflow-editor/packages/workflow-core
@@ -3099,9 +3108,9 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@fontsource/ibm-plex-mono@5.2.7': {}
+  '@fontsource/inter@5.2.8': {}
 
-  '@fontsource/ibm-plex-sans@5.2.8': {}
+  '@fontsource/jetbrains-mono@5.2.8': {}
 
   '@humanfs/core@0.19.2':
     dependencies:
