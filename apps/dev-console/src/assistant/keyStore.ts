@@ -6,7 +6,7 @@ const STORAGE_KEY = "cyoda-assistant-config";
 interface Persisted {
   provider: ProviderId;
   model: string;
-  /** API keys per provider. sessionStorage, origin-scoped; cleared on app restart. TODO: migrate to OS keychain via tauri-plugin-keyring (BYO_AI-spec §15). */
+  /** API keys per provider. sessionStorage, origin-scoped; cleared when the window closes. TODO: migrate to OS keychain via tauri-plugin-keyring (BYO_AI-spec §15). */
   keys: Partial<Record<ProviderId, string>>;
 }
 
