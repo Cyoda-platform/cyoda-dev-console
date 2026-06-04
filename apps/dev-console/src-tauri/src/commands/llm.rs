@@ -64,7 +64,14 @@ pub async fn llm_complete(
         other => return Err(format!("unknown LLM provider: {other}")),
     };
 
-    let resp = req.json(&body).send().await.map_err(|e| e.to_string())?;
+    // without_url() strips the request URL from the error string. For Gemini, the
+    // URL contains the API key as a ?key= query parameter; without this, a network
+    // failure would return the key verbatim to the frontend.
+    let resp = req
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.without_url().to_string())?;
     let status = resp.status().as_u16();
     // Providers return JSON for both success and error; fall back to Null if not JSON.
     let body = resp.json::<Value>().await.unwrap_or(Value::Null);
@@ -105,5 +112,16 @@ mod tests {
         assert_eq!(url.host_str(), Some("generativelanguage.googleapis.com"));
         // The single key query param is the only query; no injected params survive.
         assert_eq!(url.query_pairs().count(), 1);
+    }
+
+    #[test]
+    fn gemini_url_contains_api_key_in_query_string() {
+        // Documents WHY llm_complete uses .without_url() when mapping the send error:
+        // the key is embedded as ?key= and would appear in the default reqwest error string.
+        let url = gemini_url("gemini-2.0-flash", "sk-secret-abc").unwrap();
+        assert!(
+            url.as_str().contains("sk-secret-abc"),
+            "Gemini URL must embed the key as a query param — strip it from errors with without_url()"
+        );
     }
 }
