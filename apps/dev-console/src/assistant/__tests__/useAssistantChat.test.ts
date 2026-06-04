@@ -29,7 +29,7 @@ function makeStorage() {
 
 describe("useAssistantChat", () => {
   beforeEach(() => {
-    vi.stubGlobal("localStorage", makeStorage());
+    vi.stubGlobal("sessionStorage", makeStorage());
     useAssistantConfig.setState({ provider: "anthropic", model: "claude-sonnet-4-6", keys: { anthropic: "sk-test" } });
     completeMock.mockReset();
   });

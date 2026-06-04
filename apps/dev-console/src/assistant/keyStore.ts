@@ -6,7 +6,7 @@ const STORAGE_KEY = "cyoda-assistant-config";
 interface Persisted {
   provider: ProviderId;
   model: string;
-  /** API keys per provider. localStorage, origin-scoped (BYO_AI-spec §15). */
+  /** API keys per provider. sessionStorage, origin-scoped; cleared on app restart. TODO: migrate to OS keychain via tauri-plugin-keyring (BYO_AI-spec §15). */
   keys: Partial<Record<ProviderId, string>>;
 }
 
@@ -16,7 +16,7 @@ function defaults(): Persisted {
 
 function load(): Persisted {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return defaults();
     const p = JSON.parse(raw) as Partial<Persisted>;
     const provider =
@@ -35,9 +35,9 @@ function load(): Persisted {
 
 function save(p: Persisted): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(p));
   } catch {
-    // localStorage unavailable; in-memory only
+    // sessionStorage unavailable; in-memory only
   }
 }
 

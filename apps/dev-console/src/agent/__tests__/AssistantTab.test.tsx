@@ -32,7 +32,7 @@ const project: DevProject = {
 
 describe("AssistantTab with no workflow selected", () => {
   beforeEach(() => {
-    vi.stubGlobal("localStorage", makeStorage());
+    vi.stubGlobal("sessionStorage", makeStorage());
     useAssistantConfig.setState({ provider: "anthropic", model: "claude-sonnet-4-6", keys: {} });
     useProjectStore.setState({ active: project, config: null });
   });

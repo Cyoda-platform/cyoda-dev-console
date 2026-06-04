@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useAssistantConfig } from "../keyStore.js";
 
-// The test env's built-in localStorage shim is incomplete, so stub a real in-memory one.
 function makeStorage() {
   const map = new Map<string, string>();
   return {
@@ -14,7 +13,7 @@ function makeStorage() {
 
 describe("useAssistantConfig", () => {
   beforeEach(() => {
-    vi.stubGlobal("localStorage", makeStorage());
+    vi.stubGlobal("sessionStorage", makeStorage());
     useAssistantConfig.setState({ provider: "anthropic", model: "claude-sonnet-4-6", keys: {} });
   });
   afterEach(() => vi.unstubAllGlobals());
@@ -25,10 +24,13 @@ describe("useAssistantConfig", () => {
     expect(useAssistantConfig.getState().model).toBe("gpt-5.4");
   });
 
-  it("stores per-provider keys and persists them to localStorage", () => {
+  it("stores per-provider keys and persists them to sessionStorage (not localStorage)", () => {
     useAssistantConfig.getState().setKey("anthropic", "sk-ant-123");
     expect(useAssistantConfig.getState().keys.anthropic).toBe("sk-ant-123");
-    const persisted = JSON.parse(localStorage.getItem("cyoda-assistant-config")!);
+    // Keys are in sessionStorage
+    const persisted = JSON.parse(sessionStorage.getItem("cyoda-assistant-config")!);
     expect(persisted.keys.anthropic).toBe("sk-ant-123");
+    // Keys are NOT in localStorage
+    expect(localStorage.getItem("cyoda-assistant-config")).toBeNull();
   });
 });
