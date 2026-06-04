@@ -97,7 +97,7 @@ export function EntityRoute({
         </span>
 
         {viewMode === "json" && dirty && (
-          <span style={{ color: t.color.cyodaOrange, flexShrink: 0 }}>● Unsaved</span>
+          <span style={{ color: "#D97706", flexShrink: 0 }}>● Unsaved</span>
         )}
         {viewMode === "json" && (
           <button
