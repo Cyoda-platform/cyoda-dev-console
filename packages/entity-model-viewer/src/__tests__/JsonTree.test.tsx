@@ -34,8 +34,8 @@ describe("JsonTree", () => {
     expect(screen.getByText('"one"')).toBeDefined();
     expect(screen.getByText('"two"')).toBeDefined();
 
-    // Click the collapse button (▾)
-    fireEvent.click(screen.getByText("▾"));
+    // Click the toggle button (› with CSS rotation)
+    fireEvent.click(screen.getByRole("button"));
 
     // Children no longer rendered
     expect(screen.queryByText('"one"')).toBeNull();
@@ -44,8 +44,9 @@ describe("JsonTree", () => {
 
   it("re-expands after collapsing", () => {
     wrap(<JsonTree value={{ x: 99 }} />);
-    fireEvent.click(screen.getByText("▾"));
-    fireEvent.click(screen.getByText("▸"));
+    const btn = screen.getByRole("button");
+    fireEvent.click(btn); // collapse
+    fireEvent.click(btn); // expand
     expect(screen.getByText("99")).toBeDefined();
   });
 
