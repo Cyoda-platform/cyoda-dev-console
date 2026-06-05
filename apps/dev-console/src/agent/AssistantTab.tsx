@@ -6,6 +6,7 @@ import { useAssistantChat } from "../assistant/useAssistantChat.js";
 import { AiSetup } from "../assistant/AiSetup.js";
 import { ProposedChange } from "../assistant/ProposedChange.js";
 import { ChatBubble, ChatComposer } from "../assistant/chatUi.js";
+import { toRelativePath } from "./pathUtils.js";
 
 /**
  * Full-page assistant (kept for setup / general use, reachable from the AI route). Uses the
@@ -24,7 +25,7 @@ export function AssistantTab() {
       workflowPath && projectRoot
         ? (await readTextFile(workflowPath, projectRoot)).contents
         : undefined,
-    ...(workflowPath && projectRoot ? { relPath: relativeOf(workflowPath, projectRoot) } : {}),
+    ...(workflowPath && projectRoot ? { relPath: toRelativePath(workflowPath, projectRoot) ?? workflowPath } : {}),
     onApply: async (canonical) => {
       if (!workflowPath || !projectRoot) return;
       await writeTextFileWithConfirmedOverwrite(workflowPath, canonical, projectRoot);
@@ -100,6 +101,3 @@ export function AssistantTab() {
   );
 }
 
-function relativeOf(abs: string, root: string): string {
-  return abs.startsWith(root) ? abs.slice(root.length).replace(/^[/\\]+/, "") : abs;
-}

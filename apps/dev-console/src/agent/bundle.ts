@@ -10,6 +10,7 @@ import {
   TEMPLATE_VERSION,
   type TemplateInput,
 } from "./templates.js";
+import { toRelativePath } from "./pathUtils.js";
 
 /** Directory (relative to the project root) the bundle is written into. */
 export const BUNDLE_DIR = "cyoda-agent-task";
@@ -33,14 +34,6 @@ export interface BundleInputs {
   brief?: string;
 }
 
-function toRelative(absPath: string | undefined, projectRoot: string): string | undefined {
-  if (!absPath) return undefined;
-  if (absPath.startsWith(projectRoot)) {
-    return absPath.slice(projectRoot.length).replace(/^[/\\]+/, "");
-  }
-  return absPath;
-}
-
 /**
  * Assemble the task-bundle file list (BYO_AI-spec §19). Pure: the caller writes the
  * returned files. Throws if a provided profile name/endpoint is unsafe.
@@ -49,8 +42,8 @@ export function assembleBundle(inputs: BundleInputs): BundleFile[] {
   const { request, context, profile } = inputs;
   const ruleFile = request.agentRuleFile;
 
-  const workflowRel = toRelative(context.selectedWorkflowPath, context.projectRoot);
-  const entityRel = toRelative(context.selectedEntityPath, context.projectRoot);
+  const workflowRel = toRelativePath(context.selectedWorkflowPath, context.projectRoot);
+  const entityRel = toRelativePath(context.selectedEntityPath, context.projectRoot);
   const templateInput: TemplateInput = {
     projectRoot: context.projectRoot,
     ...(workflowRel ? { workflowRelPath: workflowRel } : {}),

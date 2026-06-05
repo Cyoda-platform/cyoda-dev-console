@@ -6,6 +6,7 @@ import { detectAgents, writeProjectTextFile } from "../ipc/agent.js";
 import { readTextFile } from "../ipc/fsio.js";
 import { useAgentContext } from "./AgentContext.js";
 import { generateRuleFile, RULE_FILE_FOR_AGENT, type AgentId, type TemplateInput } from "./templates.js";
+import { toRelativePath } from "./pathUtils.js";
 
 interface AgentCardMeta {
   id: AgentId;
@@ -90,8 +91,8 @@ function AgentCard({
   const [confirmOverwrite, setConfirmOverwrite] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const workflowRel = relativeTo(context.selectedWorkflowPath, projectRoot);
-  const entityRel = relativeTo(context.selectedEntityPath, projectRoot);
+  const workflowRel = toRelativePath(context.selectedWorkflowPath, projectRoot);
+  const entityRel = toRelativePath(context.selectedEntityPath, projectRoot);
   const templateInput: TemplateInput = {
     projectRoot,
     ...(workflowRel ? { workflowRelPath: workflowRel } : {}),
@@ -266,7 +267,3 @@ function Note({ children }: { children: React.ReactNode }) {
   );
 }
 
-function relativeTo(abs: string | undefined, root: string): string | undefined {
-  if (!abs) return undefined;
-  return abs.startsWith(root) ? abs.slice(root.length).replace(/^[/\\]+/, "") : abs;
-}
