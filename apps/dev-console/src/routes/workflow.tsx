@@ -101,8 +101,13 @@ export function WorkflowRoute({
   // AI assistant scoped to this open file. Owned here (not in the panel) so the conversation
   // survives the drawer being toggled closed/open. Proposals are applied to the in-memory
   // editor session — not written to disk — so the existing dirty/Save flow stays in control.
+  const getCurrentJson = useCallback(
+    () => (session.document ? serializeImportPayload(session.document) : undefined),
+    [session.document],
+  );
+
   const assistant = useAssistantChat({
-    getCurrentJson: () => (session.document ? serializeImportPayload(session.document) : undefined),
+    getCurrentJson,
     relPath: relativePath,
     onApply: (canonical) => {
       // F-09: guard against silently discarding unsaved graph-editor edits.
