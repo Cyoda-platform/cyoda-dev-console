@@ -167,19 +167,48 @@
 
 ## Fix Progress
 
-| ID | File | Status |
+All 14 items completed on 2026-06-05. **110 new tests** added across 14 new test files.
+
+| ID | File | Status | Tests | Commit |
+|---|---|---|---|---|
+| T-01 | `assistant/WorkflowAssistantPanel.tsx` | ✅ done | 10 | `6990a82` |
+| T-02 | `assistant/ProposedChange.tsx` | ✅ done | 6 | `47bf0f3` |
+| T-03 | `assistant/chatUi.tsx` (ChatBubble + ChatComposer) | ✅ done | 11 | `47bf0f3` |
+| T-04 | `assistant/systemPrompt.ts` | ✅ done | 7 | `47bf0f3` |
+| T-05 | `assistant/llmClient.ts` | ✅ done | 8 | `6990a82` |
+| T-06 | `routes/agent.tsx` | ✅ done | 7 | `6990a82` |
+| T-07 | `agent/templates.ts` | ✅ done | 18 | `ddf9810` |
+| T-08 | `components/ContextMenu.tsx` | ✅ done | 5 | `ddf9810` |
+| T-09 | `components/CustomSelect.tsx` | ✅ done | 8 | `ddf9810` |
+| T-10 | ChatComposer ⌘Enter | ✅ done | covered in T-03 | `47bf0f3` |
+| T-11 | `console-design-system/WarningBanner` | ✅ done | 6 | `23d6488` |
+| T-12 | `console-design-system/FilePath` | ✅ done | 6 | `23d6488` |
+| T-13 | `workflow-editor-host/ParseErrorView` | ✅ done | 5 | `23d6488` |
+| T-14 | `workflow-editor-host/OverwriteConfirmModal` | ✅ done | 5 | `23d6488` |
+
+### Additional tests added during the session
+
+| File | Tests | Notes | Commit |
+|---|---|---|---|
+| `agent/ConnectTab.tsx` | 7 | detection, write, overwrite confirm, error | `8cbcd51` |
+| `agent/BundleTab.tsx` | 6 | UI tests; also fixed `written` scoping bug in catch block | `8cbcd51` |
+
+### Updated coverage estimate
+
+| Area | Before | After |
 |---|---|---|
-| T-01 | `assistant/WorkflowAssistantPanel.tsx` | ⏳ pending |
-| T-02 | `assistant/ProposedChange.tsx` | ⏳ pending |
-| T-03 | `assistant/chatUi.tsx` | ⏳ pending |
-| T-04 | `assistant/systemPrompt.ts` | ⏳ pending |
-| T-05 | `assistant/llmClient.ts` | ⏳ pending |
-| T-06 | `routes/agent.tsx` | ⏳ pending |
-| T-07 | `agent/templates.ts` | ⏳ pending |
-| T-08 | `components/ContextMenu.tsx` | ⏳ pending |
-| T-09 | `components/CustomSelect.tsx` | ⏳ pending |
-| T-10 | ChatComposer ⌘Enter | ⏳ pending |
-| T-11 | `WarningBanner` severity variants | ⏳ pending |
-| T-12 | `FilePath` copy button | ⏳ pending |
-| T-13 | `ParseErrorView` | ⏳ pending |
-| T-14 | `OverwriteConfirmModal` | ⏳ pending |
+| `assistant/` module | 36% | ~85% |
+| `agent/` module | 88% | 100% |
+| routes (agent) | 0% | covered |
+| `components/` (ContextMenu, CustomSelect) | 0% | covered |
+| `console-design-system` | 25% | 63% |
+| `workflow-editor-host` | 20% | 80% |
+
+### Remaining gaps (no plans to address)
+
+- `components/CompareView.tsx`, `FileTree.tsx`, `ErrorBoundary.tsx` — UI-only wrappers, no complex logic
+- `routes/workflow.tsx` — save/compare/external-change flows not tested (only lifecycle)
+- `routes/settings.tsx` — save/remove mutations not tested
+- `state/projectStore.ts` — exercised via component tests
+- `ipc/*.ts` — require Tauri runtime, intentionally not unit-tested
+- `agent/AgentContext.tsx` — thin context provider, exercised via consumer tests
