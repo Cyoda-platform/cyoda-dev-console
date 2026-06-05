@@ -53,6 +53,7 @@ export function BundleTab() {
     if (!ctx) return;
     setBusy(true);
     setResult(null);
+    const written: string[] = [];
     try {
       const workflowJson =
         includeWorkflow && ctx.selectedWorkflowPath
@@ -82,7 +83,6 @@ export function BundleTab() {
         ...(brief.trim() ? { brief: brief.trim() } : {}),
       });
 
-      const written: string[] = [];
       for (const f of files) {
         const res = await writeProjectTextFile(ctx.projectRoot, f.relativePath, f.contents);
         written.push(res.path);
