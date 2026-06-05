@@ -68,6 +68,11 @@ describe("assembleBundle", () => {
     expect(manifest.cyodaProfile).toBe("prod");
     expect(manifest.ruleFile).toBe("CLAUDE.md");
   });
+
+  it("always writes MANIFEST.json last (commit-marker invariant)", () => {
+    const files = assembleBundle({ request: baseReq, context: ctx });
+    expect(files.at(-1)!.relativePath).toMatch(/MANIFEST\.json$/);
+  });
 });
 
 describe("profile-instructions validation", () => {

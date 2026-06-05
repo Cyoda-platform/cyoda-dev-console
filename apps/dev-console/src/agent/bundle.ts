@@ -99,6 +99,9 @@ export function assembleBundle(inputs: BundleInputs): BundleFile[] {
     ...(profile ? { cyodaProfile: profile.name } : {}),
     templateVersion: TEMPLATE_VERSION,
   };
+  // MANIFEST.json is intentionally the last file written. Its presence on disk signals
+  // a complete bundle — if any earlier write fails, no MANIFEST exists and agents should
+  // treat the cyoda-agent-task/ directory as incomplete.
   files.push({
     relativePath: `${BUNDLE_DIR}/MANIFEST.json`,
     contents: JSON.stringify(manifest, null, 2) + "\n",

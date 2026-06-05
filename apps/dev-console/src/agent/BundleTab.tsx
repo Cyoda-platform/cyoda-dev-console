@@ -89,7 +89,12 @@ export function BundleTab() {
       }
       setResult({ paths: written });
     } catch (e) {
-      setResult({ paths: [], error: (e as Error).message ?? String(e) });
+      // written[] may contain partial files; MANIFEST.json was not reached so the bundle
+      // is incomplete. The user may need to delete the cyoda-agent-task/ folder manually.
+      const detail = written.length > 0
+        ? ` (${written.length} file(s) were written before the error — you may need to delete the cyoda-agent-task/ folder manually)`
+        : "";
+      setResult({ paths: [], error: `${(e as Error).message ?? String(e)}${detail}` });
     } finally {
       setBusy(false);
     }
