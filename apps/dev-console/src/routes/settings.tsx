@@ -5,8 +5,42 @@ import { loadAppConfig, saveAppConfig } from "../ipc/config.js";
 import { selectProjectRoot } from "../ipc/project.js";
 import { useProjectStore } from "../state/projectStore.js";
 import type { AppConfig, DevProject } from "@cyoda/workflow-project-model";
-import { Button, EmptyState, FilePath, Panel } from "@cyoda/console-design-system";
-import { useTokens } from "@cyoda/console-design-system";
+import { Button, EmptyState, FilePath, Panel, useTokens } from "@cyoda/console-design-system";
+
+function ConfirmRemoveModal({
+  projectName,
+  onConfirm,
+  onCancel,
+}: {
+  projectName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTokens();
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        display: "grid",
+        placeItems: "center",
+        zIndex: 1000,
+      }}
+    >
+      <Panel title="Remove project?">
+        <p style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.md, color: t.color.text, margin: `0 0 ${t.space.sm}` }}>
+          <strong>{projectName}</strong> will be removed from the project list.
+          The files on disk are not affected.
+        </p>
+        <div style={{ display: "flex", gap: t.space.sm, justifyContent: "flex-end", marginTop: t.space.md }}>
+          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+          <Button variant="danger" onClick={onConfirm}>Remove</Button>
+        </div>
+      </Panel>
+    </div>
+  );
+}
 
 function toRelative(abs: string, rootPath: string): string | null {
   const clean = abs.replace(/\/$/, "");
@@ -111,6 +145,7 @@ export function SettingsRoute() {
   const { recentProjects } = configQ.data;
 
   return (
+    <>
     <div style={{ padding: t.space.lg, maxWidth: 900, margin: "0 auto", fontFamily: t.font.sans }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: t.space.lg }}>
         <h2 style={{ fontSize: t.font.sizes.xl, margin: 0, color: t.color.text }}>Projects</h2>
@@ -161,27 +196,13 @@ export function SettingsRoute() {
                   >
                     Switch
                   </Button>
-                  {confirmRemoveId === p.id ? (
-                    <>
-                      <Button variant="secondary" onClick={() => setConfirmRemoveId(null)}>
-                        Cancel
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => { void handleRemove(p.id); setConfirmRemoveId(null); }}
-                      >
-                        Yes, remove
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      style={{ color: t.color.danger, marginLeft: "auto" }}
-                      onClick={() => setConfirmRemoveId(p.id)}
-                    >
-                      Remove
-                    </Button>
-                  )}
+                  <Button
+                    variant="secondary"
+                    style={{ color: t.color.danger, marginLeft: "auto" }}
+                    onClick={() => setConfirmRemoveId(p.id)}
+                  >
+                    Remove
+                  </Button>
                 </div>
 
                 {configOpen && (
@@ -222,6 +243,17 @@ export function SettingsRoute() {
         </div>
       )}
     </div>
+
+    {confirmRemoveId !== null && (
+      <ConfirmRemoveModal
+        projectName={
+          configQ.data?.recentProjects.find((p) => p.id === confirmRemoveId)?.name ?? ""
+        }
+        onConfirm={() => { void handleRemove(confirmRemoveId); setConfirmRemoveId(null); }}
+        onCancel={() => setConfirmRemoveId(null)}
+      />
+    )}
+    </>
   );
 }
 
