@@ -11,10 +11,14 @@ apps/dev-console/src-tauri/gen/
 coverage/
 .vite/
 
+# IDE
+.idea/
+
 # Local AI / planning files
 CLAUDE.md
 docs/BYO_AI-spec.md
 docs/phases/
 docs/superpowers/
+.superpowers/
 # Local environment overrides — use apps/dev-console/.env.example as the template
 apps/dev-console/.env
