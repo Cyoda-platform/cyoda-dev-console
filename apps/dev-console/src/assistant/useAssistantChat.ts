@@ -102,7 +102,9 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
           }
         }
       } else if (!result.text) {
-        setMessages((m) => [...m, { role: "assistant", content: "(no response)" }]);
+        // Do NOT push to messages — two consecutive assistant turns break Anthropic's
+        // role-alternation requirement. Show as a transient error instead.
+        setError("The model returned an empty response. Please try again.");
       }
     } catch (e) {
       setError((e as Error).message ?? String(e));

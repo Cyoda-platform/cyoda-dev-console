@@ -50,8 +50,8 @@ export const openai: LlmProvider = {
         if (typeof args.workflow_json === "string") {
           toolCall = { workflowJson: args.workflow_json };
         }
-      } catch {
-        // malformed tool arguments — leave toolCall unset
+      } catch (err) {
+        throw new Error(`Model returned malformed tool-call arguments: ${String(err)}`);
       }
     }
 

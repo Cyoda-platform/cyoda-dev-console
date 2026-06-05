@@ -77,6 +77,23 @@ describe("openai adapter", () => {
     });
     expect(result.text).toBe("hello");
   });
+
+  it("throws on malformed tool-call JSON arguments", () => {
+    expect(() =>
+      openai.parseResponse({
+        choices: [
+          {
+            message: {
+              content: null,
+              tool_calls: [
+                { function: { name: TOOL_NAME, arguments: "NOT_VALID_JSON" } },
+              ],
+            },
+          },
+        ],
+      })
+    ).toThrow(/malformed tool-call arguments/i);
+  });
 });
 
 describe("gemini adapter", () => {

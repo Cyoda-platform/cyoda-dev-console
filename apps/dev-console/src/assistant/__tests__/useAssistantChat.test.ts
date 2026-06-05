@@ -86,6 +86,22 @@ describe("useAssistantChat", () => {
     expect(result.current.applied).toBeNull();
   });
 
+  it("shows an error (not a chat message) when the model returns neither text nor a tool call", async () => {
+    completeMock.mockResolvedValue({}); // neither text nor toolCall
+
+    const { result } = renderHook(() =>
+      useAssistantChat({ getCurrentJson: () => undefined, onApply: vi.fn() }),
+    );
+
+    act(() => result.current.setInput("hello"));
+    await act(async () => { await result.current.send(); });
+
+    // No synthetic assistant message should appear
+    expect(result.current.messages.every((m) => m.content !== "(no response)")).toBe(true);
+    // An error is shown instead
+    expect(result.current.error).toBeTruthy();
+  });
+
   it("declines to propose when there is no workflow context", async () => {
     completeMock.mockResolvedValue({ toolCall: { workflowJson: WORKFLOW } });
     const onApply = vi.fn();
