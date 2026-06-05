@@ -55,6 +55,7 @@ export function SettingsRoute() {
   const setActive = useProjectStore((s) => s.setActive);
   const [configureOpenId, setConfigureOpenId] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [scanRootError, setScanRootError] = useState<string | null>(null);
 
   const configQ = useQuery({ queryKey: ["app-config"], queryFn: loadAppConfig });
 
@@ -126,15 +127,27 @@ export function SettingsRoute() {
   };
 
   const handleBrowseWorkflowRoot = async (p: DevProject) => {
+    setScanRootError(null);
     const abs = await selectProjectRoot();
     if (!abs) return;
-    await updateProjectField(p.id, { workflowRoot: toRelative(abs, p.rootPath) });
+    const rel = toRelative(abs, p.rootPath);
+    if (rel === null) {
+      setScanRootError(`"${abs}" must be a subfolder inside the project root.`);
+      return;
+    }
+    await updateProjectField(p.id, { workflowRoot: rel });
   };
 
   const handleBrowseEntityRoot = async (p: DevProject) => {
+    setScanRootError(null);
     const abs = await selectProjectRoot();
     if (!abs) return;
-    await updateProjectField(p.id, { entityRoot: toRelative(abs, p.rootPath) });
+    const rel = toRelative(abs, p.rootPath);
+    if (rel === null) {
+      setScanRootError(`"${abs}" must be a subfolder inside the project root.`);
+      return;
+    }
+    await updateProjectField(p.id, { entityRoot: rel });
   };
 
   if (configQ.isPending)
@@ -223,7 +236,7 @@ export function SettingsRoute() {
                       description="Only show workflows from this folder (leave empty to auto-detect)"
                       value={p.workflowRoot}
                       onBrowse={() => void handleBrowseWorkflowRoot(p)}
-                      onClear={() => void updateProjectField(p.id, { workflowRoot: null })}
+                      onClear={() => { setScanRootError(null); void updateProjectField(p.id, { workflowRoot: null }); }}
                       t={t}
                     />
 
@@ -232,9 +245,19 @@ export function SettingsRoute() {
                       description="Only show entities from this folder (leave empty to auto-detect)"
                       value={p.entityRoot}
                       onBrowse={() => void handleBrowseEntityRoot(p)}
-                      onClear={() => void updateProjectField(p.id, { entityRoot: null })}
+                      onClear={() => { setScanRootError(null); void updateProjectField(p.id, { entityRoot: null }); }}
                       t={t}
                     />
+
+                    {scanRootError && (
+                      <div style={{
+                        fontSize: t.font.sizes.sm,
+                        color: t.color.danger,
+                        paddingTop: t.space.xs,
+                      }}>
+                        {scanRootError}
+                      </div>
+                    )}
                   </div>
                 )}
               </Panel>
