@@ -6,7 +6,8 @@ import { ThemeProvider } from "@cyoda/console-design-system";
 import { queryClient } from "../state/queryClient.js";
 
 vi.mock("../ipc/fsio.js", () => ({
-  readTextFile: vi.fn(),
+  // Reject layout file reads — WorkflowRoute .catch(() => {}) handles this gracefully.
+  readTextFile: vi.fn().mockRejectedValue(new Error("not found")),
   writeTextFileWithConfirmedOverwrite: vi.fn(),
   saveFileAs: vi.fn(),
 }));

@@ -6,7 +6,8 @@ import { queryClient } from "../state/queryClient.js";
 import { WorkflowRoute } from "../routes/workflow.js";
 
 vi.mock("../ipc/fsio.js", () => ({
-  readTextFile: vi.fn(),
+  // Reject layout file reads — WorkflowRoute .catch(() => {}) handles this gracefully.
+  readTextFile: vi.fn().mockRejectedValue(new Error("not found")),
   writeTextFileWithConfirmedOverwrite: vi.fn(),
   saveFileAs: vi.fn(),
 }));

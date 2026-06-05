@@ -77,15 +77,16 @@ describe("ProjectExplorer", () => {
     expect(screen.getByRole("button", { name: /Entities/ })).toBeInTheDocument();
   });
 
-  it("renders Project section", () => {
+  it("renders project action buttons (Settings, Rescan)", () => {
     wrap(<ProjectExplorer {...baseProps} allEntries={[]} />);
-    expect(screen.getByRole("button", { name: /Project/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rescan" })).toBeInTheDocument();
   });
 
   it("shows a top-level AI Agent nav entry only when onOpenAgent is provided", async () => {
     const onOpenAgent = vi.fn();
     wrap(<ProjectExplorer {...baseProps} allEntries={[]} onOpenAgent={onOpenAgent} />);
-    const agentBtn = screen.getByRole("button", { name: "AI Assistant" });
+    const agentBtn = screen.getByRole("button", { name: /AI Assistant/ });
     expect(agentBtn).toBeInTheDocument();
     await userEvent.click(agentBtn);
     expect(onOpenAgent).toHaveBeenCalledTimes(1);
@@ -93,7 +94,7 @@ describe("ProjectExplorer", () => {
 
   it("hides the AI Agent nav entry when onOpenAgent is absent", () => {
     wrap(<ProjectExplorer {...baseProps} allEntries={[]} />);
-    expect(screen.queryByRole("button", { name: "AI Assistant" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /AI Assistant/ })).not.toBeInTheDocument();
   });
 
   it("shows workflow display name — not the full path", () => {
@@ -190,12 +191,11 @@ describe("ProjectExplorer", () => {
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
-  it("calls onOpenSettings from Project section", async () => {
+  it("calls onOpenSettings when Settings button is clicked", async () => {
     const onOpenSettings = vi.fn();
     wrap(
       <ProjectExplorer {...baseProps} allEntries={[]} onOpenSettings={onOpenSettings} />,
     );
-    await userEvent.click(screen.getByRole("button", { name: /Project/ }));
     await userEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });
