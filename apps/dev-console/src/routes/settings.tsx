@@ -198,7 +198,7 @@ export function SettingsRoute() {
                 <div style={{ display: "flex", alignItems: "center", gap: t.space.sm, flexWrap: "wrap" }}>
                   <Button
                     variant="secondary"
-                    onClick={() => setConfigureOpenId(configOpen ? null : p.id)}
+                    onClick={() => { setScanRootError(null); setConfigureOpenId(configOpen ? null : p.id); }}
                   >
                     {configOpen ? "Close config" : "Configure"}
                   </Button>
