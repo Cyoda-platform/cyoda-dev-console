@@ -67,7 +67,7 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
     setInput("");
     setError(null);
     setApplied(null);
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: userText }];
+    const nextMessages: ChatMessage[] = [...messages, { id: crypto.randomUUID(), role: "user", content: userText }];
     setMessages(nextMessages);
     setSending(true);
     try {
@@ -79,13 +79,13 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
       const result = await complete({ provider, apiKey, model, system, messages: nextMessages });
 
       if (result.text) {
-        setMessages((m) => [...m, { role: "assistant", content: result.text! }]);
+        setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: result.text! }]);
       }
       if (result.toolCall) {
         if (current === undefined) {
           setMessages((m) => [
             ...m,
-            { role: "assistant", content: "Open a workflow file in the editor so I can apply this change." },
+            { id: crypto.randomUUID(), role: "assistant", content: "Open a workflow file in the editor so I can apply this change." },
           ]);
         } else {
           const validated = validateAndCanonicalize(result.toolCall.workflowJson);
@@ -95,6 +95,7 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
             setMessages((m) => [
               ...m,
               {
+                id: crypto.randomUUID(),
                 role: "assistant",
                 content: "I proposed a change but it failed validation:\n- " + validated.issues.join("\n- "),
               },

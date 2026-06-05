@@ -68,8 +68,8 @@ export function AssistantTab() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: t.space.sm }}>
-        {chat.messages.map((m, i) => (
-          <ChatBubble key={i} role={m.role} content={m.content} />
+        {chat.messages.map((m) => (
+          <ChatBubble key={m.id} role={m.role} content={m.content} />
         ))}
       </div>
 

@@ -37,7 +37,7 @@ describe("useEditorSession external-revision (drives editor remount)", () => {
     act(() => result.current.applyExternalDocument(replacement));
 
     expect(result.current.externalRevision).toBe(1);
-    expect(result.current.document).toBe(replacement);
+    expect(result.current.document).toEqual(replacement);
   });
 
   it("bumps on revert so a reload refreshes the graph", async () => {

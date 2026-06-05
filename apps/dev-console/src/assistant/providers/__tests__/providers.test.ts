@@ -7,8 +7,8 @@ import { TOOL_NAME, type BuildRequestInput } from "../types.js";
 const input: BuildRequestInput = {
   system: "You edit Cyoda workflows.",
   messages: [
-    { role: "user", content: "Add a refund transition." },
-    { role: "assistant", content: "Sure." },
+    { id: "msg-1", role: "user", content: "Add a refund transition." },
+    { id: "msg-2", role: "assistant", content: "Sure." },
   ],
   model: "test-model",
 };
