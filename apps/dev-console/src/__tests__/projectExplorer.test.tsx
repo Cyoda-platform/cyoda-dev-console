@@ -77,10 +77,10 @@ describe("ProjectExplorer", () => {
     expect(screen.getByRole("button", { name: /Entities/ })).toBeInTheDocument();
   });
 
-  it("renders project action buttons (Settings, Rescan)", () => {
+  it("renders the explorer with icon action buttons in the header", () => {
     wrap(<ProjectExplorer {...baseProps} allEntries={[]} />);
-    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Rescan" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rescan project" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reveal in Finder" })).toBeInTheDocument();
   });
 
   it("shows a top-level AI Agent nav entry only when onOpenAgent is provided", async () => {
@@ -191,13 +191,12 @@ describe("ProjectExplorer", () => {
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
-  it("calls onOpenSettings when Settings button is clicked", async () => {
+  it("onOpenSettings prop is accepted (Settings is opened via the header, not the sidebar)", () => {
+    // Settings navigation moved to HeaderContext in the redesign.
+    // Verify the component accepts the prop without crashing.
     const onOpenSettings = vi.fn();
-    wrap(
-      <ProjectExplorer {...baseProps} allEntries={[]} onOpenSettings={onOpenSettings} />,
-    );
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(onOpenSettings).toHaveBeenCalledOnce();
+    wrap(<ProjectExplorer {...baseProps} allEntries={[]} onOpenSettings={onOpenSettings} />);
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
   });
 
   it("search input has accessible label", () => {

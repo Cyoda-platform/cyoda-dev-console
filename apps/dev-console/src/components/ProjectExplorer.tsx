@@ -257,13 +257,6 @@ export function ProjectExplorer({
 
         </div>
 
-        {/* Project actions: Settings, Rescan, Reveal, Open in IDE */}
-        <ProjectActions
-          onSettings={onOpenSettings}
-          onRescan={onRescan}
-          projectRoot={projectRoot}
-        />
-
         {/* Bottom bar: collapse */}
         <div
           style={{
