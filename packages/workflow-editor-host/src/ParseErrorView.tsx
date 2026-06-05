@@ -1,7 +1,8 @@
 import type { ValidationIssue } from "@cyoda/workflow-core";
-import { WarningBanner } from "@cyoda/console-design-system";
+import { WarningBanner, useTokens } from "@cyoda/console-design-system";
 
 export function ParseErrorView({ issues, rawContent }: { issues: ValidationIssue[]; rawContent?: string }) {
+  const t = useTokens();
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <WarningBanner severity="caution">
@@ -15,9 +16,9 @@ export function ParseErrorView({ issues, rawContent }: { issues: ValidationIssue
       {rawContent != null && (
         <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
           <div style={{
-            fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+            fontFamily: t.font.mono,
             fontSize: 12,
-            color: "#525252",
+            color: t.color.textMuted,
             marginBottom: 8,
           }}>
             File contents:
@@ -25,13 +26,13 @@ export function ParseErrorView({ issues, rawContent }: { issues: ValidationIssue
           <pre style={{
             margin: 0,
             padding: 12,
-            background: "#F4F4F4",
-            borderRadius: 2,
-            fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+            background: t.color.surfaceMuted,
+            borderRadius: 4,
+            fontFamily: t.font.mono,
             fontSize: 12,
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
-            color: "#161616",
+            color: t.color.text,
           }}>
             {rawContent}
           </pre>

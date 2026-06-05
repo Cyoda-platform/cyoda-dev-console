@@ -148,7 +148,7 @@ export function WorkflowAssistantPanel({
         )}
 
         {chat.applied && (
-          <WarningBanner severity="warning">
+          <WarningBanner severity="success">
             {chat.applied} Review the graph, then Save to write to disk.
           </WarningBanner>
         )}

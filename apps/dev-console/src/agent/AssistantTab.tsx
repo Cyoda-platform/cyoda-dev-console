@@ -84,7 +84,7 @@ export function AssistantTab() {
         />
       )}
 
-      {chat.applied && <WarningBanner severity="warning">{chat.applied}</WarningBanner>}
+      {chat.applied && <WarningBanner severity="success">{chat.applied}</WarningBanner>}
       {chat.error && (
         <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.danger }}>{chat.error}</div>
       )}
