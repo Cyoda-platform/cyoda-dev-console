@@ -1,11 +1,10 @@
 import { useEffect, useRef } from "react";
-import { WarningBanner, useTokens } from "@cyoda/console-design-system";
+import { useTokens } from "@cyoda/console-design-system";
 import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
 import { useAgentContext } from "./AgentContext.js";
 import { useAssistantChat } from "../assistant/useAssistantChat.js";
-import { AiSetup } from "../assistant/AiSetup.js";
-import { ProposedChange } from "../assistant/ProposedChange.js";
-import { ChatBubble, ChatComposer } from "../assistant/chatUi.js";
+import { ChatContent } from "../assistant/ChatContent.js";
+import { ChatComposer } from "../assistant/chatUi.js";
 import { toRelativePath } from "./pathUtils.js";
 
 /**
@@ -25,7 +24,9 @@ export function AssistantTab() {
       workflowPath && projectRoot
         ? (await readTextFile(workflowPath, projectRoot)).contents
         : undefined,
-    ...(workflowPath && projectRoot ? { relPath: toRelativePath(workflowPath, projectRoot) ?? workflowPath } : {}),
+    ...(workflowPath && projectRoot
+      ? { relPath: toRelativePath(workflowPath, projectRoot) ?? workflowPath }
+      : {}),
     onApply: async (canonical) => {
       if (!workflowPath || !projectRoot) return;
       await writeTextFileWithConfirmedOverwrite(workflowPath, canonical, projectRoot);
@@ -58,36 +59,26 @@ export function AssistantTab() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: t.space.md, padding: t.space.lg }}>
-      <AiSetup />
-
-      {!workflowPath && (
-        <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
-          Open a workflow file in the editor and I can propose & apply edits. You can still ask
-          general questions below.
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: t.space.sm }}>
-        {chat.messages.map((m) => (
-          <ChatBubble key={m.id} role={m.role} content={m.content} />
-        ))}
-      </div>
-
-      {chat.proposal && (
-        <ProposedChange
-          current={chat.proposal.current}
-          proposed={chat.proposal.canonical}
-          applying={chat.applying}
-          onApply={() => void chat.applyProposal()}
-          onCancel={chat.discardProposal}
-        />
-      )}
-
-      {chat.applied && <WarningBanner severity="success">{chat.applied}</WarningBanner>}
-      {chat.error && (
-        <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.danger }}>{chat.error}</div>
-      )}
+    <div
+      style={{ display: "flex", flexDirection: "column", gap: t.space.md, padding: t.space.lg }}
+    >
+      <ChatContent
+        chat={chat}
+        hint={
+          !workflowPath ? (
+            <div
+              style={{
+                fontFamily: t.font.sans,
+                fontSize: t.font.sizes.sm,
+                color: t.color.textMuted,
+              }}
+            >
+              Open a workflow file in the editor and I can propose & apply edits. You can
+              still ask general questions below.
+            </div>
+          ) : undefined
+        }
+      />
 
       <ChatComposer
         value={chat.input}
@@ -95,9 +86,12 @@ export function AssistantTab() {
         onSend={() => void chat.send()}
         sending={chat.sending}
         canSend={chat.canSend}
-        placeholder={chat.hasKey ? "Ask about or change the workflow… (⌘/Ctrl+Enter to send)" : "Add an API key above to start"}
+        placeholder={
+          chat.hasKey
+            ? "Ask about or change the workflow… (⌘/Ctrl+Enter to send)"
+            : "Add an API key above to start"
+        }
       />
     </div>
   );
 }
-
