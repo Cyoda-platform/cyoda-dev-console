@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { WarningBanner, useTokens } from "@cyoda/console-design-system";
 import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
 import { useAgentContext } from "./AgentContext.js";
@@ -29,6 +30,23 @@ export function AssistantTab() {
       await writeTextFileWithConfirmedOverwrite(workflowPath, canonical, projectRoot);
     },
   });
+
+  // Keep a stable ref to discardProposal so the effect below doesn't re-fire on
+  // every render (discardProposal is a new reference each render).
+  const discardRef = useRef(chat.discardProposal);
+  useEffect(() => { discardRef.current = chat.discardProposal; });
+
+  // Clear any pending proposal when the workflow context changes.
+  // The proposal was computed against the old workflow and must not be applied to the new one.
+  // Skip the initial mount — only discard when the path actually changes to a new value.
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    discardRef.current();
+  }, [workflowPath]);
 
   if (!ctx) {
     return (
