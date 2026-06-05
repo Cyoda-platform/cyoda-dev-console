@@ -122,11 +122,15 @@ function AgentCard({
   }
 
   async function onWriteClick() {
-    if (await fileExists()) {
-      setConfirmOverwrite(true);
-      return;
+    try {
+      if (await fileExists()) {
+        setConfirmOverwrite(true);
+        return;
+      }
+      await write();
+    } catch (e) {
+      setStatus(`Failed: ${(e as Error).message ?? String(e)}`);
     }
-    await write();
   }
 
   return (
