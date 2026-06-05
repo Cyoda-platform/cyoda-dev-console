@@ -16,3 +16,5 @@ CLAUDE.md
 docs/BYO_AI-spec.md
 docs/phases/
 docs/superpowers/
+# Local environment overrides — use apps/dev-console/.env.example as the template
+apps/dev-console/.env
