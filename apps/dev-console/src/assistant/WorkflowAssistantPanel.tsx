@@ -1,7 +1,6 @@
-import { WarningBanner, useTokens } from "@cyoda/console-design-system";
-import { AiSetup } from "./AiSetup.js";
-import { ProposedChange } from "./ProposedChange.js";
-import { ChatBubble, ChatComposer } from "./chatUi.js";
+import { useTokens } from "@cyoda/console-design-system";
+import { ChatContent } from "./ChatContent.js";
+import { ChatComposer } from "./chatUi.js";
 import type { AssistantChat } from "./useAssistantChat.js";
 
 /**
@@ -26,7 +25,6 @@ export function WorkflowAssistantPanel({
   onClose: () => void;
 }) {
   const t = useTokens();
-  const hasWorkflow = parseOk;
 
   return (
     <div
@@ -83,7 +81,7 @@ export function WorkflowAssistantPanel({
         </button>
       </div>
 
-      {/* Scrollable body: context + setup + chat + proposal */}
+      {/* Scrollable body */}
       <div
         style={{
           flex: 1,
@@ -94,6 +92,7 @@ export function WorkflowAssistantPanel({
           gap: t.space.md,
         }}
       >
+        {/* Context: file path + parse/dirty status */}
         <div
           style={{
             display: "flex",
@@ -116,51 +115,40 @@ export function WorkflowAssistantPanel({
             {relativePath}
           </span>
           <span>
-            {hasWorkflow ? "Valid workflow" : "No valid workflow open"}
-            {hasWorkflow && dirty ? " · unsaved changes" : ""}
+            {parseOk ? "Valid workflow" : "No valid workflow open"}
+            {parseOk && dirty ? " · unsaved changes" : ""}
           </span>
         </div>
 
-        <AiSetup />
-
-        {!hasWorkflow && (
-          <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
-            This file isn’t a valid workflow, so I can’t propose edits to it. You can still ask
-            general questions below.
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: t.space.sm }}>
-          {chat.messages.map((m) => (
-            <ChatBubble key={m.id} role={m.role} content={m.content} />
-          ))}
-        </div>
-
-        {chat.proposal && (
-          <ProposedChange
-            current={chat.proposal.current}
-            proposed={chat.proposal.canonical}
-            applying={chat.applying}
-            applyLabel="Apply to editor"
-            onApply={() => void chat.applyProposal()}
-            onCancel={chat.discardProposal}
-          />
-        )}
-
-        {chat.applied && (
-          <WarningBanner severity="success">
-            {chat.applied} Review the graph, then Save to write to disk.
-          </WarningBanner>
-        )}
-        {chat.error && (
-          <div style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.danger }}>
-            {chat.error}
-          </div>
-        )}
+        <ChatContent
+          chat={chat}
+          hint={
+            !parseOk ? (
+              <div
+                style={{
+                  fontFamily: t.font.sans,
+                  fontSize: t.font.sizes.sm,
+                  color: t.color.textMuted,
+                }}
+              >
+                This file isn't a valid workflow, so I can't propose edits to it. You can
+                still ask general questions below.
+              </div>
+            ) : undefined
+          }
+          applyLabel="Apply to editor"
+          appliedSuffix="Review the graph, then Save to write to disk."
+        />
       </div>
 
       {/* Composer pinned to the bottom */}
-      <div style={{ padding: t.space.md, borderTop: `1px solid ${t.color.border}`, flexShrink: 0 }}>
+      <div
+        style={{
+          padding: t.space.md,
+          borderTop: `1px solid ${t.color.border}`,
+          flexShrink: 0,
+        }}
+      >
         <ChatComposer
           value={chat.input}
           onChange={chat.setInput}
