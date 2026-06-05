@@ -33,7 +33,10 @@ pub struct AgentStatus {
 /// the enumerated-command invariant.
 #[tauri::command]
 pub async fn read_cyoda_profile_config() -> Result<Option<serde_json::Value>, String> {
-    let home = std::env::var("HOME").map_err(|e| format!("HOME not set: {e}"))?;
+    // HOME is unset on Windows; fall back to USERPROFILE (the Windows equivalent).
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .map_err(|_| "cannot resolve home directory (neither HOME nor USERPROFILE is set)".to_string())?;
     let path = PathBuf::from(home)
         .join(".config")
         .join("cyoda")
@@ -153,6 +156,13 @@ mod tests {
         let root_c = fs::canonicalize(root).unwrap();
         assert!(resolved.starts_with(&root_c));
         assert!(resolved.ends_with("cyoda-agent-task/CLAUDE.md"));
+    }
+
+    #[test]
+    fn home_dir_env_var_is_present() {
+        // On Unix HOME is set; on Windows USERPROFILE should be set.
+        let has_home = std::env::var("HOME").is_ok() || std::env::var("USERPROFILE").is_ok();
+        assert!(has_home, "neither HOME nor USERPROFILE is set in this environment");
     }
 
     #[test]

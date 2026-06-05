@@ -1,6 +1,5 @@
 use std::fs::{File, OpenOptions};
 use std::io::Write;
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -19,7 +18,13 @@ pub fn write_atomic(target: &Path, contents: &[u8]) -> std::io::Result<()> {
         f.write_all(contents)?;
         f.sync_all()?;
     }
-    std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o600))?;
+    // File permissions are a Unix concept; on Windows the ACL is inherited from the
+    // parent directory, which is sufficient for the security model of this app.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o600))?;
+    }
     std::fs::rename(&tmp, target)?;
     Ok(())
 }
