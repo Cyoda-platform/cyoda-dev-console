@@ -120,4 +120,31 @@ describe("useAssistantChat", () => {
     const last = result.current.messages.at(-1);
     expect(last?.content).toMatch(/open a workflow file/i);
   });
+
+  it("keeps a file's transcript across unmount/remount (e.g. switching workflows and back)", async () => {
+    completeMock.mockResolvedValue({ text: "sure, here's what I'd change" });
+
+    const first = renderHook(() =>
+      useAssistantChat({ getCurrentJson: () => WORKFLOW, relPath: "workflows/a.json", onApply: vi.fn() }),
+    );
+    act(() => first.result.current.setInput("hello a"));
+    await act(async () => { await first.result.current.send(); });
+    expect(first.result.current.messages).toHaveLength(2);
+    first.unmount();
+
+    // A different file's chat starts empty — history is scoped per path, not global.
+    const other = renderHook(() =>
+      useAssistantChat({ getCurrentJson: () => WORKFLOW, relPath: "workflows/b.json", onApply: vi.fn() }),
+    );
+    expect(other.result.current.messages).toHaveLength(0);
+    other.unmount();
+
+    // Returning to the first file restores its transcript.
+    const again = renderHook(() =>
+      useAssistantChat({ getCurrentJson: () => WORKFLOW, relPath: "workflows/a.json", onApply: vi.fn() }),
+    );
+    expect(again.result.current.messages).toHaveLength(2);
+    expect(again.result.current.messages[0]).toMatchObject({ role: "user", content: "hello a" });
+    expect(again.result.current.messages[1]).toMatchObject({ role: "assistant", content: "sure, here's what I'd change" });
+  });
 });

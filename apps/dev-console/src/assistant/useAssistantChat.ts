@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAssistantConfig } from "./keyStore.js";
 import { complete } from "./llmClient.js";
 import { buildSystemPrompt } from "./systemPrompt.js";
 import { validateAndCanonicalize } from "./applyWorkflow.js";
 import type { ChatMessage } from "./providers/index.js";
+
+/**
+ * In-memory, per-file conversation history. `WorkflowRoute` is remounted (keyed by file path)
+ * whenever the user switches workflows, which would otherwise reset `useAssistantChat`'s local
+ * state. Keeping the transcripts here lets a conversation pick back up when the user returns to
+ * a file — for the lifetime of the app session (not persisted to disk).
+ */
+const chatHistoryByPath = new Map<string, ChatMessage[]>();
 
 export interface Proposal {
   /** The workflow JSON the proposal was computed against (left/"Current" diff pane). */
@@ -50,7 +58,19 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
   const { provider, model, keys } = useAssistantConfig();
   const apiKey = keys[provider] ?? "";
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    () => (relPath ? chatHistoryByPath.get(relPath) : undefined) ?? [],
+  );
+
+  useEffect(() => {
+    if (!relPath) return;
+    if (messages.length > 0) {
+      chatHistoryByPath.set(relPath, messages);
+    } else {
+      chatHistoryByPath.delete(relPath);
+    }
+  }, [relPath, messages]);
+
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
