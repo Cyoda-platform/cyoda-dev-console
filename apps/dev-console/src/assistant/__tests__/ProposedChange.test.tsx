@@ -54,4 +54,34 @@ describe("ProposedChange", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onCancel).toHaveBeenCalledOnce();
   });
+
+  it("opens a modal with the full Current JSON when the expand button is clicked", () => {
+    wrap(<ProposedChange {...base} />);
+    fireEvent.click(screen.getByTitle("Expand Current"));
+    const modal = screen.getAllByText(base.current);
+    expect(modal.length).toBeGreaterThanOrEqual(2); // inline pane + modal
+    expect(screen.getByTitle("Close")).toBeInTheDocument();
+  });
+
+  it("opens a modal with the full Proposed JSON when the expand button is clicked", () => {
+    wrap(<ProposedChange {...base} />);
+    fireEvent.click(screen.getByTitle("Expand Proposed"));
+    const modal = screen.getAllByText(base.proposed);
+    expect(modal.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("closes the modal when the X button is clicked", () => {
+    wrap(<ProposedChange {...base} />);
+    fireEvent.click(screen.getByTitle("Expand Current"));
+    expect(screen.getByTitle("Close")).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle("Close"));
+    expect(screen.queryByTitle("Close")).not.toBeInTheDocument();
+  });
+
+  it("closes the modal when the backdrop is clicked", () => {
+    wrap(<ProposedChange {...base} />);
+    fireEvent.click(screen.getByTitle("Expand Proposed"));
+    fireEvent.click(screen.getByTestId("expand-backdrop"));
+    expect(screen.queryByTitle("Close")).not.toBeInTheDocument();
+  });
 });
