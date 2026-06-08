@@ -97,8 +97,9 @@ describe("ChatComposer", () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it("shows '…' instead of the send icon while sending", () => {
+  it("shows a spinner instead of the send icon while sending", () => {
     wrap(<ChatComposer {...baseProps} sending={true} />);
-    expect(screen.getByTitle("Send (⌘Enter)")).toHaveTextContent("…");
+    const button = screen.getByTitle("Sending…");
+    expect(button.querySelector("svg.lucide-loader-circle")).toBeInTheDocument();
   });
 });

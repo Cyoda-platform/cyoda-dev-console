@@ -1,3 +1,4 @@
+import { useCallback, useState } from "react";
 import { useTokens } from "@cyoda/console-design-system";
 import { ChatContent } from "./ChatContent.js";
 import { ChatComposer } from "./chatUi.js";
@@ -25,19 +26,50 @@ export function WorkflowAssistantPanel({
   onClose: () => void;
 }) {
   const t = useTokens();
+  const [width, setWidth] = useState(380);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = width;
+    const onMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX;
+      setWidth(Math.max(320, startWidth + delta));
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [width]);
 
   return (
-    <div
-      style={{
-        width: 380,
-        flexShrink: 0,
-        borderLeft: `1px solid ${t.color.border}`,
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        background: t.color.surface,
-      }}
-    >
+    <>
+      <div
+        onMouseDown={handleResizeStart}
+        style={{
+          width: 3,
+          flexShrink: 0,
+          cursor: "col-resize",
+          background: "transparent",
+          borderLeft: `1px solid ${t.color.border}`,
+          transition: "background 0.15s",
+          zIndex: 10,
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = t.color.border)}
+        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+      />
+      <div
+        style={{
+          width,
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          background: t.color.surface,
+        }}
+      >
       {/* Header: AI Assistant · <file> */}
       <div
         style={{
@@ -162,6 +194,7 @@ export function WorkflowAssistantPanel({
           }
         />
       </div>
-    </div>
+      </div>
+    </>
   );
 }

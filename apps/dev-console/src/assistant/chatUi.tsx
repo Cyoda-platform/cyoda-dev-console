@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { useTokens } from "@cyoda/console-design-system";
+
+const spinKeyframes = "@keyframes chat-composer-spin { to { transform: rotate(360deg); } }";
 
 /** One chat message bubble — user on the right (green), assistant on the left. */
 export function ChatBubble({ role, content }: { role: "user" | "assistant"; content: string }) {
@@ -45,6 +47,7 @@ export function ChatComposer({
   const [focused, setFocused] = useState(false);
   return (
     <div style={{ position: "relative" }}>
+      <style>{spinKeyframes}</style>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -76,7 +79,7 @@ export function ChatComposer({
         type="button"
         onClick={onSend}
         disabled={!canSend}
-        title="Send (⌘Enter)"
+        title={sending ? "Sending…" : "Send (⌘Enter)"}
         style={{
           position: "absolute",
           bottom: 8,
@@ -94,7 +97,11 @@ export function ChatComposer({
           transition: "color 0.15s",
         }}
       >
-        {sending ? "…" : <Send size={14} />}
+        {sending ? (
+          <Loader2 size={14} style={{ animation: "chat-composer-spin 0.8s linear infinite" }} />
+        ) : (
+          <Send size={14} />
+        )}
       </button>
     </div>
   );

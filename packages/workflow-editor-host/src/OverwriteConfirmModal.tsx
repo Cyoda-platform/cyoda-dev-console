@@ -1,4 +1,4 @@
-import { Button, Panel, FilePath } from "@cyoda/console-design-system";
+import { Button, Panel, FilePath, useTokens } from "@cyoda/console-design-system";
 
 export function OverwriteConfirmModal({
   path,
@@ -9,6 +9,7 @@ export function OverwriteConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const t = useTokens();
   return (
     <div
       style={{
@@ -20,10 +21,14 @@ export function OverwriteConfirmModal({
         zIndex: 1000,
       }}
     >
-      <Panel title="Overwrite workflow file?">
-        <p>This will replace the contents of:</p>
-        <FilePath path={path} />
-        <p>
+      <Panel title="Overwrite workflow file?" style={{ width: "100%", maxWidth: 560, boxSizing: "border-box" }}>
+        <p style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.md, color: t.color.text, margin: `0 0 ${t.space.xs}` }}>
+          This will replace the contents of:
+        </p>
+        <div style={{ margin: `0 0 ${t.space.md}` }}>
+          <FilePath path={path} />
+        </div>
+        <p style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.sm, color: t.color.textMuted, margin: `0 0 ${t.space.md}` }}>
           Only clean Cyoda workflow JSON will be written. Editor layout, comments, edge
           anchors, and viewport state will not be saved into the workflow file.
         </p>
