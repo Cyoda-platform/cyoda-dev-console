@@ -18,8 +18,8 @@ describe("ParseErrorView", () => {
     wrap(
       <ParseErrorView
         issues={[
-          { message: "Missing importMode field", path: [] },
-          { message: "workflows must be an array", path: [] },
+          { severity: "error", code: "missing_field", message: "Missing importMode field" },
+          { severity: "error", code: "invalid_type", message: "workflows must be an array" },
         ]}
       />,
     );
