@@ -147,4 +147,23 @@ describe("useAssistantChat", () => {
     expect(again.result.current.messages[0]).toMatchObject({ role: "user", content: "hello a" });
     expect(again.result.current.messages[1]).toMatchObject({ role: "assistant", content: "sure, here's what I'd change" });
   });
+
+  it("persists per-file transcripts to localStorage so they survive app restarts", async () => {
+    completeMock.mockResolvedValue({ text: "got it" });
+    const storage = makeStorage();
+    vi.stubGlobal("localStorage", storage);
+
+    const { result } = renderHook(() =>
+      useAssistantChat({ getCurrentJson: () => WORKFLOW, relPath: "workflows/persisted.json", onApply: vi.fn() }),
+    );
+    act(() => result.current.setInput("remember me"));
+    await act(async () => { await result.current.send(); });
+
+    const raw = storage.getItem("cyoda-assistant-chat-history");
+    expect(raw).not.toBeNull();
+    const persisted = JSON.parse(raw!) as Record<string, unknown[]>;
+    expect(persisted["workflows/persisted.json"]).toHaveLength(2);
+    expect(persisted["workflows/persisted.json"]?.[0]).toMatchObject({ role: "user", content: "remember me" });
+    expect(persisted["workflows/persisted.json"]?.[1]).toMatchObject({ role: "assistant", content: "got it" });
+  });
 });

@@ -6,12 +6,46 @@ import { validateAndCanonicalize } from "./applyWorkflow.js";
 import type { ChatMessage } from "./providers/index.js";
 
 /**
- * In-memory, per-file conversation history. `WorkflowRoute` is remounted (keyed by file path)
- * whenever the user switches workflows, which would otherwise reset `useAssistantChat`'s local
- * state. Keeping the transcripts here lets a conversation pick back up when the user returns to
- * a file — for the lifetime of the app session (not persisted to disk).
+ * Per-file conversation history, persisted to localStorage so it survives both `WorkflowRoute`
+ * remounts (it's keyed by file path, so switching workflows would otherwise reset
+ * `useAssistantChat`'s local state) and app restarts. Bounded on both axes — number of files
+ * tracked and messages per file — to keep storage size predictable.
  */
-const chatHistoryByPath = new Map<string, ChatMessage[]>();
+const CHAT_HISTORY_STORAGE_KEY = "cyoda-assistant-chat-history";
+const MAX_HISTORY_FILES = 30;
+const MAX_MESSAGES_PER_FILE = 100;
+
+function loadChatHistory(): Map<string, ChatMessage[]> {
+  try {
+    const raw = localStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
+    if (!raw) return new Map();
+    const parsed = JSON.parse(raw) as Record<string, ChatMessage[]>;
+    return new Map(Object.entries(parsed));
+  } catch {
+    return new Map();
+  }
+}
+
+function saveChatHistory(history: Map<string, ChatMessage[]>): void {
+  try {
+    // Keep only the most recently touched files — bounds storage size as more files are opened.
+    const entries = [...history.entries()].slice(-MAX_HISTORY_FILES);
+    localStorage.setItem(CHAT_HISTORY_STORAGE_KEY, JSON.stringify(Object.fromEntries(entries)));
+  } catch {
+    // localStorage unavailable or over quota; history stays in-memory for this session.
+  }
+}
+
+const chatHistoryByPath = loadChatHistory();
+
+function rememberChatHistory(relPath: string, messages: ChatMessage[]): void {
+  // Re-insert so the Map's iteration order reflects most-recently-touched (LRU-ish trimming).
+  chatHistoryByPath.delete(relPath);
+  if (messages.length > 0) {
+    chatHistoryByPath.set(relPath, messages.slice(-MAX_MESSAGES_PER_FILE));
+  }
+  saveChatHistory(chatHistoryByPath);
+}
 
 export interface Proposal {
   /** The workflow JSON the proposal was computed against (left/"Current" diff pane). */
@@ -64,11 +98,7 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
 
   useEffect(() => {
     if (!relPath) return;
-    if (messages.length > 0) {
-      chatHistoryByPath.set(relPath, messages);
-    } else {
-      chatHistoryByPath.delete(relPath);
-    }
+    rememberChatHistory(relPath, messages);
   }, [relPath, messages]);
 
   const [input, setInput] = useState("");
