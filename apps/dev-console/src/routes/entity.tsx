@@ -82,7 +82,7 @@ export function EntityRoute({
           alignItems: "center",
           gap: 8,
           padding: "0 12px",
-          height: 36,
+          height: 42,
           flexShrink: 0,
           borderBottom: `1px solid ${t.color.border}`,
           fontFamily: t.font.mono,
