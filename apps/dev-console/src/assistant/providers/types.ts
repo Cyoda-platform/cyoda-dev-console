@@ -4,6 +4,8 @@ export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  /** Present when this message records an AI-applied workflow change (for history rendering). */
+  appliedProposal?: { current: string; canonical: string };
 }
 
 /** Normalised result of one completion: free text and/or a single workflow-update proposal. */

@@ -14,13 +14,16 @@ export function ProposedChange({
   onApply,
   onCancel,
   applyLabel = "Apply to file",
+  mode = "pending",
 }: {
   current: string;
   proposed: string;
-  applying: boolean;
-  onApply: () => void;
-  onCancel: () => void;
+  applying?: boolean;
+  onApply?: () => void;
+  onCancel?: () => void;
   applyLabel?: string;
+  /** "applied" renders a read-only history record; "pending" shows Apply/Cancel buttons. */
+  mode?: "pending" | "applied";
 }) {
   const t = useTokens();
   const [expanded, setExpanded] = useState<"current" | "proposed" | null>(null);
@@ -55,8 +58,8 @@ export function ProposedChange({
         background: t.color.surface,
       }}
     >
-      <div style={{ fontFamily: t.font.sans, fontWeight: 600, marginBottom: t.space.sm }}>
-        Proposed workflow change
+      <div style={{ fontFamily: t.font.sans, fontWeight: 600, marginBottom: t.space.sm, color: mode === "applied" ? t.color.textMuted : t.color.text }}>
+        {mode === "applied" ? "✓ Applied workflow change" : "Proposed workflow change"}
       </div>
       <div style={{ display: "flex", gap: t.space.md }}>
         {(["current", "proposed"] as const).map((side) => (
@@ -151,14 +154,16 @@ export function ProposedChange({
           </div>
         </div>
       )}
-      <div style={{ display: "flex", gap: t.space.sm, marginTop: t.space.md }}>
-        <Button onClick={onApply} disabled={applying}>
-          {applying ? "Applying…" : applyLabel}
-        </Button>
-        <Button variant="secondary" onClick={onCancel} disabled={applying}>
-          Cancel
-        </Button>
-      </div>
+      {mode === "pending" && (
+        <div style={{ display: "flex", gap: t.space.sm, marginTop: t.space.md }}>
+          <Button onClick={onApply} disabled={applying}>
+            {applying ? "Applying…" : applyLabel}
+          </Button>
+          <Button variant="secondary" onClick={onCancel} disabled={applying}>
+            Cancel
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

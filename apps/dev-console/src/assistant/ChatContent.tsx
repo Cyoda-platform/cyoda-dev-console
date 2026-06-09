@@ -18,14 +18,17 @@ export function ChatContent({
   hint,
   applyLabel,
   appliedSuffix,
+  onUndoApply,
+  canUndoApply,
 }: {
   chat: AssistantChat;
-  /** Rendered between AiSetup and the message list (e.g. "no workflow" notice). */
   hint?: ReactNode;
-  /** Label for the proposal apply button. Defaults to "Apply to file". */
   applyLabel?: string;
-  /** Extra text appended after chat.applied in the success banner. */
   appliedSuffix?: string;
+  /** Called when the user clicks Undo after an AI apply. */
+  onUndoApply?: () => void;
+  /** Whether an AI-apply snapshot is available to undo. */
+  canUndoApply?: boolean;
 }) {
   const t = useTokens();
   return (
@@ -35,9 +38,18 @@ export function ChatContent({
       {hint}
 
       <div style={{ display: "flex", flexDirection: "column", gap: t.space.sm }}>
-        {chat.messages.map((m) => (
-          <ChatBubble key={m.id} role={m.role} content={m.content} />
-        ))}
+        {chat.messages.map((m) =>
+          m.appliedProposal ? (
+            <ProposedChange
+              key={m.id}
+              current={m.appliedProposal.current}
+              proposed={m.appliedProposal.canonical}
+              mode="applied"
+            />
+          ) : (
+            <ChatBubble key={m.id} role={m.role} content={m.content} />
+          )
+        )}
       </div>
 
       {chat.proposal && (
@@ -53,8 +65,27 @@ export function ChatContent({
 
       {chat.applied && (
         <WarningBanner severity="success">
-          {chat.applied}
-          {appliedSuffix ? ` ${appliedSuffix}` : ""}
+          <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, width: "100%" }}>
+            <span>{chat.applied}{appliedSuffix ? ` ${appliedSuffix}` : ""}</span>
+            {canUndoApply && onUndoApply && (
+              <button
+                type="button"
+                onClick={onUndoApply}
+                style={{
+                  background: "none",
+                  border: "1px solid currentColor",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  padding: "2px 8px",
+                  fontSize: "inherit",
+                  color: "inherit",
+                  flexShrink: 0,
+                }}
+              >
+                Undo
+              </button>
+            )}
+          </span>
         </WarningBanner>
       )}
 

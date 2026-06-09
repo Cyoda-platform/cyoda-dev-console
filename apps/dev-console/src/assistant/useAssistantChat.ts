@@ -170,8 +170,18 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
     setError(null);
     try {
       await onApply(proposal.canonical);
+      const appliedText = relPath ? `Applied changes to ${relPath}.` : "Applied changes.";
+      setMessages((m) => [
+        ...m,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: appliedText,
+          appliedProposal: { current: proposal.current, canonical: proposal.canonical },
+        },
+      ]);
       setProposal(null);
-      setApplied(relPath ? `Applied changes to ${relPath}.` : "Applied changes.");
+      setApplied(appliedText);
     } catch (e) {
       setError((e as Error).message ?? String(e));
     } finally {

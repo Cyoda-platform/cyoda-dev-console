@@ -272,6 +272,8 @@ export function WorkflowRoute({
             parseOk={session.parseOk}
             dirty={session.dirty}
             onClose={() => setAiOpen(false)}
+            onUndoApply={session.undoAiApply}
+            canUndoApply={session.canUndoAi}
           />
         )}
       </div>

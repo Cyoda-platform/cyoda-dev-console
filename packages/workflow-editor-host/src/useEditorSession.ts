@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   parseImportPayload,
   serializeImportPayload,
@@ -37,6 +37,10 @@ export interface EditorSession {
   applyExternalDocument: (doc: WorkflowEditorDocument) => void;
   /** Increments whenever the document is replaced externally (apply/revert). */
   externalRevision: number;
+  /** True when an AI-applied snapshot is available to undo (cleared by manual edits or save). */
+  canUndoAi: boolean;
+  /** Roll back the last AI-applied document. No-op if no snapshot available. */
+  undoAiApply: () => void;
   save: () => Promise<void>;
   revert: () => Promise<void>;
   saveAs?: () => Promise<{ path: string; lastModified: string; sizeBytes: number } | null>;
@@ -65,6 +69,8 @@ export function useEditorSession({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [externalRevision, setExternalRevision] = useState(0);
+  const aiSnapshotRef = useRef<WorkflowEditorDocument | null>(null);
+  const [canUndoAi, setCanUndoAi] = useState(false);
 
   const dirty = useMemo(
     () => (document ? serializeImportPayload(document) !== baseline : false),
@@ -73,10 +79,24 @@ export function useEditorSession({
 
   const setDocument = useCallback((doc: WorkflowEditorDocument) => {
     setDocumentState(doc);
+    // Any manual edit clears the AI snapshot — undoing would discard user's own work.
+    aiSnapshotRef.current = null;
+    setCanUndoAi(false);
   }, []);
 
   const applyExternalDocument = useCallback((doc: WorkflowEditorDocument) => {
+    aiSnapshotRef.current = document;
+    setCanUndoAi(true);
     setDocumentState(doc);
+    setExternalRevision((r) => r + 1);
+  }, [document]);
+
+  const undoAiApply = useCallback(() => {
+    const snapshot = aiSnapshotRef.current;
+    if (!snapshot) return;
+    aiSnapshotRef.current = null;
+    setCanUndoAi(false);
+    setDocumentState(snapshot);
     setExternalRevision((r) => r + 1);
   }, []);
 
@@ -88,6 +108,8 @@ export function useEditorSession({
       const payload = serializeImportPayload(document);
       await io.write(filePath, payload);
       setBaseline(payload);
+      aiSnapshotRef.current = null;
+      setCanUndoAi(false);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
       throw e;
@@ -130,6 +152,8 @@ export function useEditorSession({
     setDocument,
     applyExternalDocument,
     externalRevision,
+    canUndoAi,
+    undoAiApply,
     save,
     revert,
     ...(saveAs !== undefined ? { saveAs } : {}),

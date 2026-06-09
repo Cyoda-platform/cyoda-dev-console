@@ -17,6 +17,8 @@ export function WorkflowAssistantPanel({
   parseOk,
   dirty,
   onClose,
+  onUndoApply,
+  canUndoApply,
 }: {
   chat: AssistantChat;
   displayName: string;
@@ -24,6 +26,8 @@ export function WorkflowAssistantPanel({
   parseOk: boolean;
   dirty: boolean;
   onClose: () => void;
+  onUndoApply?: () => void;
+  canUndoApply?: boolean;
 }) {
   const t = useTokens();
   const [width, setWidth] = useState(380);
@@ -155,6 +159,7 @@ export function WorkflowAssistantPanel({
 
         <ChatContent
           chat={chat}
+          {...(onUndoApply ? { onUndoApply, canUndoApply } : {})}
           hint={
             !parseOk ? (
               <div
