@@ -76,7 +76,8 @@ export function WorkflowAssistantPanel({
           display: "flex",
           alignItems: "center",
           gap: t.space.sm,
-          padding: `${t.space.sm} ${t.space.md}`,
+          padding: `0 ${t.space.md}`,
+          height: 36,
           borderBottom: `1px solid ${t.color.border}`,
           flexShrink: 0,
         }}
