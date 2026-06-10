@@ -95,6 +95,8 @@ export function ChatContent({
             fontFamily: t.font.sans,
             fontSize: t.font.sizes.sm,
             color: t.color.danger,
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
           }}
         >
           {chat.error}
