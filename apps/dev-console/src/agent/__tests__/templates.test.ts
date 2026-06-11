@@ -100,7 +100,7 @@ describe("generateProfileInstructionsMd", () => {
     const md = generateProfileInstructionsMd(full);
     const match = md.match(/```jsonc\n([\s\S]*?)\n```/);
     expect(match).not.toBeNull();
-    const cleaned = match![1]
+    const cleaned = match![1]!
       .split("\n")
       .filter((line) => !line.trimStart().startsWith("//"))
       .join("\n")
@@ -114,7 +114,7 @@ describe("generateProfileInstructionsMd", () => {
       endpoint: 'http://host/","token":"stolen',
     });
     const match = md.match(/```jsonc\n([\s\S]*?)\n```/);
-    const cleaned = match![1]
+    const cleaned = match![1]!
       .split("\n")
       .filter((line) => !line.trimStart().startsWith("//"))
       .join("\n")

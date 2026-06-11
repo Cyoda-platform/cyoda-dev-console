@@ -449,7 +449,7 @@ function ExplorerItem({
         outline: "none",
       }}
     >
-      <StatusDot status={entry.status} colorOverride={dotColor} />
+      <StatusDot status={entry.status} {...(dotColor ? { colorOverride: dotColor } : {})} />
       <span
         style={{
           flex: 1,
