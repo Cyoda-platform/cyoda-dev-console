@@ -154,6 +154,9 @@ importers:
       '@cyoda/workflow-graph':
         specifier: file:../workflow-graph
         version: link:../workflow-graph
+      '@cyoda/workflow-layout':
+        specifier: file:../workflow-layout
+        version: link:../workflow-layout
     devDependencies:
       '@testing-library/react':
         specifier: ^14.2.0
@@ -190,7 +193,7 @@ importers:
         version: link:../../packages/entity-model-viewer
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: file:../cyoda-workflow-editor/packages/workflow-core
+        version: link:../../../cyoda-workflow-editor/packages/workflow-core
       '@cyoda/workflow-editor-host':
         specifier: workspace:*
         version: link:../../packages/workflow-editor-host
@@ -199,10 +202,10 @@ importers:
         version: link:../../packages/workflow-file-indexer
       '@cyoda/workflow-graph':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-graph
-        version: file:../cyoda-workflow-editor/packages/workflow-graph
+        version: link:../../../cyoda-workflow-editor/packages/workflow-graph
       '@cyoda/workflow-layout':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-layout
-        version: file:../cyoda-workflow-editor/packages/workflow-layout
+        version: link:../../../cyoda-workflow-editor/packages/workflow-layout
       '@cyoda/workflow-monaco':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-monaco
         version: file:../cyoda-workflow-editor/packages/workflow-monaco(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
@@ -211,10 +214,10 @@ importers:
         version: link:../../packages/workflow-project-model
       '@cyoda/workflow-react':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-react
-        version: file:../cyoda-workflow-editor/packages/workflow-react(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(reactflow@11.11.4(@types/react@18.3.29)(immer@10.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)
+        version: link:../../../cyoda-workflow-editor/packages/workflow-react
       '@cyoda/workflow-viewer':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-viewer
-        version: file:../cyoda-workflow-editor/packages/workflow-viewer(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: link:../../../cyoda-workflow-editor/packages/workflow-viewer
       '@tanstack/react-query':
         specifier: ^5.62.0
         version: 5.100.14(react@18.3.1)
@@ -416,10 +419,10 @@ importers:
         version: link:../console-design-system
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: file:../cyoda-workflow-editor/packages/workflow-core
+        version: link:../../../cyoda-workflow-editor/packages/workflow-core
       '@cyoda/workflow-react':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-react
-        version: file:../cyoda-workflow-editor/packages/workflow-react(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(reactflow@11.11.4(@types/react@18.3.29)(immer@10.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)
+        version: link:../../../cyoda-workflow-editor/packages/workflow-react
       zustand:
         specifier: ^5.0.0
         version: 5.0.14(@types/react@18.3.29)(immer@10.2.0)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
@@ -459,7 +462,7 @@ importers:
     dependencies:
       '@cyoda/workflow-core':
         specifier: file:../../../cyoda-workflow-editor/packages/workflow-core
-        version: file:../cyoda-workflow-editor/packages/workflow-core
+        version: link:../../../cyoda-workflow-editor/packages/workflow-core
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -613,12 +616,6 @@ packages:
   '@cyoda/workflow-core@file:../cyoda-workflow-editor/packages/workflow-core':
     resolution: {directory: ../cyoda-workflow-editor/packages/workflow-core, type: directory}
 
-  '@cyoda/workflow-graph@file:../cyoda-workflow-editor/packages/workflow-graph':
-    resolution: {directory: ../cyoda-workflow-editor/packages/workflow-graph, type: directory}
-
-  '@cyoda/workflow-layout@file:../cyoda-workflow-editor/packages/workflow-layout':
-    resolution: {directory: ../cyoda-workflow-editor/packages/workflow-layout, type: directory}
-
   '@cyoda/workflow-monaco@file:../cyoda-workflow-editor/packages/workflow-monaco':
     resolution: {directory: ../cyoda-workflow-editor/packages/workflow-monaco, type: directory}
     peerDependencies:
@@ -630,19 +627,6 @@ packages:
         optional: true
       react-dom:
         optional: true
-
-  '@cyoda/workflow-react@file:../cyoda-workflow-editor/packages/workflow-react':
-    resolution: {directory: ../cyoda-workflow-editor/packages/workflow-react, type: directory}
-    peerDependencies:
-      react: ^18.3.1
-      react-dom: ^18.3.1
-      reactflow: ^11
-
-  '@cyoda/workflow-viewer@file:../cyoda-workflow-editor/packages/workflow-viewer':
-    resolution: {directory: ../cyoda-workflow-editor/packages/workflow-viewer, type: directory}
-    peerDependencies:
-      react: ^18.3.1
-      react-dom: ^18.3.1
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -2958,15 +2942,6 @@ snapshots:
       uuid: 14.0.0
       zod: 3.25.76
 
-  '@cyoda/workflow-graph@file:../cyoda-workflow-editor/packages/workflow-graph':
-    dependencies:
-      '@cyoda/workflow-core': file:../cyoda-workflow-editor/packages/workflow-core
-
-  '@cyoda/workflow-layout@file:../cyoda-workflow-editor/packages/workflow-layout':
-    dependencies:
-      '@cyoda/workflow-core': file:../cyoda-workflow-editor/packages/workflow-core
-      '@cyoda/workflow-graph': file:../cyoda-workflow-editor/packages/workflow-graph
-
   '@cyoda/workflow-monaco@file:../cyoda-workflow-editor/packages/workflow-monaco(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)':
     dependencies:
       '@cyoda/workflow-core': file:../cyoda-workflow-editor/packages/workflow-core
@@ -2978,27 +2953,6 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
     transitivePeerDependencies:
       - zod
-
-  '@cyoda/workflow-react@file:../cyoda-workflow-editor/packages/workflow-react(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(reactflow@11.11.4(@types/react@18.3.29)(immer@10.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)':
-    dependencies:
-      '@cyoda/workflow-core': file:../cyoda-workflow-editor/packages/workflow-core
-      '@cyoda/workflow-graph': file:../cyoda-workflow-editor/packages/workflow-graph
-      '@cyoda/workflow-layout': file:../cyoda-workflow-editor/packages/workflow-layout
-      '@cyoda/workflow-monaco': file:../cyoda-workflow-editor/packages/workflow-monaco(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
-      '@cyoda/workflow-viewer': file:../cyoda-workflow-editor/packages/workflow-viewer(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      reactflow: 11.11.4(@types/react@18.3.29)(immer@10.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    transitivePeerDependencies:
-      - monaco-editor
-      - zod
-
-  '@cyoda/workflow-viewer@file:../cyoda-workflow-editor/packages/workflow-viewer(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@cyoda/workflow-core': file:../cyoda-workflow-editor/packages/workflow-core
-      '@cyoda/workflow-graph': file:../cyoda-workflow-editor/packages/workflow-graph
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
