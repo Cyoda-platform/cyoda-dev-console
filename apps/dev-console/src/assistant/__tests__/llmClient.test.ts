@@ -13,7 +13,7 @@ const input = {
   provider: "anthropic" as const,
   apiKey: "sk-test",
   model: "claude-sonnet-4-6",
-  system: "You help with Cyoda workflows.",
+  system: { static: "You help with Cyoda workflows." },
   messages: [{ id: "1", role: "user" as const, content: "Add a state" }],
 };
 

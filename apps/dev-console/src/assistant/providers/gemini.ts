@@ -2,6 +2,7 @@ import {
   TOOL_DESCRIPTION,
   TOOL_NAME,
   TOOL_PARAMETERS,
+  joinSystemPrompt,
   type BuildRequestInput,
   type LlmProvider,
   type ProviderResult,
@@ -17,7 +18,7 @@ export const gemini: LlmProvider = {
   // Model is carried in the request URL (see the Rust proxy), not the body.
   buildRequest({ system, messages }: BuildRequestInput) {
     return {
-      system_instruction: { parts: [{ text: system }] },
+      system_instruction: { parts: [{ text: joinSystemPrompt(system) }] },
       contents: messages.map((m) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],

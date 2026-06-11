@@ -2,6 +2,7 @@ import {
   TOOL_DESCRIPTION,
   TOOL_NAME,
   TOOL_PARAMETERS,
+  joinSystemPrompt,
   type BuildRequestInput,
   type LlmProvider,
   type ProviderResult,
@@ -18,7 +19,7 @@ export const openai: LlmProvider = {
     return {
       model,
       messages: [
-        { role: "system", content: system },
+        { role: "system", content: joinSystemPrompt(system) },
         ...messages.map((m) => ({ role: m.role, content: m.content })),
       ],
       tools: [

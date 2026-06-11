@@ -5,7 +5,7 @@ import { gemini } from "../gemini.js";
 import { TOOL_NAME, type BuildRequestInput } from "../types.js";
 
 const input: BuildRequestInput = {
-  system: "You edit Cyoda workflows.",
+  system: { static: "You edit Cyoda workflows." },
   messages: [
     { id: "msg-1", role: "user", content: "Add a refund transition." },
     { id: "msg-2", role: "assistant", content: "Sure." },
@@ -13,18 +13,46 @@ const input: BuildRequestInput = {
   model: "test-model",
 };
 
+const inputWithDynamic: BuildRequestInput = {
+  system: { static: "You edit Cyoda workflows.", dynamic: 'Current workflow JSON:\n```json\n{"a":1}\n```' },
+  messages: input.messages,
+  model: "test-model",
+};
+
 describe("anthropic adapter", () => {
-  it("builds a request with the tool and system prompt", () => {
+  it("builds a request with the tool and a cached static system block", () => {
     const body = anthropic.buildRequest(input) as {
-      system: string;
+      system: Array<{ type: string; text: string; cache_control?: { type: string } }>;
       model: string;
       messages: unknown[];
       tools: Array<{ name: string }>;
     };
-    expect(body.system).toBe(input.system);
+    expect(body.system).toHaveLength(1);
+    expect(body.system[0]).toEqual({
+      type: "text",
+      text: "You edit Cyoda workflows.",
+      cache_control: { type: "ephemeral" },
+    });
     expect(body.model).toBe("test-model");
     expect(body.tools[0]!.name).toBe(TOOL_NAME);
     expect(body.messages).toHaveLength(2);
+  });
+
+  it("adds a second cached block for the dynamic workflow JSON", () => {
+    const body = anthropic.buildRequest(inputWithDynamic) as {
+      system: Array<{ type: string; text: string; cache_control?: { type: string } }>;
+    };
+    expect(body.system).toHaveLength(2);
+    expect(body.system[0]).toEqual({
+      type: "text",
+      text: "You edit Cyoda workflows.",
+      cache_control: { type: "ephemeral" },
+    });
+    expect(body.system[1]).toEqual({
+      type: "text",
+      text: 'Current workflow JSON:\n```json\n{"a":1}\n```',
+      cache_control: { type: "ephemeral" },
+    });
   });
 
   it("parses a tool_use response", () => {
@@ -46,13 +74,22 @@ describe("anthropic adapter", () => {
 });
 
 describe("openai adapter", () => {
-  it("prepends the system message and includes the function tool", () => {
+  it("prepends the joined system message and includes the function tool", () => {
     const body = openai.buildRequest(input) as {
       messages: Array<{ role: string; content: string }>;
       tools: Array<{ function: { name: string } }>;
     };
-    expect(body.messages[0]).toEqual({ role: "system", content: input.system });
+    expect(body.messages[0]).toEqual({ role: "system", content: "You edit Cyoda workflows." });
     expect(body.tools[0]!.function.name).toBe(TOOL_NAME);
+  });
+
+  it("joins static and dynamic system parts with a blank line", () => {
+    const body = openai.buildRequest(inputWithDynamic) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    expect(body.messages[0]!.content).toBe(
+      'You edit Cyoda workflows.\n\nCurrent workflow JSON:\n```json\n{"a":1}\n```',
+    );
   });
 
   it("parses a tool_calls response (arguments are a JSON string)", () => {
@@ -97,15 +134,24 @@ describe("openai adapter", () => {
 });
 
 describe("gemini adapter", () => {
-  it("maps assistant role to model and carries system_instruction", () => {
+  it("maps assistant role to model and carries the joined system_instruction", () => {
     const body = gemini.buildRequest(input) as {
       system_instruction: { parts: Array<{ text: string }> };
       contents: Array<{ role: string }>;
       tools: Array<{ function_declarations: Array<{ name: string }> }>;
     };
-    expect(body.system_instruction.parts[0]!.text).toBe(input.system);
+    expect(body.system_instruction.parts[0]!.text).toBe("You edit Cyoda workflows.");
     expect(body.contents[1]!.role).toBe("model");
     expect(body.tools[0]!.function_declarations[0]!.name).toBe(TOOL_NAME);
+  });
+
+  it("joins static and dynamic system parts with a blank line", () => {
+    const body = gemini.buildRequest(inputWithDynamic) as {
+      system_instruction: { parts: Array<{ text: string }> };
+    };
+    expect(body.system_instruction.parts[0]!.text).toBe(
+      'You edit Cyoda workflows.\n\nCurrent workflow JSON:\n```json\n{"a":1}\n```',
+    );
   });
 
   it("parses a functionCall response", () => {

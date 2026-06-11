@@ -15,4 +15,4 @@ export function getProvider(id: ProviderId): LlmProvider {
   return PROVIDERS[id];
 }
 
-export type { LlmProvider, ProviderId, ChatMessage, ProviderResult } from "./types.js";
+export type { LlmProvider, ProviderId, ChatMessage, ProviderResult, SystemPrompt } from "./types.js";

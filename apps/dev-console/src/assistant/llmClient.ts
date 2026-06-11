@@ -1,11 +1,17 @@
 import { llmComplete } from "../ipc/llm.js";
-import { getProvider, type ChatMessage, type ProviderId, type ProviderResult } from "./providers/index.js";
+import {
+  getProvider,
+  type ChatMessage,
+  type ProviderId,
+  type ProviderResult,
+  type SystemPrompt,
+} from "./providers/index.js";
 
 export interface CompleteInput {
   provider: ProviderId;
   apiKey: string;
   model: string;
-  system: string;
+  system: SystemPrompt;
   messages: ChatMessage[];
 }
 

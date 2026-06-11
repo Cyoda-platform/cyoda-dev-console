@@ -14,8 +14,23 @@ export interface ProviderResult {
   toolCall?: { workflowJson: string };
 }
 
+/**
+ * System prompt split into a static portion (identical across all turns of a chat — safe to
+ * cache long-term) and an optional dynamic portion (e.g. the current workflow JSON, which
+ * changes whenever the workflow is edited and is only cache-hit while unchanged).
+ */
+export interface SystemPrompt {
+  static: string;
+  dynamic?: string;
+}
+
+/** Flatten a {@link SystemPrompt} for providers without segmented cache_control support. */
+export function joinSystemPrompt(system: SystemPrompt): string {
+  return system.dynamic ? `${system.static}\n\n${system.dynamic}` : system.static;
+}
+
 export interface BuildRequestInput {
-  system: string;
+  system: SystemPrompt;
   messages: ChatMessage[];
   model: string;
 }

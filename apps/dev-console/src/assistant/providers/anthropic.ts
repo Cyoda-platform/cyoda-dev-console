@@ -15,10 +15,19 @@ export const anthropic: LlmProvider = {
   defaultModel: "claude-sonnet-4-6",
 
   buildRequest({ system, messages, model }: BuildRequestInput) {
+    // Two cache breakpoints: the static instructions (rarely change, so they're a cache hit on
+    // almost every turn) and the dynamic workflow JSON (a cache hit only on turns where the
+    // workflow hasn't changed since the previous turn — see docs/ai-assistant-cost-alternatives.md).
+    const systemBlocks: Array<{ type: "text"; text: string; cache_control: { type: "ephemeral" } }> = [
+      { type: "text", text: system.static, cache_control: { type: "ephemeral" } },
+    ];
+    if (system.dynamic) {
+      systemBlocks.push({ type: "text", text: system.dynamic, cache_control: { type: "ephemeral" } });
+    }
     return {
       model,
       max_tokens: MAX_OUTPUT_TOKENS,
-      system,
+      system: systemBlocks,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       tools: [
         {
