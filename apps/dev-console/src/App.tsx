@@ -14,7 +14,7 @@ import { readTextFile } from "./ipc/fsio.js";
 import { loadAppConfig } from "./ipc/config.js";
 import { scanProject } from "./ipc/project.js";
 import { watchProject, onFileChanged } from "./ipc/watcher.js";
-import { classifyWorkflowFile, type WorkflowFileIndexEntry, type WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
+import { classifyWorkflowFile, WORKFLOW_STATUSES, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { HeaderContext } from "./components/HeaderContext.js";
 import { ProjectExplorer } from "./components/ProjectExplorer.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
@@ -22,9 +22,6 @@ import { deriveDisplayName } from "./utils/displayName.js";
 
 const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
-const WORKFLOW_STATUSES: WorkflowFileStatus[] = [
-  "valid-workflow", "invalid-workflow", "export-payload", "probable-workflow", "parse-error",
-];
 
 type ViewKind = "workflow" | "entity" | "settings" | "agent";
 

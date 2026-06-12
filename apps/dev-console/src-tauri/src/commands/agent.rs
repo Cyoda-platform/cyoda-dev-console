@@ -8,7 +8,6 @@
 
 use serde::Serialize;
 use std::path::PathBuf;
-use std::process::Command;
 use tauri::State;
 
 use crate::atomic_write::write_atomic;
@@ -58,9 +57,10 @@ pub async fn detect_agents() -> Result<Vec<AgentStatus>, String> {
     for id in KNOWN_AGENTS {
         match which::which(id) {
             Ok(resolved) => {
-                let version = Command::new(&resolved)
+                let version = tokio::process::Command::new(&resolved)
                     .arg("--version")
                     .output()
+                    .await
                     .ok()
                     .filter(|o| o.status.success())
                     .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())

@@ -1,5 +1,5 @@
 import { useTokens } from "@cyoda/console-design-system";
-import { FolderOpen, ChevronDown } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 
 export function HeaderContext({
   projectName,

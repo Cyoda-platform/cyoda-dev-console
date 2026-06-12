@@ -53,9 +53,11 @@ export function SettingsRoute() {
   const qc = useQueryClient();
   const active = useProjectStore((s) => s.active);
   const setActive = useProjectStore((s) => s.setActive);
+  const clearActive = useProjectStore((s) => s.clearActive);
   const [configureOpenId, setConfigureOpenId] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-  const [scanRootError, setScanRootError] = useState<string | null>(null);
+  const [workflowRootError, setWorkflowRootError] = useState<string | null>(null);
+  const [entityRootError, setEntityRootError] = useState<string | null>(null);
 
   const configQ = useQuery({ queryKey: ["app-config"], queryFn: loadAppConfig });
 
@@ -105,12 +107,14 @@ export function SettingsRoute() {
 
   const handleRemove = async (projectId: string) => {
     const current = configQ.data!;
+    const wasActive = current.activeProjectId === projectId;
     const updated: AppConfig = {
       ...current,
-      activeProjectId: current.activeProjectId === projectId ? null : current.activeProjectId,
+      activeProjectId: wasActive ? null : current.activeProjectId,
       recentProjects: current.recentProjects.filter((p) => p.id !== projectId),
     };
     await saveMutation.mutateAsync(updated);
+    if (wasActive) clearActive();
   };
 
   const updateProjectField = async (projectId: string, patch: Partial<DevProject>) => {
@@ -127,24 +131,24 @@ export function SettingsRoute() {
   };
 
   const handleBrowseWorkflowRoot = async (p: DevProject) => {
-    setScanRootError(null);
+    setWorkflowRootError(null);
     const abs = await selectProjectRoot();
     if (!abs) return;
     const rel = toRelative(abs, p.rootPath);
     if (rel === null) {
-      setScanRootError(`"${abs}" must be a subfolder inside the project root.`);
+      setWorkflowRootError(`"${abs}" must be a subfolder inside the project root.`);
       return;
     }
     await updateProjectField(p.id, { workflowRoot: rel });
   };
 
   const handleBrowseEntityRoot = async (p: DevProject) => {
-    setScanRootError(null);
+    setEntityRootError(null);
     const abs = await selectProjectRoot();
     if (!abs) return;
     const rel = toRelative(abs, p.rootPath);
     if (rel === null) {
-      setScanRootError(`"${abs}" must be a subfolder inside the project root.`);
+      setEntityRootError(`"${abs}" must be a subfolder inside the project root.`);
       return;
     }
     await updateProjectField(p.id, { entityRoot: rel });
@@ -198,7 +202,7 @@ export function SettingsRoute() {
                 <div style={{ display: "flex", alignItems: "center", gap: t.space.sm, flexWrap: "wrap" }}>
                   <Button
                     variant="secondary"
-                    onClick={() => { setScanRootError(null); setConfigureOpenId(configOpen ? null : p.id); }}
+                    onClick={() => { setWorkflowRootError(null); setEntityRootError(null); setConfigureOpenId(configOpen ? null : p.id); }}
                   >
                     {configOpen ? "Close config" : "Configure"}
                   </Button>
@@ -236,7 +240,8 @@ export function SettingsRoute() {
                       description="Only show workflows from this folder (leave empty to auto-detect)"
                       value={p.workflowRoot}
                       onBrowse={() => void handleBrowseWorkflowRoot(p)}
-                      onClear={() => { setScanRootError(null); void updateProjectField(p.id, { workflowRoot: null }); }}
+                      onClear={() => { setWorkflowRootError(null); void updateProjectField(p.id, { workflowRoot: null }); }}
+                      error={workflowRootError}
                       t={t}
                     />
 
@@ -245,19 +250,10 @@ export function SettingsRoute() {
                       description="Only show entities from this folder (leave empty to auto-detect)"
                       value={p.entityRoot}
                       onBrowse={() => void handleBrowseEntityRoot(p)}
-                      onClear={() => { setScanRootError(null); void updateProjectField(p.id, { entityRoot: null }); }}
+                      onClear={() => { setEntityRootError(null); void updateProjectField(p.id, { entityRoot: null }); }}
+                      error={entityRootError}
                       t={t}
                     />
-
-                    {scanRootError && (
-                      <div style={{
-                        fontSize: t.font.sizes.sm,
-                        color: t.color.danger,
-                        paddingTop: t.space.xs,
-                      }}>
-                        {scanRootError}
-                      </div>
-                    )}
                   </div>
                 )}
               </Panel>
@@ -286,6 +282,7 @@ function ScanRootRow({
   value,
   onBrowse,
   onClear,
+  error,
   t,
 }: {
   label: string;
@@ -293,6 +290,7 @@ function ScanRootRow({
   value: string | null;
   onBrowse: () => void;
   onClear: () => void;
+  error: string | null;
   t: ReturnType<typeof useTokens>;
 }) {
   return (
@@ -324,6 +322,11 @@ function ScanRootRow({
           <span style={{ fontSize: t.font.sizes.sm, color: t.color.textMuted, fontStyle: "italic" }}>
             Auto-detect
           </span>
+        )}
+        {error && (
+          <div style={{ fontSize: t.font.sizes.sm, color: t.color.danger, marginTop: t.space.xs }}>
+            {error}
+          </div>
         )}
       </div>
       <Button variant="secondary" onClick={onBrowse} style={{ flexShrink: 0, alignSelf: "flex-end" }}>

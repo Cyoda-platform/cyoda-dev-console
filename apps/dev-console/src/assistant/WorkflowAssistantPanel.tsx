@@ -169,7 +169,7 @@ export function WorkflowAssistantPanel({
                   color: t.color.textMuted,
                 }}
               >
-                This file isn't a valid workflow, so I can't propose edits to it. You can
+                This file isn&apos;t a valid workflow, so I can&apos;t propose edits to it. You can
                 still ask general questions below.
               </div>
             ) : undefined

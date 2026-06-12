@@ -52,7 +52,7 @@ export function ProjectRoute({
       aborted = true;
       cleanup?.();
     };
-  }, [active.rootPath]);
+  }, [active.rootPath, qc]);
 
   if (scan.isPending) return <div style={{ padding: 8 }}>Scanning…</div>;
   if (scan.isError) return <div style={{ padding: 8 }}>Scan failed: {String(scan.error)}</div>;

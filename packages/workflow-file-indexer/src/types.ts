@@ -6,6 +6,15 @@ export type WorkflowFileStatus =
   | "json-not-workflow"
   | "parse-error";
 
+/** All statuses that indicate the file is (or may be) a workflow — used to split explorer sections. */
+export const WORKFLOW_STATUSES: WorkflowFileStatus[] = [
+  "valid-workflow",
+  "invalid-workflow",
+  "export-payload",
+  "probable-workflow",
+  "parse-error",
+];
+
 export interface WorkflowFileIndexEntry {
   path: string;
   relativePath: string;

@@ -52,7 +52,7 @@ export const openai: LlmProvider = {
           toolCall = { workflowJson: args.workflow_json };
         }
       } catch (err) {
-        throw new Error(`Model returned malformed tool-call arguments: ${String(err)}`);
+        throw new Error(`Model returned malformed tool-call arguments: ${String(err)}`, { cause: err });
       }
     }
 

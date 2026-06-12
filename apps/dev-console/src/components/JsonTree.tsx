@@ -189,7 +189,7 @@ export const JsonTree = memo(function JsonTree({
       </div>
     );
 
-  return <Collapsible value={value} label={label} path={currentPath} depth={depth} />; // eslint-disable-line
+  return <Collapsible value={value} label={label} path={currentPath} depth={depth} />;
 });
 
 function Collapsible({

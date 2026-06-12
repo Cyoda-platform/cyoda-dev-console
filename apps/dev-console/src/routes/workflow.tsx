@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTokens } from "@cyoda/console-design-system";
 import type { WorkflowUiMeta } from "@cyoda/workflow-core";
 import {
   useEditorSession,
@@ -20,26 +21,6 @@ const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
 const jsonEditorConfig: WorkflowJsonEditorConfig = { monaco: getMonacoRuntime() };
 
-const toolbarBtn: React.CSSProperties = {
-  background: "#fff",
-  border: "1px solid #E2E8F0",
-  borderRadius: 6,
-  cursor: "pointer",
-  fontFamily: "'Inter', system-ui, sans-serif",
-  fontSize: 13,
-  fontWeight: 500,
-  color: "#64748B",
-  padding: "5px 12px",
-};
-
-const toolbarBtnPrimary: React.CSSProperties = {
-  ...toolbarBtn,
-  background: "#2563EB",
-  border: "1px solid #2563EB",
-  color: "#fff",
-  fontWeight: 600,
-};
-
 export function WorkflowRoute({
   filePath,
   relativePath,
@@ -53,9 +34,30 @@ export function WorkflowRoute({
   initialContents: string;
   onDirtyChange?: (dirty: boolean) => void;
 }) {
+  const t = useTokens();
+  const toolbarBtn = useMemo<React.CSSProperties>(() => ({
+    background: t.color.surface,
+    border: `1px solid ${t.color.border}`,
+    borderRadius: t.radius.md,
+    cursor: "pointer",
+    fontFamily: t.font.sans,
+    fontSize: t.font.sizes.sm,
+    fontWeight: 500,
+    color: t.color.textMuted,
+    padding: "5px 12px",
+  }), [t]);
+  const toolbarBtnPrimary = useMemo<React.CSSProperties>(() => ({
+    ...toolbarBtn,
+    background: t.color.cyodaGreen,
+    border: `1px solid ${t.color.cyodaGreen}`,
+    color: "#fff",
+    fontWeight: 600,
+  }), [t, toolbarBtn]);
+
   const projectId = useProjectStore((s) => s.active!.id);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [externalChange, setExternalChange] = useState(false);
+  const [reloadError, setReloadError] = useState<string | null>(null);
   const [compareOpen, setCompareOpen] = useState(false);
   const [diskSnapshot, setDiskSnapshot] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
@@ -152,13 +154,23 @@ export function WorkflowRoute({
   const handleConfirmSave = async () => {
     setConfirmOpen(false);
     suppressNextChange.current = true;
-    await session.save();
-    setExternalChange(false);
+    try {
+      await session.save();
+      setExternalChange(false);
+    } catch (e) {
+      suppressNextChange.current = false;
+      throw e;
+    }
   };
 
   const handleReload = async () => {
-    await session.revert();
-    setExternalChange(false);
+    setReloadError(null);
+    try {
+      await session.revert();
+      setExternalChange(false);
+    } catch (e) {
+      setReloadError(e instanceof Error ? e.message : "Reload failed.");
+    }
   };
 
   const handleCompare = async () => {
@@ -196,22 +208,26 @@ export function WorkflowRoute({
           padding: "0 12px",
           height: 42,
           flexShrink: 0,
-          background: "#fff",
-          borderBottom: "1px solid #E2E8F0",
-          fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-          fontSize: 12,
+          background: t.color.surface,
+          borderBottom: `1px solid ${t.color.border}`,
+          fontFamily: t.font.mono,
+          fontSize: t.font.sizes.sm,
         }}
       >
         {/* Breadcrumb */}
-        <span style={{ color: "#525252", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-          <strong style={{ color: "#161616" }}>{displayName}</strong>
-          <span style={{ marginLeft: 6, color: "#8D8D8D" }} title={relativePath}>
+        <span style={{ color: t.color.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+          <strong style={{ color: t.color.text }}>{displayName}</strong>
+          <span style={{ marginLeft: 6, color: t.color.textMuted }} title={relativePath}>
             {relativePath}
           </span>
         </span>
 
+        {reloadError && (
+          <span style={{ color: t.color.danger, flexShrink: 0, fontSize: t.font.sizes.sm }}>{reloadError}</span>
+        )}
+
         {session.dirty && (
-          <span style={{ color: "#D97706", flexShrink: 0 }}>● Unsaved</span>
+          <span style={{ color: t.color.cyodaOrange, flexShrink: 0 }}>● Unsaved</span>
         )}
 
         <button

@@ -28,8 +28,9 @@ vi.mock("../ipc/project.js", () => ({
   scanProject: vi.fn().mockResolvedValue({ root: "/tmp", scannedAt: "", files: [] }),
 }));
 vi.mock("../state/projectStore.js", () => ({
-  useProjectStore: vi.fn((selector: (s: { active: null; setActive: () => void }) => unknown) =>
-    selector({ active: null, setActive: vi.fn() }),
+  useProjectStore: vi.fn(
+    (selector: (s: { active: null; setActive: () => void; clearActive: () => void }) => unknown) =>
+      selector({ active: null, setActive: vi.fn(), clearActive: vi.fn() }),
   ),
 }));
 

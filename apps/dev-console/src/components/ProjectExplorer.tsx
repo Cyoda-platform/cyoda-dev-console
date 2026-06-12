@@ -1,18 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { RefreshCw, FolderOpen, Code2, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react";
-import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "@cyoda/workflow-file-indexer";
+import { WORKFLOW_STATUSES, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { useTokens } from "@cyoda/console-design-system";
 import { deriveDisplayName } from "../utils/displayName.js";
 import { revealInFinder, openInIde } from "../ipc/shell.js";
 import { ContextMenu } from "./ContextMenu.js";
 
-const WORKFLOW_STATUSES: WorkflowFileStatus[] = [
-  "valid-workflow",
-  "invalid-workflow",
-  "export-payload",
-  "probable-workflow",
-  "parse-error",
-];
 
 interface MenuState {
   x: number;
@@ -27,7 +20,7 @@ export function ProjectExplorer({
   collapsed,
   onToggleCollapse,
   onRescan,
-  onOpenSettings,
+  onOpenSettings: _onOpenSettings,
   onOpenAgent,
   projectRoot,
   workflowRoot,
@@ -569,43 +562,4 @@ function ExplorerHeader({
   );
 }
 
-function ProjectActions({
-  onSettings,
-  onRescan,
-  projectRoot,
-}: {
-  onSettings: () => void;
-  onRescan: () => void;
-  projectRoot: string;
-}) {
-  const t = useTokens();
-  const btn: React.CSSProperties = {
-    display: "block",
-    width: "100%",
-    padding: "4px 8px",
-    background: "none",
-    border: "none",
-    textAlign: "left",
-    cursor: "pointer",
-    fontFamily: t.font.sans,
-    fontSize: t.font.sizes.sm,
-    color: t.color.text,
-    borderRadius: 2,
-  };
-  return (
-    <div style={{ padding: "4px 0 4px 12px" }}>
-      <button style={btn} onClick={onSettings}>
-        Settings
-      </button>
-      <button style={btn} onClick={onRescan}>
-        Rescan
-      </button>
-      <button style={btn} onClick={() => void revealInFinder(projectRoot)}>
-        Reveal in Finder
-      </button>
-      <button style={btn} onClick={() => void openInIde(projectRoot, "vscode")}>
-        Open in VS Code
-      </button>
-    </div>
-  );
-}
+
