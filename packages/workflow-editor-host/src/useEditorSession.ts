@@ -5,6 +5,7 @@ import {
   type WorkflowEditorDocument,
   type ValidationIssue,
 } from "@cyoda/workflow-core";
+import { synthesizeImportPayload } from "./synthesizeImportPayload.js";
 
 export interface EditorSessionIO {
   write: (path: string, contents: string) => Promise<{ lastModified: string; sizeBytes: number }>;
@@ -120,7 +121,7 @@ export function useEditorSession({
 
   const revert = useCallback(async () => {
     const { contents } = await io.read(filePath);
-    const result = parseImportPayload(contents, document?.meta);
+    const result = parseImportPayload(synthesizeImportPayload(contents), document?.meta);
     setDocumentState(result.document ?? null);
     setIssues(result.issues);
     setParseOk(result.ok);

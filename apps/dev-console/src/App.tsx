@@ -15,6 +15,7 @@ import { loadAppConfig } from "./ipc/config.js";
 import { scanProject } from "./ipc/project.js";
 import { watchProject, onFileChanged } from "./ipc/watcher.js";
 import { classifyWorkflowFile, WORKFLOW_STATUSES, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
+import { synthesizeImportPayload } from "@cyoda/workflow-editor-host";
 import { HeaderContext } from "./components/HeaderContext.js";
 import { ProjectExplorer } from "./components/ProjectExplorer.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
@@ -102,20 +103,7 @@ function DevConsoleApp() {
 
     let contents = result.contents;
     if (entry.status === "probable-workflow" || entry.status === "export-payload") {
-      try {
-        const parsed = JSON.parse(contents) as Record<string, unknown>;
-        if (!("importMode" in parsed)) {
-          if ("workflows" in parsed) {
-            // Bare { workflows: [...] } or export-payload — promote to import payload
-            contents = JSON.stringify({ importMode: "MERGE", ...parsed }, null, 2);
-          } else {
-            // Standalone workflow object (bloc-portal format) — wrap into workflows array
-            contents = JSON.stringify({ importMode: "MERGE", workflows: [parsed] }, null, 2);
-          }
-        }
-      } catch {
-        // leave as-is; editor will show the parse error
-      }
+      contents = synthesizeImportPayload(contents);
     }
 
     setOpenedFile({
