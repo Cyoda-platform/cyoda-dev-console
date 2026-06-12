@@ -67,7 +67,7 @@ pnpm build
 pnpm tauri:dev
 
 # Run all tests
-pnpm -r test
+pnpm test
 
 # Lint
 pnpm lint
