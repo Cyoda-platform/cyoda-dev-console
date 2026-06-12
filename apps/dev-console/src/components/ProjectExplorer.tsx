@@ -162,7 +162,7 @@ export function ProjectExplorer({
         {/* Search */}
         <div
           style={{
-            padding: "0 10px 8px",
+            padding: "8px 10px",
             borderBottom: `1px solid ${t.color.border}`,
             flexShrink: 0,
           }}
