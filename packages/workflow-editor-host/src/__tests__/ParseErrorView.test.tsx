@@ -27,6 +27,22 @@ describe("ParseErrorView", () => {
     expect(screen.getByText("workflows must be an array")).toBeInTheDocument();
   });
 
+  it("prefixes the issue path when detail.path is present", () => {
+    wrap(
+      <ParseErrorView
+        issues={[
+          {
+            severity: "error",
+            code: "schema-invalid_type",
+            message: "Required",
+            detail: { path: ["workflows", 0, "initialState"] },
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("workflows.0.initialState: Required")).toBeInTheDocument();
+  });
+
   it("shows the raw content block when rawContent is provided", () => {
     wrap(<ParseErrorView issues={[]} rawContent='{"broken": true}' />);
     expect(screen.getByText("File contents:")).toBeInTheDocument();

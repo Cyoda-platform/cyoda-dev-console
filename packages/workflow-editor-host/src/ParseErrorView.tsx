@@ -1,6 +1,14 @@
 import type { ValidationIssue } from "@cyoda/workflow-core";
 import { WarningBanner, useTokens } from "@cyoda/console-design-system";
 
+function formatIssue(issue: ValidationIssue): string {
+  const path = issue.detail?.path;
+  if (Array.isArray(path) && path.length > 0) {
+    return `${path.join(".")}: ${issue.message}`;
+  }
+  return issue.message;
+}
+
 export function ParseErrorView({ issues, rawContent }: { issues: ValidationIssue[]; rawContent?: string }) {
   const t = useTokens();
   return (
@@ -9,7 +17,7 @@ export function ParseErrorView({ issues, rawContent }: { issues: ValidationIssue
         <strong>Workflow JSON could not be parsed.</strong>
         <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
           {issues.map((i, idx) => (
-            <li key={idx}>{i.message}</li>
+            <li key={idx}>{formatIssue(i)}</li>
           ))}
         </ul>
       </WarningBanner>
