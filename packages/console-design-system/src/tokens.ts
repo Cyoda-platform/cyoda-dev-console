@@ -23,7 +23,8 @@ export const tokens = {
     danger: "#DC2626",
     warning: "#D97706",
     success: "#059669",
-    // Brand orange (kept)
+    // Brand
+    cyodaGreen: "#004235",
     cyodaOrange: "#F58220",
   },
   radius: { sm: "4px", md: "6px", lg: "8px" },
