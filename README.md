@@ -59,6 +59,10 @@ After a release tag is pushed, two `.dmg` artifacts (Apple Silicon and Intel) ar
 # Install dependencies
 pnpm install
 
+# Build workspace packages (packages/*/dist is gitignored — required before
+# tauri:dev/tauri:build, and again after any pull that touches packages/*)
+pnpm build
+
 # Start the desktop app in dev mode (hot-reload)
 pnpm tauri:dev
 
