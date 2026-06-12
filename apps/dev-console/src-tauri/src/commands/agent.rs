@@ -35,7 +35,9 @@ pub async fn read_cyoda_profile_config() -> Result<Option<serde_json::Value>, St
     // HOME is unset on Windows; fall back to USERPROFILE (the Windows equivalent).
     let home = std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))
-        .map_err(|_| "cannot resolve home directory (neither HOME nor USERPROFILE is set)".to_string())?;
+        .map_err(|_| {
+            "cannot resolve home directory (neither HOME nor USERPROFILE is set)".to_string()
+        })?;
     let path = PathBuf::from(home)
         .join(".config")
         .join("cyoda")
@@ -162,7 +164,10 @@ mod tests {
     fn home_dir_env_var_is_present() {
         // On Unix HOME is set; on Windows USERPROFILE should be set.
         let has_home = std::env::var("HOME").is_ok() || std::env::var("USERPROFILE").is_ok();
-        assert!(has_home, "neither HOME nor USERPROFILE is set in this environment");
+        assert!(
+            has_home,
+            "neither HOME nor USERPROFILE is set in this environment"
+        );
     }
 
     #[test]
@@ -188,10 +193,12 @@ mod tests {
         std::fs::create_dir_all(parent).unwrap(); // sym already exists; no-op
         let root_c = std::fs::canonicalize(&root).unwrap();
         let parent_c = std::fs::canonicalize(parent).unwrap(); // resolves to outside/
-        // This assertion proves the check IS necessary: parent_c escapes the root
+                                                               // This assertion proves the check IS necessary: parent_c escapes the root
         assert!(
             !parent_c.starts_with(&root_c),
-            "parent_c {:?} should NOT be under root {:?}", parent_c, root_c
+            "parent_c {:?} should NOT be under root {:?}",
+            parent_c,
+            root_c
         );
     }
 }
