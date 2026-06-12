@@ -134,7 +134,7 @@ export function ProjectExplorer({
 
         {/* Top-level navigation (feature-flagged entries) */}
         {onOpenAgent && (
-          <div style={{ padding: "10px 10px 6px", flexShrink: 0 }}>
+          <div style={{ padding: "10px 10px 0", flexShrink: 0 }}>
             <button
               onClick={onOpenAgent}
               style={{
