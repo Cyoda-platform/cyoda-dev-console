@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTokens } from "@cyoda/console-design-system";
+import { useTokens, WarningBanner } from "@cyoda/console-design-system";
 import type { WorkflowUiMeta } from "@cyoda/workflow-core";
 import {
   useEditorSession,
@@ -55,6 +55,7 @@ export function WorkflowRoute({
   }), [t, toolbarBtn]);
 
   const projectId = useProjectStore((s) => s.active!.id);
+  const cyodaGoVersion = useProjectStore((s) => s.active!.cyodaGoVersion);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [externalChange, setExternalChange] = useState(false);
   const [reloadError, setReloadError] = useState<string | null>(null);
@@ -87,6 +88,7 @@ export function WorkflowRoute({
     projectId,
     filePath,
     initialContents,
+    cyodaGoVersion,
     io: {
       read: async (p) => {
         const r = await readTextFile(p);
@@ -111,6 +113,7 @@ export function WorkflowRoute({
   const assistant = useAssistantChat({
     getCurrentJson,
     relPath: relativePath,
+    cyodaGoVersion,
     onApply: (canonical) => {
       // F-09: guard against silently discarding unsaved graph-editor edits.
       if (session.dirty) {
@@ -119,7 +122,9 @@ export function WorkflowRoute({
         );
       }
       // F-06: throw so applyProposal() shows an error instead of a false-positive success banner.
-      const result = parseImportPayload(canonical, session.document?.meta);
+      const result = parseImportPayload(canonical, session.document?.meta, {
+        sourceVersion: cyodaGoVersion,
+      });
       if (!result.document) {
         throw new Error("Failed to apply: the proposed workflow JSON could not be parsed.");
       }
@@ -147,7 +152,7 @@ export function WorkflowRoute({
   }, [filePath]);
 
   const handleSaveRequest = () => {
-    if (!session.dirty) return;
+    if (!session.dirty || session.scheduleViolation) return;
     setConfirmOpen(true);
   };
 
@@ -232,9 +237,13 @@ export function WorkflowRoute({
 
         <button
           onClick={handleSaveRequest}
-          disabled={!session.dirty}
-          title="Save (⌘S)"
-          style={session.dirty ? toolbarBtnPrimary : { ...toolbarBtn, opacity: 0.5, background: "#fff" }}
+          disabled={!session.dirty || session.scheduleViolation != null}
+          title={session.scheduleViolation ?? "Save (⌘S)"}
+          style={
+            session.dirty && session.scheduleViolation == null
+              ? toolbarBtnPrimary
+              : { ...toolbarBtn, opacity: 0.5, background: "#fff" }
+          }
         >
           Save
         </button>
@@ -266,6 +275,42 @@ export function WorkflowRoute({
           </button>
         )}
       </div>
+
+      {session.scheduleViolation && (
+        <div style={{ padding: `${t.space.sm} ${t.space.md}`, flexShrink: 0 }}>
+          <WarningBanner severity="caution">{session.scheduleViolation}</WarningBanner>
+        </div>
+      )}
+
+      {session.warnings.length > 0 && (
+        <div style={{ padding: `${t.space.sm} ${t.space.md}`, flexShrink: 0 }}>
+          <WarningBanner severity="warning">
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ flex: 1 }}>
+                This workflow contained unsupported constructs that were removed on load:{" "}
+                {session.warnings.join("; ")}.
+              </span>
+              <button
+                onClick={session.dismissWarnings}
+                aria-label="Dismiss"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "inherit",
+                  fontWeight: 700,
+                  fontSize: t.font.sizes.md,
+                  lineHeight: 1,
+                  padding: 0,
+                  flexShrink: 0,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          </WarningBanner>
+        </div>
+      )}
 
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "row" }}>
         {/* Editor stays mounted regardless of the drawer, so the graph is never lost on toggle. */}

@@ -19,17 +19,20 @@ export function ProjectRoute({
   const qc = useQueryClient();
 
   const scan = useQuery({
-    queryKey: ["scan", active.rootPath],
+    queryKey: ["scan", active.rootPath, active.cyodaGoVersion],
     queryFn: async () => {
       const result = await scanProject(active.rootPath);
       const entries = result.files.map((f) =>
-        classifyWorkflowFile({
-          path: f.path,
-          relativePath: f.relativePath,
-          contents: f.contents,
-          lastModified: f.lastModified,
-          sizeBytes: f.sizeBytes,
-        }),
+        classifyWorkflowFile(
+          {
+            path: f.path,
+            relativePath: f.relativePath,
+            contents: f.contents,
+            lastModified: f.lastModified,
+            sizeBytes: f.sizeBytes,
+          },
+          active.cyodaGoVersion,
+        ),
       );
       return { ...result, entries };
     },

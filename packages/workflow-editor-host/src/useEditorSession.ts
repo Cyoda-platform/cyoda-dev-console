@@ -18,6 +18,11 @@ export interface EditorSessionParams {
   filePath: string;
   initialContents: string;
   io: EditorSessionIO;
+  /**
+   * The project's configured cyoda-go dialect. Controls which dialect parses and
+   * serializes this file. Defaults to the library's latest when omitted.
+   */
+  cyodaGoVersion?: string;
 }
 
 export interface EditorSession {
@@ -47,6 +52,31 @@ export interface EditorSession {
   saveAs?: () => Promise<{ path: string; lastModified: string; sizeBytes: number } | null>;
   /** localStorage key for editor layout — exposed for the WorkflowEditor prop. */
   layoutKey: string;
+  /**
+   * Human-readable notes from the parser about constructs dropped on load (e.g. a
+   * scheduled processor removed by the v0.7 dialect). Informational — does not block
+   * editing. Cleared via {@link EditorSession.dismissWarnings}.
+   */
+  warnings: string[];
+  /** Dismiss the current parse warnings banner. */
+  dismissWarnings: () => void;
+  /**
+   * Set when the project targets v0.7 but the loaded workflow contains a scheduled
+   * transition (a v0.8-only construct). Serializing under v0.7 would silently drop it,
+   * so this blocks save until the project is switched to v0.8 or the schedule removed.
+   * `null` when there is no violation.
+   */
+  scheduleViolation: string | null;
+}
+
+/** True when any transition in the document carries a `schedule` field. */
+function hasScheduledTransition(doc: WorkflowEditorDocument | null): boolean {
+  if (!doc) return false;
+  return doc.session.workflows.some((wf) =>
+    Object.values(wf.states).some((state) =>
+      state.transitions.some((tr) => tr.schedule !== undefined),
+    ),
+  );
 }
 
 export function useEditorSession({
@@ -54,10 +84,16 @@ export function useEditorSession({
   filePath,
   initialContents,
   io,
+  cyodaGoVersion,
 }: EditorSessionParams): EditorSession {
   const initialParsed = useMemo(
-    () => parseImportPayload(initialContents),
-    [initialContents],
+    () =>
+      parseImportPayload(
+        initialContents,
+        undefined,
+        cyodaGoVersion ? { sourceVersion: cyodaGoVersion } : undefined,
+      ),
+    [initialContents, cyodaGoVersion],
   );
   const [document, setDocumentState] = useState<WorkflowEditorDocument | null>(
     initialParsed.document ?? null,
@@ -72,11 +108,23 @@ export function useEditorSession({
   const [externalRevision, setExternalRevision] = useState(0);
   const aiSnapshotRef = useRef<WorkflowEditorDocument | null>(null);
   const [canUndoAi, setCanUndoAi] = useState(false);
+  const [warnings, setWarnings] = useState<string[]>(initialParsed.warnings ?? []);
 
   const dirty = useMemo(
     () => (document ? serializeImportPayload(document) !== baseline : false),
     [document, baseline],
   );
+
+  const scheduleViolation = useMemo(
+    () =>
+      cyodaGoVersion === "0.7" && hasScheduledTransition(document)
+        ? "This workflow contains a scheduled transition, which is not supported in cyoda-go v0.7. " +
+          "Switch the project to v0.8.0+ or remove the schedule configuration."
+        : null,
+    [cyodaGoVersion, document],
+  );
+
+  const dismissWarnings = useCallback(() => setWarnings([]), []);
 
   const setDocument = useCallback((doc: WorkflowEditorDocument) => {
     setDocumentState(doc);
@@ -103,6 +151,11 @@ export function useEditorSession({
 
   const save = useCallback(async () => {
     if (!document) return;
+    if (scheduleViolation) {
+      // Saving under v0.7 would silently drop the schedule — treat as a hard error.
+      setSaveError(scheduleViolation);
+      throw new Error(scheduleViolation);
+    }
     setSaving(true);
     setSaveError(null);
     try {
@@ -117,17 +170,22 @@ export function useEditorSession({
     } finally {
       setSaving(false);
     }
-  }, [document, filePath, io]);
+  }, [document, filePath, io, scheduleViolation]);
 
   const revert = useCallback(async () => {
     const { contents } = await io.read(filePath);
-    const result = parseImportPayload(synthesizeImportPayload(contents), document?.meta);
+    const result = parseImportPayload(
+      synthesizeImportPayload(contents),
+      document?.meta,
+      cyodaGoVersion ? { sourceVersion: cyodaGoVersion } : undefined,
+    );
     setDocumentState(result.document ?? null);
     setIssues(result.issues);
     setParseOk(result.ok);
+    setWarnings(result.warnings ?? []);
     setBaseline(result.document ? serializeImportPayload(result.document) : "");
     setExternalRevision((r) => r + 1);
-  }, [filePath, io, document]);
+  }, [filePath, io, document, cyodaGoVersion]);
 
   const saveAsCallback = useCallback(async () => {
     if (!document || !io.saveAs) return null;
@@ -159,5 +217,8 @@ export function useEditorSession({
     revert,
     ...(saveAs !== undefined ? { saveAs } : {}),
     layoutKey,
+    warnings,
+    dismissWarnings,
+    scheduleViolation,
   };
 }

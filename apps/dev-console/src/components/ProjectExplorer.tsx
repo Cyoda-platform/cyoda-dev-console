@@ -413,7 +413,7 @@ function ExplorerItem({
     <div
       role="button"
       tabIndex={0}
-      title={entry.relativePath}
+      title={entry.status === "incompatible-version" && entry.error ? entry.error : entry.relativePath}
       aria-pressed={selected}
       onClick={() => onOpen(entry)}
       onKeyDown={(e) => {
@@ -453,7 +453,45 @@ function ExplorerItem({
       >
         {displayName}
       </span>
+      {entry.status === "valid-workflow-legacy" && entry.cyodaVersion && (
+        <VersionBadge label={`v${entry.cyodaVersion}`} t={t} />
+      )}
+      {entry.status === "incompatible-version" && (
+        <VersionBadge
+          label={entry.cyodaVersion ? `needs v${entry.cyodaVersion}` : "incompatible"}
+          t={t}
+          tone="caution"
+        />
+      )}
     </div>
+  );
+}
+
+function VersionBadge({
+  label,
+  t,
+  tone = "muted",
+}: {
+  label: string;
+  t: ReturnType<typeof useTokens>;
+  tone?: "muted" | "caution";
+}) {
+  return (
+    <span
+      style={{
+        flexShrink: 0,
+        fontFamily: t.font.sans,
+        fontSize: "10px",
+        fontWeight: 600,
+        lineHeight: "14px",
+        padding: "0 6px",
+        borderRadius: 7,
+        background: tone === "caution" ? t.color.warning : t.color.border,
+        color: tone === "caution" ? "#3a2a00" : t.color.textMuted,
+      }}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -463,11 +501,15 @@ function StatusDot({ status, colorOverride }: { status: WorkflowFileIndexEntry["
     ? { color: colorOverride, label: "entity" }
     : status === "valid-workflow" || status === "export-payload"
       ? { color: t.color.success, label: "valid" }
-      : status === "invalid-workflow" || status === "probable-workflow"
-        ? { color: t.color.warning, label: "warnings" }
-        : status === "parse-error"
-          ? { color: t.color.danger, label: "error" }
-          : { color: t.color.textMuted, label: "not a workflow" };
+      : status === "valid-workflow-legacy"
+        ? { color: t.color.success, label: "valid (legacy version)" }
+        : status === "incompatible-version"
+          ? { color: t.color.warning, label: "version mismatch" }
+          : status === "invalid-workflow" || status === "probable-workflow"
+            ? { color: t.color.warning, label: "warnings" }
+            : status === "parse-error"
+              ? { color: t.color.danger, label: "error" }
+              : { color: t.color.textMuted, label: "not a workflow" };
 
   return (
     <span

@@ -27,6 +27,7 @@ const project: DevProject = {
   entityGlobs: ["**/*.json"],
   workflowRoot: null,
   entityRoot: null,
+  cyodaGoVersion: "0.8",
   createdAt: "2026-01-01T00:00:00Z",
   lastOpenedAt: "2026-01-01T00:00:00Z",
 };

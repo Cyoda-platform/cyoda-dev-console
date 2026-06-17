@@ -16,7 +16,7 @@ vi.mock("../agent/ProfilesTab.js", () => ({ ProfilesTab: () => <div data-testid=
 const project: DevProject = {
   id: "p1", name: "proj", rootPath: "/proj",
   workflowGlobs: ["**/*.json"], entityGlobs: ["**/*.json"],
-  workflowRoot: null, entityRoot: null,
+  workflowRoot: null, entityRoot: null, cyodaGoVersion: "0.8",
   createdAt: "2026-01-01T00:00:00Z", lastOpenedAt: "2026-01-01T00:00:00Z",
 };
 

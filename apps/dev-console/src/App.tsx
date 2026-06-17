@@ -58,17 +58,22 @@ function DevConsoleApp() {
 
   // Scan project files
   const scan = useQuery({
-    queryKey: ["scan", active?.rootPath],
+    // cyodaGoVersion is part of the key so changing the project's version re-scans
+    // immediately (the dialect changes how every file classifies).
+    queryKey: ["scan", active?.rootPath, active?.cyodaGoVersion],
     queryFn: async () => {
       const result = await scanProject(active!.rootPath);
       return result.files.map((f) =>
-        classifyWorkflowFile({
-          path: f.path,
-          relativePath: f.relativePath,
-          contents: f.contents,
-          lastModified: f.lastModified,
-          sizeBytes: f.sizeBytes,
-        }),
+        classifyWorkflowFile(
+          {
+            path: f.path,
+            relativePath: f.relativePath,
+            contents: f.contents,
+            lastModified: f.lastModified,
+            sizeBytes: f.sizeBytes,
+          },
+          active!.cyodaGoVersion,
+        ),
       );
     },
     enabled: !!active && projectReady,
@@ -119,8 +124,8 @@ function DevConsoleApp() {
 
   const allEntries = scan.data ?? [];
   const firstEntry =
-    allEntries.find((e) => e.status === "valid-workflow" || e.status === "export-payload" || e.status === "probable-workflow") ??
-    allEntries.find((e) => e.status === "invalid-workflow" || e.status === "json-not-workflow") ??
+    allEntries.find((e) => e.status === "valid-workflow" || e.status === "valid-workflow-legacy" || e.status === "export-payload" || e.status === "probable-workflow") ??
+    allEntries.find((e) => e.status === "invalid-workflow" || e.status === "incompatible-version" || e.status === "json-not-workflow") ??
     null;
   const workflowPath = openedFile?.kind === "workflow" ? openedFile.path : undefined;
   const entityPath = openedFile?.kind === "entity" ? openedFile.path : undefined;

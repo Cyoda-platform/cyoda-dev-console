@@ -65,6 +65,8 @@ export interface AssistantChatOptions {
   relPath?: string;
   /** Where an accepted proposal goes — the editor session, or disk, depending on the consumer. */
   onApply: (canonicalJson: string) => void | Promise<void>;
+  /** The active project's cyoda-go dialect — used to validate a model proposal. */
+  cyodaGoVersion?: string;
 }
 
 export interface AssistantChat {
@@ -88,7 +90,7 @@ export interface AssistantChat {
  * full-page assistant. The only thing that differs between consumers is where context comes
  * from (`getCurrentJson`) and where an accepted change lands (`onApply`).
  */
-export function useAssistantChat({ getCurrentJson, relPath, onApply }: AssistantChatOptions): AssistantChat {
+export function useAssistantChat({ getCurrentJson, relPath, onApply, cyodaGoVersion }: AssistantChatOptions): AssistantChat {
   const { provider, model, keys } = useAssistantConfig();
   const apiKey = keys[provider] ?? "";
 
@@ -138,7 +140,7 @@ export function useAssistantChat({ getCurrentJson, relPath, onApply }: Assistant
             { id: crypto.randomUUID(), role: "assistant", content: "Open a workflow file in the editor so I can apply this change." },
           ]);
         } else {
-          const validated = validateAndCanonicalize(result.toolCall.workflowJson);
+          const validated = validateAndCanonicalize(result.toolCall.workflowJson, cyodaGoVersion);
           if (validated.ok) {
             setProposal({ current, canonical: validated.canonical });
           } else {

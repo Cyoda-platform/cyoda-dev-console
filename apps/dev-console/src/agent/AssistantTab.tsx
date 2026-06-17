@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useTokens } from "@cyoda/console-design-system";
 import { readTextFile, writeTextFileWithConfirmedOverwrite } from "../ipc/fsio.js";
 import { useAgentContext } from "./AgentContext.js";
+import { useProjectStore } from "../state/projectStore.js";
 import { useAssistantChat } from "../assistant/useAssistantChat.js";
 import { ChatContent } from "../assistant/ChatContent.js";
 import { ChatComposer } from "../assistant/chatUi.js";
@@ -18,6 +19,7 @@ export function AssistantTab() {
   const ctx = useAgentContext();
   const workflowPath = ctx?.selectedWorkflowPath;
   const projectRoot = ctx?.projectRoot;
+  const cyodaGoVersion = useProjectStore((s) => s.active?.cyodaGoVersion);
 
   const chat = useAssistantChat({
     getCurrentJson: async () =>
@@ -27,6 +29,7 @@ export function AssistantTab() {
     ...(workflowPath && projectRoot
       ? { relPath: toRelativePath(workflowPath, projectRoot) ?? workflowPath }
       : {}),
+    ...(cyodaGoVersion ? { cyodaGoVersion } : {}),
     onApply: async (canonical) => {
       if (!workflowPath || !projectRoot) return;
       await writeTextFileWithConfirmedOverwrite(workflowPath, canonical, projectRoot);

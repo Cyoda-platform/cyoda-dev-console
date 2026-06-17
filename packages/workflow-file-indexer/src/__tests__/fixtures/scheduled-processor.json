@@ -1,0 +1,24 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1.0",
+      "name": "scheduled-demo",
+      "initialState": "New",
+      "active": true,
+      "states": {
+        "New": {
+          "transitions": [
+            {
+              "name": "go",
+              "next": "Done",
+              "manual": false,
+              "processors": [{ "type": "scheduled", "name": "delayProc" }]
+            }
+          ]
+        },
+        "Done": { "transitions": [] }
+      }
+    }
+  ]
+}

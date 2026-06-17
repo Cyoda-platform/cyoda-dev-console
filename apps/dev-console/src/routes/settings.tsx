@@ -5,7 +5,9 @@ import { loadAppConfig, saveAppConfig } from "../ipc/config.js";
 import { selectProjectRoot } from "../ipc/project.js";
 import { useProjectStore } from "../state/projectStore.js";
 import type { AppConfig, DevProject } from "@cyoda/workflow-project-model";
+import { DEFAULT_CYODA_GO_VERSION } from "@cyoda/workflow-project-model";
 import { Button, EmptyState, FilePath, Panel, useTokens } from "@cyoda/console-design-system";
+import { CyodaGoVersionSelect } from "../components/CyodaGoVersionSelect.js";
 
 function ConfirmRemoveModal({
   projectName,
@@ -78,6 +80,7 @@ export function SettingsRoute() {
       entityGlobs: ["**/*.json"],
       workflowRoot: null,
       entityRoot: null,
+      cyodaGoVersion: DEFAULT_CYODA_GO_VERSION,
       createdAt: now,
       lastOpenedAt: now,
     };
@@ -233,6 +236,22 @@ export function SettingsRoute() {
                   }}>
                     <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, color: t.color.textMuted }}>
                       Scan configuration
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: t.space.md }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, marginBottom: 2 }}>
+                          cyoda-go version
+                        </div>
+                        <div style={{ fontSize: t.font.sizes.sm, color: t.color.textMuted, marginBottom: t.space.xs }}>
+                          Controls how workflow files are parsed and saved. Changing it re-scans the project.
+                        </div>
+                      </div>
+                      <CyodaGoVersionSelect
+                        value={p.cyodaGoVersion}
+                        onChange={(v) => void updateProjectField(p.id, { cyodaGoVersion: v })}
+                        t={t}
+                      />
                     </div>
 
                     <ScanRootRow

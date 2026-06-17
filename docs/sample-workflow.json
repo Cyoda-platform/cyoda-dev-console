@@ -1,0 +1,83 @@
+{
+  "importMode": "REPLACE",
+  "workflows": [
+    {
+      "version": "1",
+      "name": "sales-order-wf",
+      "desc": "Draft -> Confirmed (priced + reserved) -> Shipped (deducted); cancellable.",
+      "initialState": "draft",
+      "active": true,
+      "states": {
+        "draft": {
+          "transitions": [
+            {
+              "name": "confirm",
+              "next": "confirmed",
+              "manual": true,
+              "processors": [
+                {
+                  "type": "EXTERNAL",
+                  "name": "price-order",
+                  "executionMode": "SYNC",
+                  "config": { "attachEntity": true, "calculationNodesTags": "sioms", "responseTimeoutMs": 20000 }
+                },
+                {
+                  "type": "EXTERNAL",
+                  "name": "reserve-stock",
+                  "executionMode": "SYNC",
+                  "config": { "attachEntity": true, "calculationNodesTags": "sioms", "responseTimeoutMs": 20000 }
+                }
+              ]
+            },
+            { "name": "cancel", "next": "cancelled", "manual": true }
+          ]
+        },
+        "confirmed": {
+          "transitions": [
+            {
+              "name": "ship",
+              "next": "shipped",
+              "manual": true,
+              "processors": [
+                {
+                  "type": "EXTERNAL",
+                  "name": "deduct-stock",
+                  "executionMode": "SYNC",
+                  "config": { "attachEntity": true, "calculationNodesTags": "sioms", "responseTimeoutMs": 20000 }
+                }
+              ]
+            },
+            {
+              "name": "scan",
+              "next": "confirmed",
+              "manual": true,
+              "processors": [
+                {
+                  "type": "EXTERNAL",
+                  "name": "scan-item",
+                  "executionMode": "SYNC",
+                  "config": { "attachEntity": true, "calculationNodesTags": "sioms", "responseTimeoutMs": 20000 }
+                }
+              ]
+            },
+            {
+              "name": "cancel",
+              "next": "cancelled",
+              "manual": true,
+              "processors": [
+                {
+                  "type": "EXTERNAL",
+                  "name": "release-stock",
+                  "executionMode": "SYNC",
+                  "config": { "attachEntity": true, "calculationNodesTags": "sioms", "responseTimeoutMs": 20000 }
+                }
+              ]
+            }
+          ]
+        },
+        "shipped": {},
+        "cancelled": {}
+      }
+    }
+  ]
+}

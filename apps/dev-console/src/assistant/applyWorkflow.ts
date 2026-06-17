@@ -9,12 +9,16 @@ export type ApplyResult =
  * the CLAUDE.md invariant: the applied file is always produced by `serializeImportPayload`,
  * so a malformed or over-reaching proposal cannot write non-canonical / non-workflow JSON.
  */
-export function validateAndCanonicalize(json: string): ApplyResult {
+export function validateAndCanonicalize(json: string, cyodaGoVersion?: string): ApplyResult {
   let result;
   try {
     // parseImportPayload throws (ParseJsonError) on malformed JSON, and returns
     // { ok:false, issues } on schema/semantic failures — handle both.
-    result = parseImportPayload(json);
+    result = parseImportPayload(
+      json,
+      undefined,
+      cyodaGoVersion ? { sourceVersion: cyodaGoVersion } : undefined,
+    );
   } catch (e) {
     return { ok: false, issues: [(e as Error).message ?? "Invalid JSON"] };
   }

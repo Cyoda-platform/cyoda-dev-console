@@ -1,4 +1,9 @@
-import { parseImportPayload, parseExportPayload } from "@cyoda/workflow-core";
+import {
+  parseImportPayload,
+  parseExportPayload,
+  LATEST_CYODA_VERSION,
+  SUPPORTED_CYODA_VERSIONS,
+} from "@cyoda/workflow-core";
 import type { WorkflowFileIndexEntry, WorkflowFileStatus } from "./types.js";
 
 export interface ClassifyInput {
@@ -9,7 +14,20 @@ export interface ClassifyInput {
   sizeBytes: number;
 }
 
-export function classifyWorkflowFile(input: ClassifyInput): WorkflowFileIndexEntry {
+/**
+ * Classify a discovered file against a project's configured cyoda-go version.
+ *
+ * The version controls which dialect `parseImportPayload` uses. A file that parses
+ * cleanly under a non-latest configured version is "valid-workflow-legacy" (file tree
+ * shows a version badge). A file that fails the configured version but parses under a
+ * *different* supported version is "incompatible-version" (e.g. a v0.7 file with a
+ * scheduled processor opened in a v0.8 project) — the tooltip points at the version
+ * that does parse it. Files that fail every supported dialect remain "invalid-workflow".
+ */
+export function classifyWorkflowFile(
+  input: ClassifyInput,
+  cyodaGoVersion: string = LATEST_CYODA_VERSION,
+): WorkflowFileIndexEntry {
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(input.contents);
@@ -25,7 +43,7 @@ export function classifyWorkflowFile(input: ClassifyInput): WorkflowFileIndexEnt
   if ("importMode" in parsedJson && "workflows" in parsedJson) {
     let result;
     try {
-      result = parseImportPayload(input.contents);
+      result = parseImportPayload(input.contents, undefined, { sourceVersion: cyodaGoVersion });
     } catch (e) {
       return makeEntry(input, "parse-error", [], (e as Error).message);
     }
@@ -34,7 +52,25 @@ export function classifyWorkflowFile(input: ClassifyInput): WorkflowFileIndexEnt
         name: w.name,
         version: w.version,
       }));
+      // Parsed cleanly, but under a dialect older than the latest this build ships.
+      if (cyodaGoVersion !== LATEST_CYODA_VERSION) {
+        return makeEntry(input, "valid-workflow-legacy", workflows, undefined, cyodaGoVersion);
+      }
       return makeEntry(input, "valid-workflow", workflows);
+    }
+    // Failed the configured version. If another supported dialect parses it, this is a
+    // version mismatch rather than a malformed workflow.
+    const compatibleVersion = SUPPORTED_CYODA_VERSIONS.find(
+      (v) => v !== cyodaGoVersion && parsesUnder(input.contents, v),
+    );
+    if (compatibleVersion !== undefined) {
+      return makeEntry(
+        input,
+        "incompatible-version",
+        [],
+        `This workflow parses as cyoda-go v${compatibleVersion} but the project targets v${cyodaGoVersion}.`,
+        compatibleVersion,
+      );
     }
     const errMsg =
       result.issues.map((i) => i.message).join("; ") ||
@@ -94,6 +130,16 @@ export function classifyWorkflowFile(input: ClassifyInput): WorkflowFileIndexEnt
   return makeEntry(input, "json-not-workflow", []);
 }
 
+/** True when `parseImportPayload` succeeds for the given dialect (errors/throws → false). */
+function parsesUnder(contents: string, version: string): boolean {
+  try {
+    const r = parseImportPayload(contents, undefined, { sourceVersion: version });
+    return r.ok && !!r.value;
+  } catch {
+    return false;
+  }
+}
+
 function isObj(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -108,6 +154,7 @@ function makeEntry(
   status: WorkflowFileStatus,
   workflows: WorkflowFileIndexEntry["workflows"],
   error?: string,
+  cyodaVersion?: string,
 ): WorkflowFileIndexEntry {
   return {
     path: input.path,
@@ -117,5 +164,6 @@ function makeEntry(
     lastModified: input.lastModified,
     sizeBytes: input.sizeBytes,
     ...(error !== undefined ? { error } : {}),
+    ...(cyodaVersion !== undefined ? { cyodaVersion } : {}),
   };
 }
