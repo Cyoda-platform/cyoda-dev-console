@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { RefreshCw, FolderOpen, Code2, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react";
+import { RefreshCw, FolderOpen, Code2, ChevronDown, ChevronRight, ChevronLeft, Plus } from "lucide-react";
 import { WORKFLOW_STATUSES, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { useTokens } from "@cyoda/console-design-system";
 import { deriveDisplayName } from "../utils/displayName.js";
@@ -25,6 +25,9 @@ export function ProjectExplorer({
   projectRoot,
   workflowRoot,
   entityRoot,
+  onNewWorkflow,
+  onNewEntity,
+  onDeleteFile,
 }: {
   allEntries: WorkflowFileIndexEntry[];
   selectedPath: string | null;
@@ -38,12 +41,16 @@ export function ProjectExplorer({
   projectRoot: string;
   workflowRoot?: string | null;
   entityRoot?: string | null;
+  onNewWorkflow?: (name: string) => void;
+  onNewEntity?: (name: string) => void;
+  onDeleteFile?: (path: string, displayName: string) => void;
 }) {
   const t = useTokens();
   const [search, setSearch] = useState("");
   const [workflowsExpanded, setWorkflowsExpanded] = useState(true);
   const [entitiesExpanded, setEntitiesExpanded] = useState(true);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [creating, setCreating] = useState<"workflow" | "entity" | null>(null);
   const [width, setWidth] = useState(280);
   const draggingRef = useRef(false);
   const dragStart = useRef({ x: 0, w: 0 });
@@ -208,8 +215,15 @@ export function ProjectExplorer({
             count={filteredWorkflows.length}
             expanded={workflowsExpanded}
             onToggle={() => setWorkflowsExpanded((v) => !v)}
+            {...(onNewWorkflow ? { onNew: () => { setCreating("workflow"); setWorkflowsExpanded(true); } } : {})}
           >
-            {filteredWorkflows.length === 0 ? (
+            {creating === "workflow" && (
+              <NewFileInput
+                onSubmit={(name) => { onNewWorkflow?.(name); setCreating(null); }}
+                onCancel={() => setCreating(null)}
+              />
+            )}
+            {filteredWorkflows.length === 0 && creating !== "workflow" ? (
               <EmptyRow text={q ? "No matches" : "No workflow files"} />
             ) : (
               filteredWorkflows.map((e) => (
@@ -230,8 +244,15 @@ export function ProjectExplorer({
             count={filteredEntities.length}
             expanded={entitiesExpanded}
             onToggle={() => setEntitiesExpanded((v) => !v)}
+            {...(onNewEntity ? { onNew: () => { setCreating("entity"); setEntitiesExpanded(true); } } : {})}
           >
-            {filteredEntities.length === 0 ? (
+            {creating === "entity" && (
+              <NewFileInput
+                onSubmit={(name) => { onNewEntity?.(name); setCreating(null); }}
+                onCancel={() => setCreating(null)}
+              />
+            )}
+            {filteredEntities.length === 0 && creating !== "entity" ? (
               <EmptyRow text={q ? "No matches" : "No entity files"} />
             ) : (
               filteredEntities.map((e) => (
@@ -326,6 +347,13 @@ export function ProjectExplorer({
                 if (entry) void navigator.clipboard.writeText(entry.relativePath);
               },
             },
+            ...(onDeleteFile ? [{
+              label: "Delete",
+              onClick: () => {
+                const entry = allEntries.find((e) => e.path === menu.path);
+                if (entry) onDeleteFile(menu.path, deriveDisplayName(entry));
+              },
+            }] : []),
           ]}
         />
       )}
@@ -338,56 +366,77 @@ function ExplorerSection({
   count,
   expanded,
   onToggle,
+  onNew,
   children,
 }: {
   label: string;
   count?: number;
   expanded: boolean;
   onToggle: () => void;
+  onNew?: () => void;
   children: React.ReactNode;
 }) {
   const t = useTokens();
+  const headerStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    background: t.color.surfaceAlt,
+    borderBottom: `1px solid ${t.color.border}`,
+  };
+  const toggleStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    flex: 1,
+    padding: "4px 8px",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontFamily: t.font.sans,
+    fontSize: 11,
+    fontWeight: 600,
+    color: t.color.textFaint,
+    textAlign: "left",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    minWidth: 0,
+  };
   return (
     <div>
-      <button
-        onClick={onToggle}
-        aria-expanded={expanded}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          width: "100%",
-          padding: "4px 8px",
-          background: t.color.surfaceAlt,
-          border: "none",
-          borderBottom: `1px solid ${t.color.border}`,
-          cursor: "pointer",
-          fontFamily: t.font.sans,
-          fontSize: 11,
-          fontWeight: 600,
-          color: t.color.textFaint,
-          textAlign: "left",
-          textTransform: "uppercase",
-          letterSpacing: "0.5px",
-        }}
-      >
-        <span aria-hidden style={{ display: "flex", alignItems: "center", width: 12, flexShrink: 0 }}>
-          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        </span>
-        {label}
-        {count !== undefined && count > 0 && (
-          <span
-            style={{
-              marginLeft: "auto",
-              fontWeight: 400,
-              color: t.color.textMuted,
-              fontSize: t.font.sizes.sm,
-            }}
-          >
-            {count}
+      <div style={headerStyle}>
+        <button onClick={onToggle} aria-expanded={expanded} style={toggleStyle}>
+          <span aria-hidden style={{ display: "flex", alignItems: "center", width: 12, flexShrink: 0 }}>
+            {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </span>
-        )}
-      </button>
+          {label}
+          {onNew && (
+            <span
+              role="button"
+              onClick={(e) => { e.stopPropagation(); onNew(); }}
+              title={`New ${label.toLowerCase().replace(/ies$/, "y").replace(/s$/, "")}`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 16,
+                height: 16,
+                marginLeft: 4,
+                borderRadius: 3,
+                cursor: "pointer",
+                color: t.color.textMuted,
+                flexShrink: 0,
+              }}
+            >
+              <Plus size={11} />
+            </span>
+          )}
+          {count !== undefined && count > 0 && (
+            <span style={{ marginLeft: "auto", fontWeight: 400, color: t.color.textMuted, fontSize: t.font.sizes.sm }}>
+              {count}
+            </span>
+          )}
+        </button>
+      </div>
       {expanded && children}
     </div>
   );
@@ -482,6 +531,52 @@ function StatusDot({ status, colorOverride }: { status: WorkflowFileIndexEntry["
         flexShrink: 0,
       }}
     />
+  );
+}
+
+function NewFileInput({ onSubmit, onCancel }: { onSubmit: (name: string) => void; onCancel: () => void }) {
+  const t = useTokens();
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      const name = value.trim();
+      if (name) onSubmit(name.endsWith(".json") ? name : `${name}.json`);
+      else onCancel();
+    } else if (e.key === "Escape") {
+      onCancel();
+    }
+  };
+
+  return (
+    <div style={{ padding: "3px 8px 3px 20px" }}>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={onCancel}
+        placeholder="filename.json"
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          height: 22,
+          padding: "0 6px",
+          fontFamily: t.font.sans,
+          fontSize: t.font.sizes.sm,
+          border: `1px solid ${t.color.blue}`,
+          borderRadius: 3,
+          background: t.color.surface,
+          color: t.color.text,
+          outline: "none",
+        }}
+      />
+    </div>
   );
 }
 

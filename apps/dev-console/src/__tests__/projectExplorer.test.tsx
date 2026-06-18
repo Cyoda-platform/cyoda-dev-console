@@ -260,4 +260,113 @@ describe("ProjectExplorer", () => {
     expect(screen.getByTitle("models/order.json")).toBeInTheDocument();
     expect(screen.getByTitle("entities/customer.json")).toBeInTheDocument();
   });
+
+  describe("new file (+ button)", () => {
+    it("shows + button for workflows when onNewWorkflow is provided", () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewWorkflow={vi.fn()} />);
+      expect(screen.getByTitle("New workflow")).toBeInTheDocument();
+    });
+
+    it("shows + button for entities when onNewEntity is provided", () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewEntity={vi.fn()} />);
+      expect(screen.getByTitle("New entity")).toBeInTheDocument();
+    });
+
+    it("hides + button for workflows when onNewWorkflow is absent", () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} />);
+      expect(screen.queryByTitle("New workflow")).not.toBeInTheDocument();
+    });
+
+    it("hides + button for entities when onNewEntity is absent", () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} />);
+      expect(screen.queryByTitle("New entity")).not.toBeInTheDocument();
+    });
+
+    it("clicking + shows inline input in Workflows section", async () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewWorkflow={vi.fn()} />);
+      await userEvent.click(screen.getByTitle("New workflow"));
+      expect(screen.getByPlaceholderText("filename.json")).toBeInTheDocument();
+    });
+
+    it("clicking + shows inline input in Entities section", async () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewEntity={vi.fn()} />);
+      await userEvent.click(screen.getByTitle("New entity"));
+      expect(screen.getByPlaceholderText("filename.json")).toBeInTheDocument();
+    });
+
+    it("Enter with name calls onNewWorkflow with .json appended", async () => {
+      const onNewWorkflow = vi.fn();
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewWorkflow={onNewWorkflow} />);
+      await userEvent.click(screen.getByTitle("New workflow"));
+      await userEvent.type(screen.getByPlaceholderText("filename.json"), "my_workflow{Enter}");
+      expect(onNewWorkflow).toHaveBeenCalledWith("my_workflow.json");
+    });
+
+    it("Enter with name already ending in .json does not double-append", async () => {
+      const onNewWorkflow = vi.fn();
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewWorkflow={onNewWorkflow} />);
+      await userEvent.click(screen.getByTitle("New workflow"));
+      await userEvent.type(screen.getByPlaceholderText("filename.json"), "my_workflow.json{Enter}");
+      expect(onNewWorkflow).toHaveBeenCalledWith("my_workflow.json");
+    });
+
+    it("Enter with name calls onNewEntity with .json appended", async () => {
+      const onNewEntity = vi.fn();
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewEntity={onNewEntity} />);
+      await userEvent.click(screen.getByTitle("New entity"));
+      await userEvent.type(screen.getByPlaceholderText("filename.json"), "order{Enter}");
+      expect(onNewEntity).toHaveBeenCalledWith("order.json");
+    });
+
+    it("Escape cancels inline input without calling handler", async () => {
+      const onNewWorkflow = vi.fn();
+      wrap(<ProjectExplorer {...baseProps} allEntries={[]} onNewWorkflow={onNewWorkflow} />);
+      await userEvent.click(screen.getByTitle("New workflow"));
+      await userEvent.keyboard("{Escape}");
+      expect(screen.queryByPlaceholderText("filename.json")).not.toBeInTheDocument();
+      expect(onNewWorkflow).not.toHaveBeenCalled();
+    });
+
+    it("clicking + does not collapse the section", async () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[workflowEntry]} onNewWorkflow={vi.fn()} />);
+      expect(screen.getByTitle("configs/greeting_workflow.json")).toBeInTheDocument();
+      await userEvent.click(screen.getByTitle("New workflow"));
+      expect(screen.getByTitle("configs/greeting_workflow.json")).toBeInTheDocument();
+    });
+  });
+
+  describe("delete file", () => {
+    it("shows Delete in context menu when onDeleteFile is provided", async () => {
+      const onDeleteFile = vi.fn();
+      wrap(
+        <ProjectExplorer
+          {...baseProps}
+          allEntries={[workflowEntry]}
+          onDeleteFile={onDeleteFile}
+        />,
+      );
+      await userEvent.pointer({ target: screen.getByTitle("configs/greeting_workflow.json"), keys: "[MouseRight]" });
+      expect(screen.getByText("Delete")).toBeInTheDocument();
+    });
+
+    it("hides Delete in context menu when onDeleteFile is absent", async () => {
+      wrap(<ProjectExplorer {...baseProps} allEntries={[workflowEntry]} />);
+      await userEvent.pointer({ target: screen.getByTitle("configs/greeting_workflow.json"), keys: "[MouseRight]" });
+      expect(screen.queryByText("Delete")).not.toBeInTheDocument();
+    });
+
+    it("clicking Delete calls onDeleteFile with path and display name", async () => {
+      const onDeleteFile = vi.fn();
+      wrap(
+        <ProjectExplorer
+          {...baseProps}
+          allEntries={[workflowEntry]}
+          onDeleteFile={onDeleteFile}
+        />,
+      );
+      await userEvent.pointer({ target: screen.getByTitle("configs/greeting_workflow.json"), keys: "[MouseRight]" });
+      await userEvent.click(screen.getByText("Delete"));
+      expect(onDeleteFile).toHaveBeenCalledWith(workflowEntry.path, "greeting");
+    });
+  });
 });

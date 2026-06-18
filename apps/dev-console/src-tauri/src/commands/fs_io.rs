@@ -6,6 +6,24 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
+#[tauri::command]
+pub async fn delete_file(
+    path: String,
+    active_root: Option<String>,
+) -> Result<(), String> {
+    let p = PathBuf::from(&path);
+    if let Some(root) = active_root.as_deref() {
+        resolve_inside_root(std::path::Path::new(root), &p).map_err(|e| e.to_string())?;
+    }
+    std::fs::remove_file(&p).map_err(|e| e.to_string())?;
+    // Remove companion layout file if it exists (e.g. foo.layout.json next to foo.json).
+    if let Some(stem) = p.file_stem().and_then(|s| s.to_str()) {
+        let layout = p.with_file_name(format!("{}.layout.json", stem));
+        let _ = std::fs::remove_file(layout);
+    }
+    Ok(())
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReadResult {

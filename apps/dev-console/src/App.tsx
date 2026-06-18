@@ -10,7 +10,7 @@ import { EntityRoute } from "./routes/entity.js";
 import { AgentRoute } from "./routes/agent.js";
 import { SettingsRoute } from "./routes/settings.js";
 import { AgentContextProvider } from "./agent/AgentContext.js";
-import { readTextFile } from "./ipc/fsio.js";
+import { readTextFile, writeTextFileWithConfirmedOverwrite, deleteFile } from "./ipc/fsio.js";
 import { loadAppConfig } from "./ipc/config.js";
 import { scanProject } from "./ipc/project.js";
 import { watchProject, onFileChanged } from "./ipc/watcher.js";
@@ -117,6 +117,59 @@ function DevConsoleApp() {
     setEditorDirty(false);
   };
 
+  const handleNewWorkflow = async (filename: string) => {
+    if (!active) return;
+    const wfRoot = (active.workflowRoot ?? "").replace(/\/$/, "");
+    const path = [active.rootPath, wfRoot, filename].filter(Boolean).join("/");
+    const baseName = filename.replace(/\.json$/, "");
+    const template = JSON.stringify({
+      importMode: "REPLACE",
+      workflows: [{
+        name: baseName,
+        version: "1.0",
+        initialState: "CREATED",
+        active: true,
+        states: { CREATED: { transitions: [] } },
+      }],
+    }, null, 2);
+    const result = await writeTextFileWithConfirmedOverwrite(path, template);
+    void qc.invalidateQueries({ queryKey: ["scan", active.rootPath] });
+    const relativePath = [wfRoot, filename].filter(Boolean).join("/");
+    setOpenedFile({ path: result.path, contents: template, kind: "workflow", relativePath, displayName: baseName });
+    setViewKind("workflow");
+    setEditorDirty(false);
+  };
+
+  const handleNewEntity = async (filename: string) => {
+    if (!active) return;
+    const enRoot = (active.entityRoot ?? "").replace(/\/$/, "");
+    const path = [active.rootPath, enRoot, filename].filter(Boolean).join("/");
+    const baseName = filename.replace(/\.json$/, "");
+    const template = JSON.stringify({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      title: baseName,
+      type: "object",
+      properties: {},
+    }, null, 2);
+    const result = await writeTextFileWithConfirmedOverwrite(path, template);
+    void qc.invalidateQueries({ queryKey: ["scan", active.rootPath] });
+    const relativePath = [enRoot, filename].filter(Boolean).join("/");
+    setOpenedFile({ path: result.path, contents: template, kind: "entity", relativePath, displayName: baseName });
+    setViewKind("entity");
+    setEditorDirty(false);
+  };
+
+  const handleDeleteFile = async (path: string, displayName: string) => {
+    if (!active) return;
+    if (!window.confirm(`Delete "${displayName}"?\nThis cannot be undone.`)) return;
+    await deleteFile(path, active.rootPath);
+    if (openedFile?.path === path) {
+      setOpenedFile(null);
+      setViewKind(null);
+    }
+    void qc.invalidateQueries({ queryKey: ["scan", active.rootPath] });
+  };
+
   const allEntries = scan.data ?? [];
   const firstEntry =
     allEntries.find((e) => e.status === "valid-workflow" || e.status === "export-payload" || e.status === "probable-workflow") ??
@@ -165,6 +218,9 @@ function DevConsoleApp() {
               projectRoot={active.rootPath}
               workflowRoot={active.workflowRoot}
               entityRoot={active.entityRoot}
+              onNewWorkflow={(name) => void handleNewWorkflow(name)}
+              onNewEntity={(name) => void handleNewEntity(name)}
+              onDeleteFile={(path, displayName) => void handleDeleteFile(path, displayName)}
             />
 
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>

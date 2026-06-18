@@ -26,3 +26,7 @@ export function writeTextFileWithConfirmedOverwrite(
 export function saveFileAs(contents: string): Promise<WriteResult | null> {
   return invoke<WriteResult | null>("save_file_as", { contents });
 }
+
+export function deleteFile(path: string, activeRoot?: string): Promise<void> {
+  return invoke<void>("delete_file", { path, activeRoot: activeRoot ?? null });
+}
