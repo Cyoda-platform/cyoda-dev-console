@@ -249,7 +249,7 @@ describe("ProjectExplorer", () => {
     expect(screen.getByTitle("workflows/approval_workflow.json")).toBeInTheDocument();
   });
 
-  it("null entityRoot shows all entities", () => {
+  it("null entityRoot auto-detects entities by folder name", () => {
     wrap(
       <ProjectExplorer
         {...baseProps}
@@ -257,9 +257,38 @@ describe("ProjectExplorer", () => {
         entityRoot={null}
       />,
     );
+    // entityEntry is at models/order.json — "models" is an entity folder
     expect(screen.getByTitle("models/order.json")).toBeInTheDocument();
+    // entityEntryInSubdir is at entities/customer.json — "entities" is an entity folder
     expect(screen.getByTitle("entities/customer.json")).toBeInTheDocument();
   });
+
+  it("auto-detect excludes files under schema/ folders", () => {
+    const schemaEntry: WorkflowFileIndexEntry = {
+      path: "/project/schema/entity/Foo.json",
+      relativePath: "schema/entity/Foo.json",
+      status: "json-not-workflow",
+      workflows: [],
+      lastModified: "",
+      sizeBytes: 0,
+    };
+    wrap(<ProjectExplorer {...baseProps} allEntries={[schemaEntry]} entityRoot={null} />);
+    expect(screen.queryByTitle("schema/entity/Foo.json")).not.toBeInTheDocument();
+  });
+
+  it("auto-detect excludes arbitrary JSON files not in entity folders", () => {
+    const configEntry: WorkflowFileIndexEntry = {
+      path: "/project/config/settings.json",
+      relativePath: "config/settings.json",
+      status: "json-not-workflow",
+      workflows: [],
+      lastModified: "",
+      sizeBytes: 0,
+    };
+    wrap(<ProjectExplorer {...baseProps} allEntries={[configEntry]} entityRoot={null} />);
+    expect(screen.queryByTitle("config/settings.json")).not.toBeInTheDocument();
+  });
+
 
   describe("new file (+ button)", () => {
     it("shows + button for workflows when onNewWorkflow is provided", () => {

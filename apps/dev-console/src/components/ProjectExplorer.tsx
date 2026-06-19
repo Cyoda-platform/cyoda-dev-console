@@ -7,6 +7,12 @@ import { revealInFinder, openInIde } from "../ipc/shell.js";
 import { ContextMenu } from "./ContextMenu.js";
 
 
+function looksLikeEntityPath(relativePath: string): boolean {
+  const segments = relativePath.split("/");
+  if (segments.includes("schema")) return false;
+  return segments.some((s) => /^(?:entity|entities|model|models)$/i.test(s));
+}
+
 interface MenuState {
   x: number;
   y: number;
@@ -84,7 +90,9 @@ export function ProjectExplorer({
     (e) =>
       e.status === "json-not-workflow" &&
       !e.path.endsWith(".layout.json") &&
-      (!enRoot || e.relativePath.startsWith(enRoot + "/")),
+      (enRoot
+        ? e.relativePath.startsWith(enRoot + "/")
+        : looksLikeEntityPath(e.relativePath)),
   );
 
   const q = search.trim().toLowerCase();

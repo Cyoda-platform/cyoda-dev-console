@@ -38,6 +38,16 @@ it("classifies a non-workflow JSON file", async () => {
   expect(e.error).toBeUndefined();
 });
 
+it("classifies a JSON Schema file as json-not-workflow (entity folder configured separately)", async () => {
+  const e = await classify("entity-schema-dollar.json");
+  expect(e.status).toBe("json-not-workflow");
+});
+
+it("classifies a plain entity data file as json-not-workflow", async () => {
+  const e = await classify("entity-schema-shape.json");
+  expect(e.status).toBe("json-not-workflow");
+});
+
 it("classifies a parse-error file and sets error", async () => {
   const e = await classify("parse-error.json");
   expect(e.status).toBe("parse-error");
