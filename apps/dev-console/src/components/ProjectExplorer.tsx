@@ -83,6 +83,7 @@ export function ProjectExplorer({
   const entityEntries = allEntries.filter(
     (e) =>
       e.status === "json-not-workflow" &&
+      !e.path.endsWith(".layout.json") &&
       (!enRoot || e.relativePath.startsWith(enRoot + "/")),
   );
 
