@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTokens } from "@cyoda/console-design-system";
-import type { WorkflowUiMeta } from "@cyoda/workflow-core";
+import type { WorkflowUiMeta, TransitionPointer } from "@cyoda/workflow-core";
 import {
   useEditorSession,
   WorkflowEditorHostPanel,
@@ -16,6 +16,56 @@ import { CompareView } from "../components/CompareView.js";
 import { serializeImportPayload, parseImportPayload } from "@cyoda/workflow-core";
 import { useAssistantChat } from "../assistant/useAssistantChat.js";
 import { WorkflowAssistantPanel } from "../assistant/WorkflowAssistantPanel.js";
+
+/**
+ * Re-keys transitionPositions and edgeAnchors from old synthetic UUIDs (saved
+ * in the layout file) to current UUIDs (assigned on this load), using
+ * ordinal-position matching within (workflow, state) — the same rule
+ * assignSyntheticIds uses when reusing prior UUIDs.
+ */
+export function remapLayoutUuids(
+  workflowUi: Record<string, WorkflowUiMeta>,
+  oldIds: Record<string, TransitionPointer>,
+  newIds: Record<string, TransitionPointer>,
+): Record<string, WorkflowUiMeta> {
+  if (Object.keys(oldIds).length === 0) return workflowUi;
+
+  const oldByState: Record<string, string[]> = {};
+  for (const [uuid, ptr] of Object.entries(oldIds)) {
+    const key = `${ptr.workflow}:${ptr.state}`;
+    (oldByState[key] ??= []).push(uuid);
+  }
+  const newByState: Record<string, string[]> = {};
+  for (const [uuid, ptr] of Object.entries(newIds)) {
+    const key = `${ptr.workflow}:${ptr.state}`;
+    (newByState[key] ??= []).push(uuid);
+  }
+
+  const uuidMap: Record<string, string> = {};
+  for (const [key, oldUuids] of Object.entries(oldByState)) {
+    const newUuids = newByState[key] ?? [];
+    oldUuids.forEach((oldUuid, idx) => {
+      const newUuid = newUuids[idx];
+      if (newUuid) uuidMap[oldUuid] = newUuid;
+    });
+  }
+
+  const result: Record<string, WorkflowUiMeta> = {};
+  for (const [wfName, ui] of Object.entries(workflowUi)) {
+    const transitionPositions = ui.transitionPositions
+      ? Object.fromEntries(
+          Object.entries(ui.transitionPositions).map(([uuid, pos]) => [uuidMap[uuid] ?? uuid, pos]),
+        )
+      : undefined;
+    const edgeAnchors = ui.edgeAnchors
+      ? Object.fromEntries(
+          Object.entries(ui.edgeAnchors).map(([uuid, anchor]) => [uuidMap[uuid] ?? uuid, anchor]),
+        )
+      : undefined;
+    result[wfName] = { ...ui, transitionPositions, edgeAnchors };
+  }
+  return result;
+}
 
 const AGENT_FLAG = import.meta.env.VITE_FEATURE_FLAG_AGENT === "true";
 
