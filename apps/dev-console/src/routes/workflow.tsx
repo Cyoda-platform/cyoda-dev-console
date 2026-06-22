@@ -62,7 +62,11 @@ export function remapLayoutUuids(
           Object.entries(ui.edgeAnchors).map(([uuid, anchor]) => [uuidMap[uuid] ?? uuid, anchor]),
         )
       : undefined;
-    result[wfName] = { ...ui, transitionPositions, edgeAnchors };
+    result[wfName] = {
+      ...ui,
+      ...(transitionPositions !== undefined ? { transitionPositions } : {}),
+      ...(edgeAnchors !== undefined ? { edgeAnchors } : {}),
+    };
   }
   return result;
 }
@@ -117,19 +121,13 @@ export function WorkflowRoute({
   const layoutSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [layoutReady, setLayoutReady] = useState(false);
 
-  // On mount: load layout file → seed localStorage → let editor pick it up
-  useEffect(() => {
-    readTextFile(layoutFilePath)
-      .then(({ contents }) => { localStorage.setItem(layoutKey, contents); })
-      .catch(() => { /* no layout file yet — that's fine */ })
-      .finally(() => { setLayoutReady(true); });
-  }, [layoutFilePath, layoutKey]);
-
   const handleWorkflowUiChange = useCallback((workflowUi: Record<string, WorkflowUiMeta>) => {
     if (layoutSaveTimer.current) clearTimeout(layoutSaveTimer.current);
     layoutSaveTimer.current = setTimeout(() => {
       if (Object.keys(workflowUi).length === 0) return;
-      void writeTextFileWithConfirmedOverwrite(layoutFilePath, JSON.stringify(workflowUi, null, 2));
+      const transitionIds = sessionDocRef.current?.meta.ids.transitions ?? {};
+      const payload = { ...workflowUi, _transitionIds: transitionIds };
+      void writeTextFileWithConfirmedOverwrite(layoutFilePath, JSON.stringify(payload, null, 2));
     }, 800);
   }, [layoutFilePath]);
 
@@ -149,6 +147,32 @@ export function WorkflowRoute({
       saveAs: saveFileAs,
     },
   });
+
+  const sessionDocRef = useRef(session.document);
+  sessionDocRef.current = session.document;
+
+  // On mount: load layout file → remap UUID keys → seed localStorage → let editor pick it up
+  useEffect(() => {
+    const currentIds = session.document?.meta.ids.transitions ?? {};
+    readTextFile(layoutFilePath)
+      .then(({ contents }) => {
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(contents) as Record<string, unknown>;
+        } catch {
+          return;
+        }
+        const { _transitionIds, ...rawWorkflowUi } = parsed;
+        const workflowUi = rawWorkflowUi as Record<string, WorkflowUiMeta>;
+        const remapped =
+          _transitionIds && typeof _transitionIds === "object"
+            ? remapLayoutUuids(workflowUi, _transitionIds as Record<string, TransitionPointer>, currentIds)
+            : workflowUi;
+        localStorage.setItem(layoutKey, JSON.stringify(remapped));
+      })
+      .catch(() => { /* no layout file yet — that's fine */ })
+      .finally(() => { setLayoutReady(true); });
+  }, [layoutFilePath, layoutKey]); // currentIds captured at mount — intentionally runs once
 
   // AI assistant scoped to this open file. Owned here (not in the panel) so the conversation
   // survives the drawer being toggled closed/open. Proposals are applied to the in-memory

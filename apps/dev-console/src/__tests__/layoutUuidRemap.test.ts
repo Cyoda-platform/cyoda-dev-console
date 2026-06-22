@@ -28,7 +28,7 @@ describe("remapLayoutUuids", () => {
       },
     };
     const result = remapLayoutUuids(workflowUi, oldIds, newIds);
-    expect(result["wf"].transitionPositions).toEqual({
+    expect(result["wf"]?.transitionPositions).toEqual({
       [NEW_UUID_1]: { x: 10, y: 20 },
       [NEW_UUID_2]: { x: 30, y: 40 },
     });
@@ -43,7 +43,7 @@ describe("remapLayoutUuids", () => {
       },
     };
     const result = remapLayoutUuids(workflowUi, oldIds, newIds);
-    expect(result["wf"].edgeAnchors).toEqual({
+    expect(result["wf"]?.edgeAnchors).toEqual({
       [NEW_UUID_1]: { source: "top", target: "bottom" },
     });
   });
@@ -53,7 +53,7 @@ describe("remapLayoutUuids", () => {
       wf: { transitionPositions: { "unknown-uuid": { x: 5, y: 5 } } },
     };
     const result = remapLayoutUuids(workflowUi, oldIds, newIds);
-    expect(result["wf"].transitionPositions?.["unknown-uuid"]).toEqual({ x: 5, y: 5 });
+    expect(result["wf"]?.transitionPositions?.["unknown-uuid"]).toEqual({ x: 5, y: 5 });
   });
 
   it("preserves other WorkflowUiMeta fields unchanged", () => {
@@ -64,7 +64,7 @@ describe("remapLayoutUuids", () => {
       },
     };
     const result = remapLayoutUuids(workflowUi, oldIds, newIds);
-    expect(result["wf"].layout).toEqual({ nodes: { INITIAL: { x: 1, y: 2 } } });
+    expect(result["wf"]?.layout).toEqual({ nodes: { INITIAL: { x: 1, y: 2 } } });
   });
 
   it("returns workflowUi unchanged when oldIds is empty", () => {
