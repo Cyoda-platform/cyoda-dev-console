@@ -14,6 +14,10 @@ function makeStorage() {
 describe("useAssistantConfig", () => {
   beforeEach(() => {
     vi.stubGlobal("sessionStorage", makeStorage());
+    // Stub localStorage too (sibling tests do the same): under Node 22 + vitest 4
+    // the bare `localStorage` global resolves to Node's experimental Web Storage,
+    // not happy-dom's, so its methods are unavailable without an explicit stub.
+    vi.stubGlobal("localStorage", makeStorage());
     useAssistantConfig.setState({ provider: "anthropic", model: "claude-sonnet-4-6", keys: {} });
   });
   afterEach(() => vi.unstubAllGlobals());
