@@ -4,6 +4,8 @@ build/
 target/
 .pnpm-store/
 .turbo/
+# Personal dev sandbox (safe-claude profile + pnpm store) — never committed
+.sandbox/
 .DS_Store
 *.log
 apps/dev-console/src-tauri/target/
