@@ -30,6 +30,6 @@ jobs:
         run: |
           pnpm --filter dev-console tauri:build -- --target ${{ matrix.target }}
       - name: Upload .dmg
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: apps/dev-console/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
