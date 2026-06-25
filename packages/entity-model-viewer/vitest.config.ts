@@ -1,2 +1,2 @@
 import { defineConfig } from "vitest/config";
-export default defineConfig({ test: { environment: "happy-dom", globals: true } });
+export default defineConfig({ test: { include: ["src/**/*.test.{ts,tsx}"], environment: "happy-dom", globals: true } });

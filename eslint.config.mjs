@@ -27,7 +27,7 @@ export default [
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
     },
-    settings: { react: { version: "18.3" } },
+    settings: { react: { version: "19.2" } },
     rules: {
       ...tsPlugin.configs.recommended.rules,
       ...reactPlugin.configs.recommended.rules,

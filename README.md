@@ -90,6 +90,19 @@ packages/
   agent-bridge-contract/  # Type-only contract for the BYO AI surface
 ```
 
+### Workflow editor (`@cyoda/workflow-*`)
+
+The workflow editor is consumed as **published packages from the public npm
+registry** (`@cyoda/workflow-core`, `-react`, `-viewer`, `-monaco`, `-graph`,
+`-layout`), pinned to exact versions. No registry auth is required to install.
+To upgrade, bump the versions in the consuming manifests and run `pnpm install`.
+
+**Local co-development** (editing the lib in `../cyoda-workflow-editor` against
+this app): use `pnpm` overrides or `pnpm link` to point the `@cyoda/workflow-*`
+deps at the sibling checkout, build the lib (`pnpm -r build` there), then
+re-install here. Keep those local edits out of commits — committed manifests must
+stay on the published versions so CI (which has no sibling checkout) installs cleanly.
+
 ## BYO AI (AI Assistant)
 
 The Dev Console has an in-app AI Assistant, plus optional tooling to set up a separate

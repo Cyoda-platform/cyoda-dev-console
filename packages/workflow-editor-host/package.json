@@ -17,25 +17,25 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "dependencies": {
     "@cyoda/console-design-system": "workspace:*",
-    "@cyoda/workflow-core": "file:../../../cyoda-workflow-editor/packages/workflow-core",
-    "@cyoda/workflow-react": "file:../../../cyoda-workflow-editor/packages/workflow-react",
+    "@cyoda/workflow-core": "0.3.0",
+    "@cyoda/workflow-react": "0.3.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.1.0",
+    "@testing-library/react": "catalog:",
     "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "happy-dom": "^15.11.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "typescript": "^5.7.0",
-    "vitest": "^2.1.0"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "happy-dom": "^20.10.6",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
