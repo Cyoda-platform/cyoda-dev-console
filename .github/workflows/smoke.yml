@@ -1,0 +1,21 @@
+name: Smoke
+on:
+  push:
+    branches: [staging]
+jobs:
+  release-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: "aarch64-apple-darwin" }
+      - run: pnpm install --frozen-lockfile
+      # Build workspace packages first: app consumes their gitignored dist/.
+      - run: pnpm -r build
+      # Unsigned native release build — no Apple secrets, no notarization.
+      # signingIdentity "-" (ad-hoc) in tauri.conf.json; channel pinned by
+      # rust-toolchain.toml (1.96.0), so @stable above is overridden on build.
+      - run: pnpm --filter dev-console tauri:build -- --target aarch64-apple-darwin
