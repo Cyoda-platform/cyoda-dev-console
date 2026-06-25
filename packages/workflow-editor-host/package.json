@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "@cyoda/console-design-system": "workspace:*",
-    "@cyoda/workflow-core": "file:../../../cyoda-workflow-editor/packages/workflow-core",
-    "@cyoda/workflow-react": "file:../../../cyoda-workflow-editor/packages/workflow-react",
+    "@cyoda/workflow-core": "0.3.0",
+    "@cyoda/workflow-react": "0.3.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

@@ -7,10 +7,7 @@ use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command]
-pub async fn delete_file(
-    path: String,
-    active_root: Option<String>,
-) -> Result<(), String> {
+pub async fn delete_file(path: String, active_root: Option<String>) -> Result<(), String> {
     let p = PathBuf::from(&path);
     if let Some(root) = active_root.as_deref() {
         resolve_inside_root(std::path::Path::new(root), &p).map_err(|e| e.to_string())?;
