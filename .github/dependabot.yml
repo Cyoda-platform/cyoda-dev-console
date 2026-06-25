@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    target-branch: staging
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Hand-pinned lockstep deps — bumped manually, not by Dependabot.
+      - dependency-name: "@cyoda/workflow-*"
+
+  - package-ecosystem: cargo
+    directory: "/apps/dev-console/src-tauri"
+    target-branch: staging
+    schedule:
+      interval: weekly
+    groups:
+      cargo-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: staging
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
