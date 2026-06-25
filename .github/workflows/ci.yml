@@ -9,10 +9,12 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      # Build first: workspace packages resolve to their gitignored dist/, so
+      # lint/typecheck/test must run after the packages are built.
+      - run: pnpm -r build
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm -r test
-      - run: pnpm -r build
   rust:
     runs-on: macos-14
     defaults: { run: { working-directory: apps/dev-console/src-tauri } }
