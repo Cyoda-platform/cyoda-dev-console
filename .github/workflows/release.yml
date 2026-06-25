@@ -17,7 +17,7 @@ jobs:
         with: { targets: "${{ matrix.target }}" }
       - run: pnpm install --frozen-lockfile
       - name: Import code-signing certificate
-        uses: apple-actions/import-codesign-certs@v3
+        uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
           p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
