@@ -136,6 +136,17 @@ describe("ProjectNameField", () => {
     expect(ev.defaultPrevented).toBe(true);
   });
 
+  it("does not double-commit when Enter is followed by blur", () => {
+    const onCommit = vi.fn();
+    wrap(<ProjectNameField name="my-proj" rootPath={ROOT} onCommit={onCommit} />);
+    const input = screen.getByLabelText("Project name");
+    fireEvent.change(input, { target: { value: "renamed" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.blur(input);
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith("renamed");
+  });
+
   it("preserves unsaved text when the name prop changes, and a later chip click still commits", () => {
     const onCommit = vi.fn();
     const { rerender } = wrap(<ProjectNameField name="a" rootPath={ROOT} onCommit={onCommit} />);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTokens } from "@cyoda/console-design-system";
 
 const MAX_NAME = 200;
@@ -23,10 +23,16 @@ export function ProjectNameField({
 }) {
   const t = useTokens();
   const [value, setValue] = useState(name); // mount-once seed; not re-seeded on prop change
+  const committedRef = useRef(name);
 
   const commit = (raw: string) => {
     const next = raw.trim();
+    if (next === committedRef.current) {
+      setValue(next); // already committed (or unchanged) — keep shown, don't re-fire
+      return;
+    }
     if (next.length >= 1 && next.length <= MAX_NAME && next !== name) {
+      committedRef.current = next;
       onCommit(next);
       setValue(next);
     } else {
