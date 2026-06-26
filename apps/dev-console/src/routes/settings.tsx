@@ -201,7 +201,7 @@ export function SettingsRoute() {
           Show setup tips
         </button>
       ) : (
-        <div style={{ marginBottom: t.space.md }}>
+        <div style={{ marginBottom: t.space.md, width: 0, minWidth: "100%", boxSizing: "border-box" }}>
           <WarningBanner severity="info" onDismiss={dismissTips}>
             <strong>Set your project folders explicitly.</strong> Auto-detection of
             workflow and entity files is still evolving and may not always pick the
