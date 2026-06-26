@@ -13,7 +13,7 @@ import { AgentContextProvider } from "./agent/AgentContext.js";
 import { readTextFile, writeTextFileWithConfirmedOverwrite, deleteFile } from "./ipc/fsio.js";
 import { loadAppConfig } from "./ipc/config.js";
 import { scanProject } from "./ipc/project.js";
-import { watchProject, onFileChanged } from "./ipc/watcher.js";
+import { useProjectWatcher } from "./hooks/useProjectWatcher.js";
 import { classifyWorkflowFile, WORKFLOW_STATUSES, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { synthesizeImportPayload } from "@cyoda/workflow-editor-host";
 import { HeaderContext } from "./components/HeaderContext.js";
@@ -74,26 +74,8 @@ function DevConsoleApp() {
     enabled: !!active && projectReady,
   });
 
-  // File watcher — invalidate scan on external changes
-  useEffect(() => {
-    if (!active?.rootPath) return;
-    let aborted = false;
-    let cleanup: (() => void) | null = null;
-    void watchProject(active.rootPath)
-      .then(() => {
-        if (aborted) return;
-        return onFileChanged(() => {
-          void qc.invalidateQueries({ queryKey: ["scan", active.rootPath] });
-        });
-      })
-      .then((unlisten) => {
-        if (unlisten) cleanup = unlisten;
-      });
-    return () => {
-      aborted = true;
-      cleanup?.();
-    };
-  }, [active?.rootPath, qc]);
+  // File watcher — invalidate scan on external changes (teardown-safe)
+  useProjectWatcher(active?.rootPath, qc);
 
   const handleOpenEntry = async (entry: WorkflowFileIndexEntry) => {
     const result = await readTextFile(entry.path);

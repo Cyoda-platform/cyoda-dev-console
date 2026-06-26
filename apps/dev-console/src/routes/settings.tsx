@@ -1,18 +1,25 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { v4 as uuid } from "uuid";
 import { loadAppConfig, saveAppConfig } from "../ipc/config.js";
 import { selectProjectRoot } from "../ipc/project.js";
 import { useProjectStore } from "../state/projectStore.js";
 import type { AppConfig, DevProject } from "@cyoda/workflow-project-model";
-import { Button, EmptyState, FilePath, Panel, useTokens } from "@cyoda/console-design-system";
+import { Button, EmptyState, FilePath, Panel, WarningBanner, useTokens } from "@cyoda/console-design-system";
+import { ProjectNameField } from "../components/ProjectNameField.js";
 
-function ConfirmRemoveModal({
-  projectName,
+function ConfirmModal({
+  title,
+  body,
+  confirmLabel,
+  confirmVariant = "primary",
   onConfirm,
   onCancel,
 }: {
-  projectName: string;
+  title: string;
+  body: ReactNode;
+  confirmLabel: string;
+  confirmVariant?: "primary" | "danger";
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -28,14 +35,13 @@ function ConfirmRemoveModal({
         zIndex: 1000,
       }}
     >
-      <Panel title="Remove project?">
+      <Panel title={title}>
         <p style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.md, color: t.color.text, margin: `0 0 ${t.space.sm}` }}>
-          <strong>{projectName}</strong> will be removed from the project list.
-          The files on disk are not affected.
+          {body}
         </p>
         <div style={{ display: "flex", gap: t.space.sm, justifyContent: "flex-end", marginTop: t.space.md }}>
           <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button variant="danger" onClick={onConfirm}>Remove</Button>
+          <Button variant={confirmVariant} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </Panel>
     </div>
@@ -58,6 +64,21 @@ export function SettingsRoute() {
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [workflowRootError, setWorkflowRootError] = useState<string | null>(null);
   const [entityRootError, setEntityRootError] = useState<string | null>(null);
+  const [confirmRootChange, setConfirmRootChange] = useState<{ id: string; abs: string } | null>(null);
+
+  const [tipsDismissed, setTipsDismissed] = useState<boolean>(
+    () => localStorage.getItem("cyoda.setupTipsDismissed") === "1",
+  );
+  const dismissTips = () => {
+    localStorage.setItem("cyoda.setupTipsDismissed", "1");
+    setTipsDismissed(true);
+  };
+  const showTips = () => {
+    localStorage.removeItem("cyoda.setupTipsDismissed");
+    setTipsDismissed(false);
+  };
+
+  const [structureOpen, setStructureOpen] = useState(false);
 
   const configQ = useQuery({ queryKey: ["app-config"], queryFn: loadAppConfig });
 
@@ -118,13 +139,14 @@ export function SettingsRoute() {
   };
 
   const updateProjectField = async (projectId: string, patch: Partial<DevProject>) => {
-    const current = configQ.data!;
+    const current = qc.getQueryData<AppConfig>(["app-config"]) ?? configQ.data!;
     const updated: AppConfig = {
       ...current,
       recentProjects: current.recentProjects.map((p) =>
         p.id === projectId ? { ...p, ...patch } : p,
       ),
     };
+    qc.setQueryData(["app-config"], updated); // optimistic: next edit reads this
     await saveMutation.mutateAsync(updated);
     const updatedProject = updated.recentProjects.find((p) => p.id === projectId);
     if (updatedProject && active?.id === projectId) setActive(updatedProject);
@@ -140,6 +162,19 @@ export function SettingsRoute() {
       return;
     }
     await updateProjectField(p.id, { workflowRoot: rel });
+  };
+
+  const applyRootChange = (projectId: string, abs: string) =>
+    updateProjectField(projectId, { rootPath: abs, workflowRoot: null, entityRoot: null });
+
+  const handleChangeRoot = async (p: DevProject) => {
+    const abs = await selectProjectRoot();
+    if (!abs || abs === p.rootPath) return;
+    if (p.workflowRoot != null || p.entityRoot != null) {
+      setConfirmRootChange({ id: p.id, abs });
+      return;
+    }
+    await applyRootChange(p.id, abs);
   };
 
   const handleBrowseEntityRoot = async (p: DevProject) => {
@@ -168,6 +203,34 @@ export function SettingsRoute() {
         <h2 style={{ fontSize: t.font.sizes.xl, margin: 0, color: t.color.text }}>Projects</h2>
         <Button onClick={() => void handleOpenProject()}>Open project…</Button>
       </div>
+      {tipsDismissed ? (
+        <button
+          type="button"
+          onClick={showTips}
+          style={{
+            display: "block",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: t.color.textMuted,
+            fontSize: t.font.sizes.sm,
+            padding: 0,
+            textDecoration: "underline",
+            marginBottom: t.space.md,
+          }}
+        >
+          Show setup tips
+        </button>
+      ) : (
+        <div style={{ marginBottom: t.space.md, width: 0, minWidth: "100%", boxSizing: "border-box" }}>
+          <WarningBanner severity="info" onDismiss={dismissTips}>
+            <strong>Set your project folders explicitly.</strong> Auto-detection of
+            workflow and entity files is still evolving and may not always pick the
+            right files. For reliable results, open <strong>Configure</strong> on a
+            project and set the workflow and entity folders explicitly.
+          </WarningBanner>
+        </div>
+      )}
       {recentProjects.length === 0 ? (
         <EmptyState title="No recent projects" description="Open a project folder to get started." />
       ) : (
@@ -231,8 +294,89 @@ export function SettingsRoute() {
                     flexDirection: "column",
                     gap: t.space.sm,
                   }}>
+                    <ProjectNameField
+                      name={p.name}
+                      rootPath={p.rootPath}
+                      onCommit={(name) => void updateProjectField(p.id, { name })}
+                    />
+
+                    <div>
+                      <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, marginBottom: 2 }}>
+                        Root folder
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: t.space.sm }}>
+                        <FilePath path={p.rootPath} copyable />
+                        <Button variant="secondary" onClick={() => void handleChangeRoot(p)}>
+                          Change…
+                        </Button>
+                      </div>
+                    </div>
+
                     <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, color: t.color.textMuted }}>
                       Scan configuration
+                    </div>
+
+                    <div>
+                      <button
+                        type="button"
+                        aria-expanded={structureOpen}
+                        onClick={() => setStructureOpen((v) => !v)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: t.space.xs,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                          fontSize: t.font.sizes.sm,
+                          color: t.color.text,
+                        }}
+                      >
+                        <span aria-hidden>{structureOpen ? "▾" : "▸"}</span>
+                        Recommended folder structure
+                      </button>
+                      {structureOpen && (
+                        <div style={{ marginTop: t.space.xs, width: 0, minWidth: "100%", boxSizing: "border-box", fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
+                          <p style={{ margin: `0 0 ${t.space.xs}` }}>
+                            Keep a versioned layout and a distinct file name per entity, so files
+                            are easy to tell apart in the sidebar:
+                          </p>
+                          <pre
+                            style={{
+                              margin: 0,
+                              padding: t.space.sm,
+                              minWidth: 0,
+                              background: t.color.surfaceMuted,
+                              borderRadius: t.radius.sm,
+                              fontFamily: t.font.mono,
+                              fontSize: t.font.sizes.sm,
+                              color: t.color.text,
+                              overflowX: "auto",
+                            }}
+                          >
+{`models/
+  workflows/
+    v1/
+      order.json
+      customer.json
+  schema/
+    v1/
+      order.json
+      customer.json`}
+                          </pre>
+                          <p style={{ margin: `${t.space.xs} 0 0` }}>
+                            Each entity has a workflow file under <code>workflows/</code> and its
+                            example data under <code>schema/</code>, both named for the entity (e.g.{" "}
+                            <code>order.json</code>). Point <strong>Workflow root</strong> at{" "}
+                            <code>models/workflows</code> and <strong>Entity root</strong> at{" "}
+                            <code>models/schema</code>, and always include the model version
+                            (<code>v1</code>, <code>v2</code>, …) to stay future-proof. Other layouts
+                            work too — the keys are explicit roots, versioned folders, and distinct
+                            per-entity file names.
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <ScanRootRow
@@ -264,12 +408,38 @@ export function SettingsRoute() {
     </div>
 
     {confirmRemoveId !== null && (
-      <ConfirmRemoveModal
-        projectName={
-          configQ.data?.recentProjects.find((p) => p.id === confirmRemoveId)?.name ?? ""
+      <ConfirmModal
+        title="Remove project?"
+        body={
+          <>
+            <strong>
+              {configQ.data?.recentProjects.find((p) => p.id === confirmRemoveId)?.name ?? ""}
+            </strong>{" "}
+            will be removed from the project list. The files on disk are not affected.
+          </>
         }
+        confirmLabel="Remove"
+        confirmVariant="danger"
         onConfirm={() => { void handleRemove(confirmRemoveId); setConfirmRemoveId(null); }}
         onCancel={() => setConfirmRemoveId(null)}
+      />
+    )}
+    {confirmRootChange !== null && (
+      <ConfirmModal
+        title="Change root folder?"
+        body={
+          <>
+            The workflow and entity folders are set relative to the current root.
+            Changing the root resets them to Auto-detect.
+          </>
+        }
+        confirmLabel="Change root"
+        onConfirm={() => {
+          const { id, abs } = confirmRootChange;
+          void applyRootChange(id, abs);
+          setConfirmRootChange(null);
+        }}
+        onCancel={() => setConfirmRootChange(null)}
       />
     )}
     </>

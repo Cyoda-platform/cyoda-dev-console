@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import { ThemeProvider } from "../ThemeProvider";
 import { WarningBanner } from "../WarningBanner";
 
@@ -40,5 +40,27 @@ describe("WarningBanner", () => {
       </WarningBanner>,
     );
     expect(screen.getByText("Bold text")).toBeInTheDocument();
+  });
+
+  it("renders with info severity without errors", () => {
+    wrap(<WarningBanner severity="info">Heads up.</WarningBanner>);
+    expect(screen.getByRole("alert")).toHaveTextContent("Heads up.");
+  });
+
+  it("renders no dismiss button when onDismiss is absent", () => {
+    wrap(<WarningBanner>No dismiss here.</WarningBanner>);
+    expect(screen.queryByRole("button", { name: /dismiss/i })).toBeNull();
+  });
+
+  it("renders a dismiss button and calls onDismiss when clicked", () => {
+    const onDismiss = vi.fn();
+    wrap(
+      <WarningBanner severity="info" onDismiss={onDismiss}>
+        Dismiss me.
+      </WarningBanner>,
+    );
+    const btn = screen.getByRole("button", { name: /dismiss/i });
+    fireEvent.click(btn);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });
