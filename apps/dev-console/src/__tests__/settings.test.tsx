@@ -90,11 +90,13 @@ describe("SettingsRoute", () => {
     await waitFor(() => screen.getByRole("button", { name: /dismiss/i }));
     fireEvent.click(screen.getByRole("button", { name: /dismiss/i }));
 
-    expect(
-      screen.queryByText(/Auto-detection of workflow and entity files is still evolving/i),
-    ).toBeNull();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Auto-detection of workflow and entity files is still evolving/i),
+      ).toBeNull();
+      expect(screen.getByRole("button", { name: /show setup tips/i })).toBeInTheDocument();
+    });
     expect(localStorage.getItem("cyoda.setupTipsDismissed")).toBe("1");
-    expect(screen.getByRole("button", { name: /show setup tips/i })).toBeInTheDocument();
   });
 
   it("restores the callout when the reset link is clicked", async () => {
@@ -103,9 +105,11 @@ describe("SettingsRoute", () => {
     await waitFor(() => screen.getByRole("button", { name: /show setup tips/i }));
     fireEvent.click(screen.getByRole("button", { name: /show setup tips/i }));
 
-    expect(
-      screen.getByText(/Auto-detection of workflow and entity files is still evolving/i),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Auto-detection of workflow and entity files is still evolving/i),
+      ).toBeInTheDocument();
+    });
     expect(localStorage.getItem("cyoda.setupTipsDismissed")).toBeNull();
   });
 });
