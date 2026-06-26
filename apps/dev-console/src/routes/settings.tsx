@@ -71,6 +71,8 @@ export function SettingsRoute() {
     setTipsDismissed(false);
   };
 
+  const [structureOpen, setStructureOpen] = useState(false);
+
   const configQ = useQuery({ queryKey: ["app-config"], queryFn: loadAppConfig });
 
   const saveMutation = useMutation({
@@ -273,6 +275,65 @@ export function SettingsRoute() {
                   }}>
                     <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, color: t.color.textMuted }}>
                       Scan configuration
+                    </div>
+
+                    <div>
+                      <button
+                        type="button"
+                        aria-expanded={structureOpen}
+                        onClick={() => setStructureOpen((v) => !v)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: t.space.xs,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                          fontSize: t.font.sizes.sm,
+                          color: t.color.text,
+                        }}
+                      >
+                        <span aria-hidden>{structureOpen ? "▾" : "▸"}</span>
+                        Recommended folder structure
+                      </button>
+                      {structureOpen && (
+                        <div style={{ marginTop: t.space.xs, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
+                          <p style={{ margin: `0 0 ${t.space.xs}` }}>
+                            Keep a versioned layout and a distinct file name per entity, so files
+                            are easy to tell apart in the sidebar:
+                          </p>
+                          <pre
+                            style={{
+                              margin: 0,
+                              padding: t.space.sm,
+                              background: t.color.surfaceMuted,
+                              borderRadius: t.radius.sm,
+                              fontFamily: t.font.mono,
+                              fontSize: t.font.sizes.sm,
+                              color: t.color.text,
+                              overflowX: "auto",
+                            }}
+                          >
+{`models/
+  workflows/
+    v1/
+      order.json        ← workflow for "order"
+      customer.json
+  schema/
+    v1/
+      order.json        ← example data for "order"
+      customer.json`}
+                          </pre>
+                          <p style={{ margin: `${t.space.xs} 0 0` }}>
+                            Point <strong>Workflow root</strong> at <code>models/workflows</code>{" "}
+                            and <strong>Entity root</strong> at <code>models/schema</code>. Always
+                            include the model version (<code>v1</code>, <code>v2</code>, …) to stay
+                            future-proof. Other layouts work too — the keys are: explicit roots,
+                            versioned folders, and distinct per-entity file names.
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <ScanRootRow

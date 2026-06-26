@@ -112,4 +112,23 @@ describe("SettingsRoute", () => {
     });
     expect(localStorage.getItem("cyoda.setupTipsDismissed")).toBeNull();
   });
+
+  it("hides the folder-structure detail until the disclosure is expanded", async () => {
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+
+    expect(screen.getByRole("button", { name: /recommended folder structure/i })).toBeInTheDocument();
+    expect(screen.queryByText(/distinct per-entity file names/i)).toBeNull();
+  });
+
+  it("reveals the folder-structure convention when expanded", async () => {
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /recommended folder structure/i }));
+
+    expect(screen.getByText(/distinct per-entity file names/i)).toBeInTheDocument();
+    expect(screen.getByText(/example data for/i)).toBeInTheDocument();
+  });
 });
