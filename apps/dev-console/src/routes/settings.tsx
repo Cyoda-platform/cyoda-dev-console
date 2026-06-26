@@ -5,7 +5,7 @@ import { loadAppConfig, saveAppConfig } from "../ipc/config.js";
 import { selectProjectRoot } from "../ipc/project.js";
 import { useProjectStore } from "../state/projectStore.js";
 import type { AppConfig, DevProject } from "@cyoda/workflow-project-model";
-import { Button, EmptyState, FilePath, Panel, useTokens } from "@cyoda/console-design-system";
+import { Button, EmptyState, FilePath, Panel, WarningBanner, useTokens } from "@cyoda/console-design-system";
 
 function ConfirmRemoveModal({
   projectName,
@@ -58,6 +58,18 @@ export function SettingsRoute() {
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [workflowRootError, setWorkflowRootError] = useState<string | null>(null);
   const [entityRootError, setEntityRootError] = useState<string | null>(null);
+
+  const [tipsDismissed, setTipsDismissed] = useState<boolean>(
+    () => localStorage.getItem("cyoda.setupTipsDismissed") === "1",
+  );
+  const dismissTips = () => {
+    localStorage.setItem("cyoda.setupTipsDismissed", "1");
+    setTipsDismissed(true);
+  };
+  const showTips = () => {
+    localStorage.removeItem("cyoda.setupTipsDismissed");
+    setTipsDismissed(false);
+  };
 
   const configQ = useQuery({ queryKey: ["app-config"], queryFn: loadAppConfig });
 
@@ -168,6 +180,34 @@ export function SettingsRoute() {
         <h2 style={{ fontSize: t.font.sizes.xl, margin: 0, color: t.color.text }}>Projects</h2>
         <Button onClick={() => void handleOpenProject()}>Open project…</Button>
       </div>
+      {tipsDismissed ? (
+        <button
+          type="button"
+          onClick={showTips}
+          style={{
+            display: "block",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: t.color.textMuted,
+            fontSize: t.font.sizes.sm,
+            padding: 0,
+            textDecoration: "underline",
+            marginBottom: t.space.md,
+          }}
+        >
+          Show setup tips
+        </button>
+      ) : (
+        <div style={{ marginBottom: t.space.md }}>
+          <WarningBanner severity="info" onDismiss={dismissTips}>
+            <strong>Set your project folders explicitly.</strong> Auto-detection of
+            workflow and entity files is still evolving and may not always pick the
+            right files. For reliable results, open <strong>Configure</strong> on a
+            project and set the workflow and entity folders explicitly.
+          </WarningBanner>
+        </div>
+      )}
       {recentProjects.length === 0 ? (
         <EmptyState title="No recent projects" description="Open a project folder to get started." />
       ) : (

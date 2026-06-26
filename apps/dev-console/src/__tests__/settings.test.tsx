@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../state/queryClient.js";
@@ -34,12 +34,27 @@ vi.mock("../state/projectStore.js", () => ({
   ),
 }));
 
+function makeStorage() {
+  const map = new Map<string, string>();
+  return {
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => void map.set(k, v),
+    removeItem: (k: string) => void map.delete(k),
+    clear: () => map.clear(),
+  };
+}
+
 function wrap(ui: React.ReactElement) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
 describe("SettingsRoute", () => {
-  beforeEach(() => queryClient.clear());
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", makeStorage());
+    queryClient.clear();
+    localStorage.clear();
+  });
+  afterEach(() => vi.unstubAllGlobals());
 
   it("shows the recent project name after load", async () => {
     wrap(<SettingsRoute />);
@@ -59,5 +74,38 @@ describe("SettingsRoute", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /open project/i })).toBeInTheDocument(),
     );
+  });
+
+  it("shows the setup-tips callout by default", async () => {
+    wrap(<SettingsRoute />);
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Auto-detection of workflow and entity files is still evolving/i),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it("dismisses the callout, persists the flag, and shows a reset link", async () => {
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /dismiss/i }));
+    fireEvent.click(screen.getByRole("button", { name: /dismiss/i }));
+
+    expect(
+      screen.queryByText(/Auto-detection of workflow and entity files is still evolving/i),
+    ).toBeNull();
+    expect(localStorage.getItem("cyoda.setupTipsDismissed")).toBe("1");
+    expect(screen.getByRole("button", { name: /show setup tips/i })).toBeInTheDocument();
+  });
+
+  it("restores the callout when the reset link is clicked", async () => {
+    localStorage.setItem("cyoda.setupTipsDismissed", "1");
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /show setup tips/i }));
+    fireEvent.click(screen.getByRole("button", { name: /show setup tips/i }));
+
+    expect(
+      screen.getByText(/Auto-detection of workflow and entity files is still evolving/i),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem("cyoda.setupTipsDismissed")).toBeNull();
   });
 });
