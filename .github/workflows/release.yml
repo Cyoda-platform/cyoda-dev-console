@@ -148,6 +148,15 @@ jobs:
           if ls | grep -Ei '\.(deb|rpm|app|app\.tar\.gz)$'; then
             echo "::error::unexpected bundle artifact present in release"; exit 1
           fi
+      - name: Assert expected asset count
+        run: |
+          cd dist
+          dmg=$(ls cyoda-dev-console_*.dmg 2>/dev/null | wc -l | tr -d ' ')
+          appimg=$(ls cyoda-dev-console_*.AppImage 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$dmg" -ne 2 ] || [ "$appimg" -ne 2 ]; then
+            echo "::error::expected 2 DMG + 2 AppImage assets, got ${dmg} DMG / ${appimg} AppImage"
+            exit 1
+          fi
       - name: Stage installer icon
         run: cp apps/dev-console/src-tauri/icons/128x128.png dist/cyoda-dev-console.png
       - name: Generate SHA256SUMS over installable artifacts
