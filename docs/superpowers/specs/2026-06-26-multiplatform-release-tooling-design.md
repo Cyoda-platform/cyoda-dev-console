@@ -44,6 +44,8 @@ A sibling project, **`cyoda-go`**, has already solved automated Homebrew publish
 | D7 | CI mechanism | Unify on `tauri-apps/tauri-action` + explicit cask-publish job |
 | D8 | Cask publish | **Full auto-commit** to tap as `cyoda-go-release-bot`; skip prerelease tags |
 | D9 | Tap | Consolidate into `Cyoda/homebrew-cyoda` (`Formula/` + `Casks/`); reuse existing bot App |
+| D10 | Publish gate | **Auto-publish on green** (match cyoda-go) — no manual approval; safety comes from the rehearsal stack (§3.1) |
+| D11 | GitHub org | `Cyoda` is canonical; migrate repo + all generated URLs off legacy `Cyoda-platform` |
 
 ---
 
@@ -63,6 +65,18 @@ A sibling project, **`cyoda-go`**, has already solved automated Homebrew publish
 
 - **Draft until complete:** `tauri-action` creates/uploads to a **draft** Release keyed by the tag; `checksums` attaches `SHA256SUMS` and un-drafts. Avoids users seeing a half-populated release and avoids parallel jobs racing to create it.
 - **Ubuntu pinned to 22.04:** AppImage links the build host's glibc; building on the oldest supported runner maximizes the range of distros it runs on. `ubuntu-22.04-arm` is the native arm64 equivalent.
+
+### 3.1 Release safety — avoiding one-shot releases
+
+A tag binds to a commit, so the real `vX.Y.Z` tag must be cut only when the tooling is *already proven*, never as a first attempt. Safety is layered so the tag is the last, already-rehearsed step (mirrors and extends cyoda-go, which rehearses via GoReleaser `--snapshot` on PRs):
+
+1. **`workflow_dispatch` dry-run** — manual "Run workflow" trigger on **any branch** that runs the full multi-platform build but **uploads nothing and commits nothing**. Unlimited, free, **no tag / no version consumed**. This is where pipeline/tooling bugs get fixed before any tag exists. Implemented as a `dry_run` input that skips the upload + `publish-cask` steps.
+2. **Smoke on `staging`** — `smoke.yml` builds macOS (existing) and Linux (added) on every push, surfacing breakage between releases.
+3. **Pre-release `-rc.N` tags** — build all platforms and publish a GitHub **pre-release** with real, installable artifacts, but **skip the tap** (D8). Cut `-rc.1`, `-rc.2`, … freely for real-world install testing without burning the final version or publishing Homebrew metadata.
+4. **Real tag → draft Release** — `tauri-action` builds into a *draft*; each job is independently re-runnable, so a transient notarization flake is just a re-run of the same tag.
+5. **Auto-publish on green (D10)** — `publish-cask` is the **last** job, `needs:` all builds + checksums. It only runs when everything is green, so a failed build **never** publishes a cask; a failed run spends no public version. No manual approval gate (matches cyoda-go).
+
+Net flow: dry-run until green → (optional) rc tag for install testing → cut real tag → builds into draft → auto-publishes on green. No "must work first time" moment.
 
 ### Why tauri-action (D7)
 It is the maintained, canonical multi-platform Tauri release tool — the Tauri analog of cyoda-go's GoReleaser. It natively does "one tag → one Release with each OS's artifacts," consumes the Apple `APPLE_*` env contract for signing/notarization, and avoids the `--target` cargo-passthrough quirk the current smoke workflow had to comment around. The one migration cost is re-validating notarization under its env vars (documented path). The existing macOS smoke build stays as a cheap guard.
@@ -104,7 +118,9 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 - For ≥1 release cycle, **dual-publish** (or keep the old tap updated) for backwards compatibility.
 - Update cyoda-go README/tap install instructions to `cyoda/cyoda`.
 - Confirm the `cyoda-go-release-bot` App is installed on the new tap and that App-ID/key vars/secrets resolve in cyoda-go's workflow.
-- Note org-slug drift observed today (`Cyoda` vs `cyoda-platform`, root `cyoda.rb` vs `Formula/`) so the migration normalizes it.
+
+### Org migration (`Cyoda-platform` → `Cyoda`)
+`Cyoda` is the canonical GitHub org; `Cyoda-platform` is legacy. All canonical references use `Cyoda/...`: repo `Cyoda/cyoda-dev-console`, tap `Cyoda/homebrew-cyoda`, the `install.sh` raw URL, and cask/release download URLs. GitHub auto-redirects old org paths, so existing links keep working during the shift, but generated artifacts (cask URLs, installer URL) must be authored against `Cyoda/` from the start. The historical `homebrew-cyoda-go` tap also used a flat `cyoda.rb`; the consolidated tap normalizes to `Formula/` + `Casks/`.
 
 ---
 
@@ -114,7 +130,7 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 - **Convenience installer — `scripts/install.sh`**, run as:
   ```sh
   curl --proto '=https' --tlsv1.2 -fsSL \
-    https://raw.githubusercontent.com/Cyoda-platform/cyoda-dev-console/staging/scripts/install.sh | sh
+    https://raw.githubusercontent.com/Cyoda/cyoda-dev-console/staging/scripts/install.sh | sh
   ```
   Behavior:
   1. Verify OS = Linux; map `uname -m` → `x86_64` / `aarch64`; refuse anything else with a clear message.
@@ -140,7 +156,7 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 | # | Deliverable |
 |---|---|
 | T1 | `tauri.conf.json`: add `bundle.linux` and `bundle.windows`; confirm `bundle.targets` per-platform. |
-| T2 | Rewrite `release.yml`: tauri-action matrix (`build-macos`, `build-linux` incl. arm64, `build-windows` gate), draft Release. |
+| T2 | Rewrite `release.yml`: tauri-action matrix (`build-macos`, `build-linux` incl. arm64, `build-windows` gate), draft Release. Add `workflow_dispatch` with a `dry_run` input (build-only; skip upload + `publish-cask`) per §3.1. Prerelease tags skip the tap. |
 | T3 | `checksums` job: aggregate `SHA256SUMS`, attach, un-draft Release. |
 | T4 | `publish-cask` job: App-token mint → render cask template → commit to `Cyoda/homebrew-cyoda` as the bot; skip prereleases. |
 | T5 | `Casks/cyoda-dev-console.rb` template (in-repo source of generation); delete `scripts/update-cask-sha.sh` and `homebrew/cyoda-dev-console.rb`. |
@@ -149,6 +165,7 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 | T8 | Docs: rewrite `RELEASE.md` (all platforms + automated tap + one-time App/secrets setup); update `README.md` install section. |
 | T9 | **Open a GitHub issue on `cyoda-go`** for the tap rename/retarget coordination (§5). Capture the dual-publish cycle and bot-App install. |
 | T10 | One-time infra (documented, manual): create `Cyoda/homebrew-cyoda` with `Formula/`+`Casks/`; install `cyoda-go-release-bot` App on it; add `HOMEBREW_TAP_APP_ID` var + `HOMEBREW_TAP_APP_KEY` secret to this repo. |
+| T11 | Org migration: move repo to `Cyoda/cyoda-dev-console`; author all generated URLs (cask, installer, release downloads) against `Cyoda/`; rely on GitHub redirects for legacy `Cyoda-platform` links. |
 
 ---
 
@@ -165,6 +182,6 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 
 ## 10. Open risks
 
-- **Notarization under tauri-action:** must be re-validated on first run; mitigation = test on a throwaway prerelease tag before a real release.
+- **Notarization under tauri-action:** must be re-validated before first real release; mitigation = `workflow_dispatch` dry-run (no version) then a throwaway `-rc.N` tag (§3.1), both before cutting `vX.Y.Z`. Auto-publish (D10) is safe because a notarization failure fails `build-macos`, so `publish-cask` never runs.
 - **arm64 Linux runner availability:** `ubuntu-22.04-arm` is the named runner; confirm org access at implementation time, else fall back to x86_64-only with arm64 deferred (D5 reverts cleanly).
 - **Cross-repo timing:** cyoda-go retarget (T9) must land (or dual-publish) before the old tap is retired, to avoid breaking existing `cyoda-go` users.
