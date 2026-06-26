@@ -6,6 +6,7 @@ import { selectProjectRoot } from "../ipc/project.js";
 import { useProjectStore } from "../state/projectStore.js";
 import type { AppConfig, DevProject } from "@cyoda/workflow-project-model";
 import { Button, EmptyState, FilePath, Panel, WarningBanner, useTokens } from "@cyoda/console-design-system";
+import { ProjectNameField } from "../components/ProjectNameField.js";
 
 function ConfirmModal({
   title,
@@ -137,13 +138,14 @@ export function SettingsRoute() {
   };
 
   const updateProjectField = async (projectId: string, patch: Partial<DevProject>) => {
-    const current = configQ.data!;
+    const current = qc.getQueryData<AppConfig>(["app-config"]) ?? configQ.data!;
     const updated: AppConfig = {
       ...current,
       recentProjects: current.recentProjects.map((p) =>
         p.id === projectId ? { ...p, ...patch } : p,
       ),
     };
+    qc.setQueryData(["app-config"], updated); // optimistic: next edit reads this
     await saveMutation.mutateAsync(updated);
     const updatedProject = updated.recentProjects.find((p) => p.id === projectId);
     if (updatedProject && active?.id === projectId) setActive(updatedProject);
@@ -278,6 +280,12 @@ export function SettingsRoute() {
                     flexDirection: "column",
                     gap: t.space.sm,
                   }}>
+                    <ProjectNameField
+                      name={p.name}
+                      rootPath={p.rootPath}
+                      onCommit={(name) => void updateProjectField(p.id, { name })}
+                    />
+
                     <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, color: t.color.textMuted }}>
                       Scan configuration
                     </div>

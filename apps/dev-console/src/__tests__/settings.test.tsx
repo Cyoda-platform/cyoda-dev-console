@@ -16,6 +16,8 @@ vi.mock("../ipc/config.js", () => ({
         rootPath: "/projects/order-demo",
         workflowGlobs: ["**/*.json"],
         entityGlobs: ["**/*.json"],
+        workflowRoot: null,
+        entityRoot: null,
         createdAt: "2026-01-01T00:00:00.000Z",
         lastOpenedAt: "2026-01-01T00:00:00.000Z",
       },
@@ -27,11 +29,13 @@ vi.mock("../ipc/project.js", () => ({
   selectProjectRoot: vi.fn().mockResolvedValue(null),
   scanProject: vi.fn().mockResolvedValue({ root: "/tmp", scannedAt: "", files: [] }),
 }));
+const store = vi.hoisted(() => ({
+  active: null as null | { id: string },
+  setActive: vi.fn(),
+  clearActive: vi.fn(),
+}));
 vi.mock("../state/projectStore.js", () => ({
-  useProjectStore: vi.fn(
-    (selector: (s: { active: null; setActive: () => void; clearActive: () => void }) => unknown) =>
-      selector({ active: null, setActive: vi.fn(), clearActive: vi.fn() }),
-  ),
+  useProjectStore: vi.fn((selector: (s: typeof store) => unknown) => selector(store)),
 }));
 
 function makeStorage() {
@@ -53,6 +57,8 @@ describe("SettingsRoute", () => {
     vi.stubGlobal("localStorage", makeStorage());
     queryClient.clear();
     localStorage.clear();
+    store.active = null;
+    store.setActive.mockClear();
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -130,6 +136,42 @@ describe("SettingsRoute", () => {
 
     expect(screen.getByText(/distinct per-entity file names/i)).toBeInTheDocument();
     expect(screen.getByText(/example data/i)).toBeInTheDocument();
+  });
+
+  it("shows the Project name input in the Configure panel", async () => {
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    expect(screen.getByLabelText("Project name")).toBeInTheDocument();
+  });
+
+  it("persists an edited name", async () => {
+    const { saveAppConfig } = await import("../ipc/config.js");
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    const input = screen.getByLabelText("Project name");
+    fireEvent.change(input, { target: { value: "Renamed Project" } });
+    fireEvent.blur(input);
+    await waitFor(() => {
+      const saved = (saveAppConfig as ReturnType<typeof vi.fn>).mock.calls.at(-1)![0];
+      expect(saved.recentProjects.find((p: { id: string }) => p.id === "proj-1").name).toBe("Renamed Project");
+    });
+  });
+
+  it("re-setActives the active project after an edit", async () => {
+    store.active = { id: "proj-1" };
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    const input = screen.getByLabelText("Project name");
+    fireEvent.change(input, { target: { value: "Active Renamed" } });
+    fireEvent.blur(input);
+    await waitFor(() =>
+      expect(store.setActive).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "proj-1", name: "Active Renamed" }),
+      ),
+    );
   });
 
   it("removes a project via the shared confirm modal (bolded name in body)", async () => {
