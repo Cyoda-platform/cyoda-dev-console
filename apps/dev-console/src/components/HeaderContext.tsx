@@ -1,5 +1,5 @@
 import { useTokens } from "@cyoda/console-design-system";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, ChevronDown } from "lucide-react";
 
 export function HeaderContext({
   projectName,
@@ -23,7 +23,7 @@ export function HeaderContext({
     >
       <button
         onClick={onProjectClick}
-        title="Switch project"
+        title="Manage projects"
         style={{
           background: t.color.blue,
           color: "#fff",
@@ -41,6 +41,7 @@ export function HeaderContext({
       >
         <FolderOpen size={14} color="#fff" />
         <span>{projectName}</span>
+        <ChevronDown size={14} color="#fff" aria-hidden />
       </button>
       {dirty && (
         <span style={{ color: t.color.cyodaOrange }} title="Unsaved changes">
