@@ -11,11 +11,14 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
-        with: { targets: "aarch64-apple-darwin" }
       - run: pnpm install --frozen-lockfile
       # Build workspace packages first: app consumes their gitignored dist/.
       - run: pnpm -r build
-      # Unsigned native release build — no Apple secrets, no notarization.
-      # signingIdentity "-" (ad-hoc) in tauri.conf.json; channel pinned by
-      # rust-toolchain.toml (1.96.0), so @stable above is overridden on build.
-      - run: pnpm --filter dev-console tauri:build -- --target aarch64-apple-darwin
+      # Unsigned host-native release build (host = aarch64-apple-darwin on
+      # macos-14). No `--target`: passing it via `pnpm ... -- --target` makes
+      # Tauri treat it as a cargo passthrough, so the binary lands in
+      # target/<triple>/release/ while the bundler looks in target/release/.
+      # Building the host arch directly bundles correctly and still exercises
+      # the full release build. signingIdentity "-" (ad-hoc) in tauri.conf.json
+      # keeps it unsigned; channel pinned by rust-toolchain.toml (1.96.0).
+      - run: pnpm --filter dev-console tauri:build
