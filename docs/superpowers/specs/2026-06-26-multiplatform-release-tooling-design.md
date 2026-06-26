@@ -46,6 +46,8 @@ A sibling project, **`cyoda-go`**, has already solved automated Homebrew publish
 | D9 | Tap | Consolidate into `Cyoda/homebrew-cyoda` (`Formula/` + `Casks/`); reuse existing bot App |
 | D10 | Publish gate | **Auto-publish on green** (match cyoda-go) — no manual approval; safety comes from the rehearsal stack (§3.1) |
 | D11 | GitHub org | `Cyoda` is canonical; migrate repo + all generated URLs off legacy `Cyoda-platform` |
+| D12 | Artifact naming | `checksums` renames all assets to a no-space canonical form `cyoda-dev-console_<version>_<arch>.<ext>`; cask `url`, `SHA256SUMS`, and installer all derive from it (fixes spaces + AppImage `amd64`/DMG `x86_64` token split) |
+| D13 | Bundle targets | Explicit per-platform: macOS `dmg`, Linux `appimage`, Windows `nsis`+`msi` — **not** `targets: "all"` (which leaks `.deb`/`.rpm`/`.app`) |
 
 ---
 
@@ -66,6 +68,9 @@ A sibling project, **`cyoda-go`**, has already solved automated Homebrew publish
 | `publish-cask` | ubuntu (`needs:` checksums) | validate notarization → regenerate `Casks/cyoda-dev-console.rb` → commit to tap | ✅ → tap |
 
 - **Single draft, no race (B1 fix):** tauri-action's find-or-create-release step races when every matrix job runs it with the same `tagName` ([tauri-action#914](https://github.com/tauri-apps/tauri-action/issues/914)) — draft status does **not** prevent this. So a dedicated `create-release` job creates the draft once and outputs `release_id`; every build job passes `releaseId: ${{ needs.create-release.outputs.release_id }}` (never `tagName`). `checksums` attaches `SHA256SUMS` + `install.sh` and un-drafts.
+- **Idempotent + serialized (M-B):** `create-release` must **find-or-create** (reuse an existing release for the tag) so a re-run of the same tag attaches to the same draft instead of creating a second one (GitHub allows multiple releases per tag). The workflow sets `concurrency: { group: release-${{ github.ref }}, cancel-in-progress: false }` so overlapping/closely-pushed tags don't run `create-release` in parallel and break the single-draft invariant. This is the one correctness property dry-run can't exercise, so it must be designed in, not discovered.
+- **Release notes (M-A):** `create-release` populates the Release body via GitHub auto-generated notes (`generate_release_notes: true`) before un-drafting — otherwise every published release ships an empty body (a regression vs. cyoda-go's GoReleaser changelog). A `CHANGELOG`-driven body can replace this later.
+- **Version guard normalization (Mi-4):** the `guard` job strips the leading `v` and any `-rc.N`/prerelease suffix from `github.ref_name` and asserts the base equals `.version` in `tauri.conf.json` (so `v0.2.0` **and** `v0.2.0-rc.1` both require config `0.2.0`). Fail loud on mismatch — dev-console bakes the version at build time, so a mismatch otherwise yields 404 cask/installer URLs.
 - **Ubuntu pinned to 22.04:** AppImage links the build host's glibc; building on the oldest supported runner maximizes the range of distros it runs on. `ubuntu-22.04-arm` is the native arm64 equivalent (and the *only* non-QEMU arm path — linuxdeploy cannot cross-compile arm AppImages).
 
 ### 3.1 Release safety — avoiding one-shot releases
@@ -89,14 +94,15 @@ It is the maintained, canonical multi-platform Tauri release tool — the Tauri 
 
 - **Build/sign/notarize** via `tauri-action` with existing Apple secrets re-expressed as env:
   `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`, `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`. Two arch-specific signed + notarized DMGs (cask consumes both). Notarization is required — a `.app` in a cask is Gatekeeper-blocked without it (unlike cyoda-go's CLI, which needs none).
-- **Notarization-is-mandatory (M3):** as of Homebrew 5.0.0 (Nov 2025) the `--no-quarantine` bypass is being removed and casks that fail Gatekeeper are slated for removal — so notarization is non-optional infra, and with auto-publish (D10) a silently-invalid staple would publish a broken cask. **`publish-cask` therefore validates the actual DMG first** (`spctl --assess --type install` / `xcrun stapler validate`) and aborts on failure — not relying on "`build-macos` didn't error." The §9 manual `spctl` check is too late (post-publish), so this gate moves into CI.
-- **Artifact-name source of truth (B2 fix):** Tauri emits DMGs as `{productName}_{version}_{arch}.dmg` with `productName` **verbatim** — here `Cyoda Dev Console_<v>_aarch64.dmg` (spaces). The current in-repo cask URL (`Cyoda-Dev-Console_..`, hyphenated) has **never** matched a real artifact. Fix: pick one canonical scheme and derive the GitHub asset name, the `SHA256SUMS` entry, and the cask `url` from it — either URL-encode the space (`Cyoda%20Dev%20Console_...`) against the real names, or rename assets to a no-space form in `checksums` and point everything there. The cask template is **regenerated** against this, not "kept."
+- **Notarization-is-mandatory (M3, rationale corrected per Mi-1):** the official `Homebrew/homebrew-cask` removal of failing casks does **not** apply to a third-party tap like `Cyoda/homebrew-cyoda`. The operative change is Homebrew 5.0.0 (Nov 2025) **removing the `--no-quarantine` bypass** → Gatekeeper blocks an un-notarized `.app` on launch for cask users. Either way notarization is non-optional, and with auto-publish (D10) a silently-invalid staple would publish a broken cask. **`publish-cask` therefore validates the actual DMG first** (`spctl --assess --type install` / `xcrun stapler validate`) and aborts on failure — not relying on "`build-macos` didn't error." The §9 manual `spctl` check is too late (post-publish), so this gate moves into CI.
+- **Canonical artifact names (B2 + M-D — locked decision D12):** Tauri emits bundles using `productName` **verbatim** with **format-specific arch tokens** — DMG `Cyoda Dev Console_<v>_{x86_64,aarch64}.dmg` (spaces), AppImage `Cyoda Dev Console_<v>_{amd64,aarch64}.AppImage`. The current in-repo cask URL (`Cyoda-Dev-Console_..`, hyphenated) has **never** matched a real artifact, and spaces break `sha256sum -c` / installer `grep`. **Decision: the `checksums` job renames every release asset to a no-space canonical form** — `cyoda-dev-console_<version>_<arch>.<ext>` — generates `SHA256SUMS` over those names, and the cask `url` + installer download are derived from the same scheme. This removes the space problem, the URL-encoding ambiguity, and the arch-token divergence in one move (the rename also normalizes the AppImage `amd64`/DMG `x86_64` split — see B-1).
 - **`publish-cask` job** (replaces all manual SHA work):
-  1. `actions/create-github-app-token@v3` with `app-id: ${{ vars.HOMEBREW_TAP_APP_ID }}`, `private-key: ${{ secrets.HOMEBREW_TAP_APP_KEY }}`, `owner: Cyoda`, `repositories: homebrew-cyoda` → short-lived tap-scoped token.
+  1. `actions/create-github-app-token@v3` with `app-id: ${{ secrets.HOMEBREW_TAP_APP_ID }}`, `private-key: ${{ secrets.HOMEBREW_TAP_APP_KEY }}`, `owner: Cyoda`, `repositories: homebrew-cyoda` → short-lived tap-scoped token. (The GitHub **App** is the existing `cyoda-platform-release-bot`; `cyoda-go-release-bot` is only the *commit-author* string — see §5. Verify the exact installed App at T10.)
   2. Validate notarization (above); read the two macOS DMG hashes from `SHA256SUMS`.
-  3. Render `Casks/cyoda-dev-console.rb` from a template: `version` from the tag, `sha256 arm:/intel:` from the DMG hashes, `url` from the canonical scheme above — per-arch DSL (`arch arm:/intel:`, `app "Cyoda Dev Console.app"`, `zap`, `depends_on macos`). DSL verified current/valid.
-  4. Commit + push to `Cyoda/homebrew-cyoda` as `cyoda-go-release-bot <noreply@cyoda.com>`, message `Cask update for cyoda-dev-console version vX.Y.Z`.
-  5. **Skip on any prerelease tag** — match on the presence of a `-` suffix (catches `-rc`, `-beta`, `-alpha`, `-pre`, …), mirroring cyoda-go's prerelease detection, not an enumerated list.
+  3. Render `Casks/cyoda-dev-console.rb` from a template: `version` from the tag, `sha256 arm:/intel:` from the DMG hashes, `url` from the canonical scheme (D12) — per-arch DSL (`arch arm:/intel:`, `app "Cyoda Dev Console.app"`, `zap`). DSL verified current/valid. The template must keep `depends_on macos: ">= :monterey"` **coupled to** `tauri.conf.json` `bundle.macOS.minimumSystemVersion` (12.0 = Monterey) so the two can't silently diverge (Mi-6).
+  4. Commit + push to `Cyoda/homebrew-cyoda` as `cyoda-go-release-bot <noreply@cyoda.com>` (commit-author string, matching cyoda-go's tap history), message `Cask update for cyoda-dev-console version vX.Y.Z`.
+  5. **Skip on any prerelease tag** — match the presence of a `-` suffix (catches `-rc`, `-beta`, `-pre`, …). Functionally equivalent to cyoda-go's GoReleaser `skip_upload: auto` semver prerelease detection (not the identical mechanism).
+- **First-publish bootstrap:** on the very first cask push the `Casks/` dir may not yet exist; the job must create it (and tolerate an empty/just-created tap) rather than assuming a path.
 - **Removals:** delete `scripts/update-cask-sha.sh` and the in-repo `homebrew/cyoda-dev-console.rb` (the cask now lives only in the tap; `RELEASE.md` rewritten in lockstep — T8).
 
 ---
@@ -114,14 +120,15 @@ README.md                # tap usage
 ```
 - Passive metadata repo (no CI of its own), pushed into by each product's release pipeline — same model as today's `homebrew-cyoda-go`.
 - Install: `brew install --cask cyoda/cyoda/cyoda-dev-console` (already what dev-console docs reference — no doc churn).
-- **Reuse the existing `cyoda-go-release-bot` GitHub App** (do not mint a new one): install it on `Cyoda/homebrew-cyoda` with `Contents: read/write`. App-ID stored as repo **variable** `HOMEBREW_TAP_APP_ID`, private key as secret `HOMEBREW_TAP_APP_KEY` in the dev-console repo, mirroring cyoda-go.
+- **Reuse the existing release-bot GitHub App** (do not mint a new one). Per cyoda-go's `MAINTAINING.md`, the App is registered as **`cyoda-platform-release-bot`** (the `cyoda-go-release-bot <noreply@cyoda.com>` string is only the *commit author*, not the App — these were conflated in earlier drafts). Install that App **additionally** on `Cyoda/homebrew-cyoda` with `Contents: read/write` (scope to the tap repo only — not org-wide). Store App-ID as secret `HOMEBREW_TAP_APP_ID` and the private key as secret `HOMEBREW_TAP_APP_KEY` in the dev-console repo (matching cyoda-go's documented setup; App-ID isn't sensitive, but keep it a secret for parity). **Verify** the real App name/ID at T10 — cyoda-go's own docs and workflow are internally inconsistent (var vs secret; author-string vs App-name).
+- **Same-account assumption:** `Cyoda` and `cyoda` are the *same* GitHub account (org slugs are case-insensitive), so one App installation can mint tokens for both the legacy and new tap repos. Confirm at T10 that the tap repo and the App live under the same account, or the cross-repo token mint fails only at real-release time.
 
 ### cyoda-go coordination (cross-repo — tracked, not done here)
 The tap rename requires changes in the **`cyoda-go`** repo, which this project does not own. This spec includes a deliverable to **open a GitHub issue on `cyoda-go`** (see §8, T9) capturing:
 - Retarget GoReleaser `brews:` `repository` from `homebrew-cyoda-go` → `homebrew-cyoda`, writing into `Formula/` (GoReleaser `directory: Formula`).
 - For ≥1 release cycle, **dual-publish** (or keep the old tap updated) for backwards compatibility.
 - Update cyoda-go README/tap install instructions to `cyoda/cyoda`.
-- Confirm the `cyoda-go-release-bot` App is installed on the new tap and that App-ID/key vars/secrets resolve in cyoda-go's workflow.
+- Confirm the release-bot App (`cyoda-platform-release-bot`) is installed on the new tap and that the App-ID/key secrets resolve in cyoda-go's workflow.
 
 ### Org migration (`Cyoda-platform` → `Cyoda`)
 `Cyoda` is the canonical GitHub org; `Cyoda-platform` is legacy. All canonical references use `Cyoda/...`: repo `Cyoda/cyoda-dev-console`, tap `Cyoda/homebrew-cyoda`, the `install.sh` raw URL, and cask/release download URLs. GitHub auto-redirects old org paths, so existing links keep working during the shift, but generated artifacts (cask URLs, installer URL) must be authored against `Cyoda/` from the start. The historical `homebrew-cyoda-go` tap also used a flat `cyoda.rb`; the consolidated tap normalizes to `Formula/` + `Casks/`.
@@ -132,16 +139,16 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 
 - **Build:** add `bundle.linux` config; install Tauri Linux deps in-job — `webkit2gtk-4.1`, `libgtk-3-dev`, **`libayatana-appindicator3-dev`** (the maintained replacement; the old `libappindicator3-dev` is dropped on current toolchains — do not list both), `librsvg2-dev`, `patchelf`, plus AppImage tooling. No `libssl-dev` needed: `reqwest` uses `rustls-tls` (Cargo.toml), so there is no system-OpenSSL dependency. Emit `*.AppImage` for **x86_64 and arm64** on their respective native runners.
 - **arm64 AppImage caveat (M2):** linuxdeploy/AppImage tooling on arm64 has known FUSE issues in CI; document the `APPIMAGE_EXTRACT_AND_RUN=1` (and `NO_STRIP=1` if needed) escape hatch in the job up front rather than discovering it live.
-- **Monorepo build ordering (m2):** every build job must run `pnpm -r build` (workspace packages) **before** the app build — `beforeBuildCommand` only runs the app's `pnpm build`, not the workspace deps the app consumes from their gitignored `dist/`. smoke/ci already do this; the release jobs must too, or they fail only at release time.
+- **Monorepo build ordering (m2):** every build job must build the **workspace packages** **before** the app — `beforeBuildCommand` only runs the app's own `pnpm build` (vite), not the deps it consumes from their gitignored `dist/`. Use `pnpm --filter './packages/*' build` (deps only) rather than a blanket `pnpm -r build`, which would redundantly run the app's vite build a second time before tauri-action's `beforeBuildCommand` does it again (Mi-5). smoke/ci already build deps first; release jobs must too, or they fail only at release time.
 - **Convenience installer — `scripts/install.sh`**, published as a **per-release asset** (M4) so the canonical URL is version-pinned, not a moving branch (this is the lesson cyoda-go already adopted — never `curl|sh` off a branch):
   ```sh
   curl --proto '=https' --tlsv1.2 -fsSL \
     https://github.com/Cyoda/cyoda-dev-console/releases/latest/download/install.sh | sh
   ```
   Behavior:
-  1. Verify OS = Linux; map `uname -m` → `x86_64` / `aarch64`; refuse anything else with a clear message.
+  1. Verify OS = Linux; map `uname -m` to the asset's arch token. **Note (B-1): with the D12 rename the canonical AppImage arch tokens are what `checksums` writes** — map `x86_64`/`amd64` → the x64 asset and `aarch64`/`arm64` → the arm asset; refuse anything else with a clear message. (Pre-rename, raw Tauri AppImages use Debian tokens `amd64`/`aarch64`, *not* `x86_64` — which is exactly the trap D12's rename removes.)
   2. Resolve version: latest Release via GitHub API, or `VERSION=vX.Y.Z` env to pin.
-  3. Download the matching AppImage **and** `SHA256SUMS`; verify the hash; abort on mismatch.
+  3. Download the matching AppImage **and** `SHA256SUMS`; verify with `sha256sum -c` against the canonical no-space filename (D12); abort on mismatch.
   4. Install to `~/.local/bin/cyoda-dev-console` (no sudo); `chmod +x`. Warn if `~/.local/bin` not on `PATH`.
   5. Write `~/.local/share/applications/cyoda-dev-console.desktop` (with `Exec=~/.local/bin/cyoda-dev-console`) + install a **known icon shipped in the installer/repo** (`src-tauri/icons/128x128.png`) under `~/.local/share/icons/` — do not rely on extracting the AppImage's `.DirIcon`.
   6. Idempotent: re-running upgrades in place. Updates = re-run the one-liner (consistent with no-auto-update philosophy).
@@ -161,16 +168,16 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 
 | # | Deliverable |
 |---|---|
-| T1 | `tauri.conf.json`: add `bundle.linux` and `bundle.windows`; confirm `bundle.targets` per-platform. Clean up placeholder `Cargo.toml` metadata (name/authors/license/repository) consumed by bundle metadata. |
-| T2 | Rewrite `release.yml`: `guard` (tag == `tauri.conf.json` version, fail loud — **M1**) → `create-release` (single draft, `release_id` output — **B1**) → build matrix (`build-macos`, `build-linux` incl. arm64, `build-windows` gate) all using `releaseId` not `tagName`; each job runs `pnpm -r build` first (**m2**). Add `workflow_dispatch` `dry_run` input that **fully skips release lookup/upload + `publish-cask`** (not merely `releaseDraft:true` — **n4**). Skip tap on any `-` prerelease tag. |
-| T3 | `checksums` job: aggregate `SHA256SUMS` over canonically-named assets, attach it **and `install.sh`** to the Release, un-draft. |
+| T1 | `tauri.conf.json`: add `bundle.linux` and `bundle.windows`; **set explicit per-platform bundle targets (D13)** — macOS `dmg`, Linux `appimage`, Windows `nsis`+`msi` — via tauri-action `--bundles` per matrix leg (replacing `targets: "all"`, which leaks `.deb`/`.rpm`/`.app`). Clean up placeholder `Cargo.toml` metadata (name/authors/license/repository). |
+| T2 | Rewrite `release.yml`: top-level `concurrency: release-${{ github.ref }}` (**M-B**); `guard` (normalized tag == `tauri.conf.json` version, fail loud — **M1/Mi-4**) → `create-release` (**find-or-create** single draft + `generate_release_notes`, `release_id` output — **B1/M-A/M-B**) → build matrix (`build-macos`, `build-linux` incl. arm64, `build-windows` gate) all using `releaseId` not `tagName`; each job builds workspace deps first via `pnpm --filter './packages/*' build` (**m2/Mi-5**). Add `workflow_dispatch` `dry_run` input that **fully skips release lookup/upload + `publish-cask`** (not merely `releaseDraft:true` — **n4**). Skip tap on any `-` prerelease tag. Pin token-mint + tap-push actions to full commit SHAs (**Mi-3**). |
+| T3 | `checksums` job: **rename all assets to the canonical no-space form (D12)**, build `SHA256SUMS` over the renamed names, attach it **and `install.sh`** to the Release, un-draft. |
 | T4 | `publish-cask` job: **validate notarization** (`spctl`/`stapler`, **M3**) → App-token mint → render cask template against the canonical artifact URLs (**B2**) → commit to `Cyoda/homebrew-cyoda` as the bot; skip prereleases. |
 | T5 | `Casks/cyoda-dev-console.rb` template (in-repo source of generation) — URLs derived from one canonical artifact-name scheme (**B2**); delete `scripts/update-cask-sha.sh` and `homebrew/cyoda-dev-console.rb`. |
 | T6 | `scripts/install.sh` Linux installer (arch detect, checksum verify, `.desktop` + repo-shipped icon, idempotent); published as a per-release asset (**M4**). |
 | T7 | Add Linux build to `smoke.yml`; keep macOS smoke. |
-| T8 | Docs: rewrite `RELEASE.md` (all platforms + automated tap + one-time App/secrets setup); update `README.md` install section. |
+| T8 | Docs: rewrite `RELEASE.md` (all platforms + automated tap + one-time App/secrets setup); update `README.md` install section; **sweep `AGENTS.md`** §Distribution (drifts to bare `brew install --cask cyoda-dev-console` / "two separate casks") to the tap-qualified `cyoda/cyoda/...` form (**N-4**). |
 | T9 | **Open a GitHub issue on `cyoda-go`** for the tap rename/retarget coordination (§5). Capture the dual-publish cycle and bot-App install. |
-| T10 | One-time infra (documented, manual): create `Cyoda/homebrew-cyoda` with `Formula/`+`Casks/`; install `cyoda-go-release-bot` App on it; add `HOMEBREW_TAP_APP_ID` var + `HOMEBREW_TAP_APP_KEY` secret to this repo. |
+| T10 | One-time infra (documented, manual): **verify the real release-bot App name/ID** (cyoda-go docs say `cyoda-platform-release-bot`); create `Cyoda/homebrew-cyoda` with `Formula/`+`Casks/`; install that App on it (`Contents: read/write`, tap-repo-scoped); confirm tap + App share one account (`Cyoda`==`cyoda`, case-insensitive); add `HOMEBREW_TAP_APP_ID` + `HOMEBREW_TAP_APP_KEY` secrets to this repo. |
 | T11 | Org migration: move repo to `Cyoda/cyoda-dev-console`; author all generated URLs (cask, installer, release downloads) against `Cyoda/`; rely on GitHub redirects for legacy `Cyoda-platform` links. |
 
 ### 8.1 Sequencing — code first, infra gates only the real release
@@ -187,7 +194,7 @@ Recommended order: T1–T8 (code, dry-run tested) → T10/T11 (infra + org) → 
 
 ## 9. Testing / verification
 
-- **CI-level:** a green tag run (3 published targets + Windows gate + checksums + cask commit) proves the pipeline. Linux added to smoke catches AppImage regressions on `staging` before tagging.
+- **CI-level:** a green tag run (3 published targets + Windows gate + checksums + cask commit) proves the pipeline. Linux added to smoke catches AppImage regressions on `staging` before tagging. The `checksums` job asserts the Release carries **only** the intended asset extensions (`.dmg`, `.AppImage`, `SHA256SUMS`, `install.sh`) — failing if a `.deb`/`.rpm`/`.app` leaks (D13 guard) — and `create-release` produced a non-empty body (M-A).
 - **Manual checklist** (added to `RELEASE.md`):
   - macOS: cask installs from the tap on a clean account, both arches; app launches with no Gatekeeper warning; `spctl --assess` reports Notarized.
   - Linux (both arches): AppImage launches on clean Ubuntu; `install.sh` installs → working menu entry → second run upgrades cleanly; tampered file fails checksum and aborts.
