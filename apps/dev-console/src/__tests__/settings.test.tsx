@@ -188,4 +188,117 @@ describe("SettingsRoute", () => {
     const saved = (saveAppConfig as ReturnType<typeof vi.fn>).mock.calls.at(-1)![0];
     expect(saved.recentProjects.find((p: { id: string }) => p.id === "proj-1")).toBeUndefined();
   });
+
+  it("shows the Root folder row with a Change button", async () => {
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    expect(screen.getByText("Root folder")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /change…|change/i })).toBeInTheDocument();
+  });
+
+  it("changes root and resets scan roots (no confirm when both already null)", async () => {
+    const { selectProjectRoot } = await import("../ipc/project.js");
+    (selectProjectRoot as ReturnType<typeof vi.fn>).mockResolvedValueOnce("/new/root");
+    const { saveAppConfig } = await import("../ipc/config.js");
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /change/i }));
+    await waitFor(() => {
+      const saved = (saveAppConfig as ReturnType<typeof vi.fn>).mock.calls.at(-1)![0];
+      const proj = saved.recentProjects.find((p: { id: string }) => p.id === "proj-1");
+      expect(proj.rootPath).toBe("/new/root");
+      expect(proj.workflowRoot).toBeNull();
+      expect(proj.entityRoot).toBeNull();
+    });
+    expect(screen.queryByText("Change root folder?")).toBeNull();
+  });
+
+  it("cancelled folder picker changes nothing", async () => {
+    const { selectProjectRoot } = await import("../ipc/project.js");
+    (selectProjectRoot as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    const { saveAppConfig } = await import("../ipc/config.js");
+    (saveAppConfig as ReturnType<typeof vi.fn>).mockClear();
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /change/i }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(saveAppConfig).not.toHaveBeenCalled();
+    expect(screen.queryByText("Change root folder?")).toBeNull();
+  });
+
+  it("picking the current root is a no-op", async () => {
+    const { selectProjectRoot } = await import("../ipc/project.js");
+    (selectProjectRoot as ReturnType<typeof vi.fn>).mockResolvedValueOnce("/projects/order-demo");
+    const { saveAppConfig } = await import("../ipc/config.js");
+    (saveAppConfig as ReturnType<typeof vi.fn>).mockClear();
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /change/i }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(saveAppConfig).not.toHaveBeenCalled();
+  });
+
+  it("confirms before resetting scan roots when one is set", async () => {
+    const { loadAppConfig, saveAppConfig } = await import("../ipc/config.js");
+    (loadAppConfig as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      version: 1,
+      activeProjectId: "proj-1",
+      recentProjects: [{
+        id: "proj-1", name: "order-demo", rootPath: "/projects/order-demo",
+        workflowGlobs: ["**/*.json"], entityGlobs: ["**/*.json"],
+        workflowRoot: "models/workflows", entityRoot: null,
+        createdAt: "2026-01-01T00:00:00.000Z", lastOpenedAt: "2026-01-01T00:00:00.000Z",
+      }],
+    });
+    const { selectProjectRoot } = await import("../ipc/project.js");
+    (selectProjectRoot as ReturnType<typeof vi.fn>).mockResolvedValueOnce("/new/root");
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /change/i }));
+    await waitFor(() => expect(screen.getByText("Change root folder?")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /change root/i }));
+    await waitFor(() => {
+      const saved = (saveAppConfig as ReturnType<typeof vi.fn>).mock.calls.at(-1)![0];
+      const proj = saved.recentProjects.find((p: { id: string }) => p.id === "proj-1");
+      expect(proj.rootPath).toBe("/new/root");
+      expect(proj.workflowRoot).toBeNull();
+    });
+  });
+
+  it("does not persist a non-active project edit via setActive", async () => {
+    // store.active stays null (default) → editing this project must not call setActive
+    const { saveAppConfig } = await import("../ipc/config.js");
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    const input = screen.getByLabelText("Project name");
+    fireEvent.change(input, { target: { value: "NonActive" } });
+    fireEvent.blur(input);
+    await waitFor(() => expect(saveAppConfig).toHaveBeenCalled());
+    expect(store.setActive).not.toHaveBeenCalled();
+  });
+
+  it("composes a name edit and a root change (optimistic update)", async () => {
+    const { selectProjectRoot } = await import("../ipc/project.js");
+    (selectProjectRoot as ReturnType<typeof vi.fn>).mockResolvedValueOnce("/new/root");
+    const { saveAppConfig } = await import("../ipc/config.js");
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    const input = screen.getByLabelText("Project name");
+    fireEvent.change(input, { target: { value: "Both" } });
+    fireEvent.blur(input);                                   // edit 1: name
+    fireEvent.click(screen.getByRole("button", { name: /change/i })); // edit 2: root
+    await waitFor(() => {
+      const saved = (saveAppConfig as ReturnType<typeof vi.fn>).mock.calls.at(-1)![0];
+      const proj = saved.recentProjects.find((p: { id: string }) => p.id === "proj-1");
+      expect(proj.name).toBe("Both");
+      expect(proj.rootPath).toBe("/new/root");
+    });
+  });
 });

@@ -64,6 +64,7 @@ export function SettingsRoute() {
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [workflowRootError, setWorkflowRootError] = useState<string | null>(null);
   const [entityRootError, setEntityRootError] = useState<string | null>(null);
+  const [confirmRootChange, setConfirmRootChange] = useState<{ id: string; abs: string } | null>(null);
 
   const [tipsDismissed, setTipsDismissed] = useState<boolean>(
     () => localStorage.getItem("cyoda.setupTipsDismissed") === "1",
@@ -161,6 +162,19 @@ export function SettingsRoute() {
       return;
     }
     await updateProjectField(p.id, { workflowRoot: rel });
+  };
+
+  const applyRootChange = (projectId: string, abs: string) =>
+    updateProjectField(projectId, { rootPath: abs, workflowRoot: null, entityRoot: null });
+
+  const handleChangeRoot = async (p: DevProject) => {
+    const abs = await selectProjectRoot();
+    if (!abs || abs === p.rootPath) return;
+    if (p.workflowRoot != null || p.entityRoot != null) {
+      setConfirmRootChange({ id: p.id, abs });
+      return;
+    }
+    await applyRootChange(p.id, abs);
   };
 
   const handleBrowseEntityRoot = async (p: DevProject) => {
@@ -286,6 +300,18 @@ export function SettingsRoute() {
                       onCommit={(name) => void updateProjectField(p.id, { name })}
                     />
 
+                    <div>
+                      <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, marginBottom: 2 }}>
+                        Root folder
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: t.space.sm }}>
+                        <FilePath path={p.rootPath} copyable />
+                        <Button variant="secondary" onClick={() => void handleChangeRoot(p)}>
+                          Change…
+                        </Button>
+                      </div>
+                    </div>
+
                     <div style={{ fontSize: t.font.sizes.sm, fontWeight: 600, color: t.color.textMuted }}>
                       Scan configuration
                     </div>
@@ -396,6 +422,24 @@ export function SettingsRoute() {
         confirmVariant="danger"
         onConfirm={() => { void handleRemove(confirmRemoveId); setConfirmRemoveId(null); }}
         onCancel={() => setConfirmRemoveId(null)}
+      />
+    )}
+    {confirmRootChange !== null && (
+      <ConfirmModal
+        title="Change root folder?"
+        body={
+          <>
+            The workflow and entity folders are set relative to the current root.
+            Changing the root resets them to Auto-detect.
+          </>
+        }
+        confirmLabel="Change root"
+        onConfirm={() => {
+          const { id, abs } = confirmRootChange;
+          void applyRootChange(id, abs);
+          setConfirmRootChange(null);
+        }}
+        onCancel={() => setConfirmRootChange(null)}
       />
     )}
     </>
