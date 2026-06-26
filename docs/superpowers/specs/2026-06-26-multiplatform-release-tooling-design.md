@@ -167,6 +167,16 @@ The tap rename requires changes in the **`cyoda-go`** repo, which this project d
 | T10 | One-time infra (documented, manual): create `Cyoda/homebrew-cyoda` with `Formula/`+`Casks/`; install `cyoda-go-release-bot` App on it; add `HOMEBREW_TAP_APP_ID` var + `HOMEBREW_TAP_APP_KEY` secret to this repo. |
 | T11 | Org migration: move repo to `Cyoda/cyoda-dev-console`; author all generated URLs (cask, installer, release downloads) against `Cyoda/`; rely on GitHub redirects for legacy `Cyoda-platform` links. |
 
+### 8.1 Sequencing — code first, infra gates only the real release
+
+The code deliverables (T1–T8) are independent of the one-time infra/org actions (T9–T11) and can be built and **fully validated via `workflow_dispatch` dry-run** (§3.1) before the tap, bot App, secrets, or org move exist — dry-run uploads nothing and commits nothing, so it needs none of them.
+
+Only **cutting a real release** is gated on infra:
+- A real (or `-rc.N`) **tag** that uploads artifacts needs nothing extra — it just creates a GitHub Release on this repo.
+- The **`publish-cask` job** is the only step that requires T10 (tap repo exists + `cyoda-go-release-bot` installed on it + `HOMEBREW_TAP_APP_ID`/`HOMEBREW_TAP_APP_KEY` present). Until then it is the only failing job; everything else (DMGs, AppImages, checksums) still publishes. The job must therefore **fail loudly with a clear "tap infra not provisioned" message** rather than silently skipping, so a misconfiguration is never mistaken for success.
+
+Recommended order: T1–T8 (code, dry-run tested) → T10/T11 (infra + org) → T9 (cyoda-go coordination issue, can be filed in parallel) → first `-rc` tag → first real tag.
+
 ---
 
 ## 9. Testing / verification
