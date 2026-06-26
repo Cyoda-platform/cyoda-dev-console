@@ -298,7 +298,7 @@ export function SettingsRoute() {
                         Recommended folder structure
                       </button>
                       {structureOpen && (
-                        <div style={{ marginTop: t.space.xs, fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
+                        <div style={{ marginTop: t.space.xs, width: 0, minWidth: "100%", boxSizing: "border-box", fontSize: t.font.sizes.sm, color: t.color.textMuted }}>
                           <p style={{ margin: `0 0 ${t.space.xs}` }}>
                             Keep a versioned layout and a distinct file name per entity, so files
                             are easy to tell apart in the sidebar:
@@ -307,6 +307,7 @@ export function SettingsRoute() {
                             style={{
                               margin: 0,
                               padding: t.space.sm,
+                              minWidth: 0,
                               background: t.color.surfaceMuted,
                               borderRadius: t.radius.sm,
                               fontFamily: t.font.mono,
@@ -318,19 +319,22 @@ export function SettingsRoute() {
 {`models/
   workflows/
     v1/
-      order.json        ← workflow for "order"
+      order.json
       customer.json
   schema/
     v1/
-      order.json        ← example data for "order"
+      order.json
       customer.json`}
                           </pre>
                           <p style={{ margin: `${t.space.xs} 0 0` }}>
-                            Point <strong>Workflow root</strong> at <code>models/workflows</code>{" "}
-                            and <strong>Entity root</strong> at <code>models/schema</code>. Always
-                            include the model version (<code>v1</code>, <code>v2</code>, …) to stay
-                            future-proof. Other layouts work too — the keys are: explicit roots,
-                            versioned folders, and distinct per-entity file names.
+                            Each entity has a workflow file under <code>workflows/</code> and its
+                            example data under <code>schema/</code>, both named for the entity (e.g.{" "}
+                            <code>order.json</code>). Point <strong>Workflow root</strong> at{" "}
+                            <code>models/workflows</code> and <strong>Entity root</strong> at{" "}
+                            <code>models/schema</code>, and always include the model version
+                            (<code>v1</code>, <code>v2</code>, …) to stay future-proof. Other layouts
+                            work too — the keys are explicit roots, versioned folders, and distinct
+                            per-entity file names.
                           </p>
                         </div>
                       )}

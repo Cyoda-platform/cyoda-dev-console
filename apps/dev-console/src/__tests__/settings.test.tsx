@@ -129,6 +129,6 @@ describe("SettingsRoute", () => {
     fireEvent.click(screen.getByRole("button", { name: /recommended folder structure/i }));
 
     expect(screen.getByText(/distinct per-entity file names/i)).toBeInTheDocument();
-    expect(screen.getByText(/example data for/i)).toBeInTheDocument();
+    expect(screen.getByText(/example data/i)).toBeInTheDocument();
   });
 });
