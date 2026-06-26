@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { v4 as uuid } from "uuid";
 import { loadAppConfig, saveAppConfig } from "../ipc/config.js";
@@ -7,12 +7,18 @@ import { useProjectStore } from "../state/projectStore.js";
 import type { AppConfig, DevProject } from "@cyoda/workflow-project-model";
 import { Button, EmptyState, FilePath, Panel, WarningBanner, useTokens } from "@cyoda/console-design-system";
 
-function ConfirmRemoveModal({
-  projectName,
+function ConfirmModal({
+  title,
+  body,
+  confirmLabel,
+  confirmVariant = "primary",
   onConfirm,
   onCancel,
 }: {
-  projectName: string;
+  title: string;
+  body: ReactNode;
+  confirmLabel: string;
+  confirmVariant?: "primary" | "danger";
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -28,14 +34,13 @@ function ConfirmRemoveModal({
         zIndex: 1000,
       }}
     >
-      <Panel title="Remove project?">
+      <Panel title={title}>
         <p style={{ fontFamily: t.font.sans, fontSize: t.font.sizes.md, color: t.color.text, margin: `0 0 ${t.space.sm}` }}>
-          <strong>{projectName}</strong> will be removed from the project list.
-          The files on disk are not affected.
+          {body}
         </p>
         <div style={{ display: "flex", gap: t.space.sm, justifyContent: "flex-end", marginTop: t.space.md }}>
           <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button variant="danger" onClick={onConfirm}>Remove</Button>
+          <Button variant={confirmVariant} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </Panel>
     </div>
@@ -369,10 +374,18 @@ export function SettingsRoute() {
     </div>
 
     {confirmRemoveId !== null && (
-      <ConfirmRemoveModal
-        projectName={
-          configQ.data?.recentProjects.find((p) => p.id === confirmRemoveId)?.name ?? ""
+      <ConfirmModal
+        title="Remove project?"
+        body={
+          <>
+            <strong>
+              {configQ.data?.recentProjects.find((p) => p.id === confirmRemoveId)?.name ?? ""}
+            </strong>{" "}
+            will be removed from the project list. The files on disk are not affected.
+          </>
         }
+        confirmLabel="Remove"
+        confirmVariant="danger"
         onConfirm={() => { void handleRemove(confirmRemoveId); setConfirmRemoveId(null); }}
         onCancel={() => setConfirmRemoveId(null)}
       />

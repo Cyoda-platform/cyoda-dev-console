@@ -131,4 +131,19 @@ describe("SettingsRoute", () => {
     expect(screen.getByText(/distinct per-entity file names/i)).toBeInTheDocument();
     expect(screen.getByText(/example data/i)).toBeInTheDocument();
   });
+
+  it("removes a project via the shared confirm modal (bolded name in body)", async () => {
+    wrap(<SettingsRoute />);
+    await waitFor(() => screen.getByRole("button", { name: /remove/i }));
+    fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+    await waitFor(() => expect(screen.getByText("Remove project?")).toBeInTheDocument());
+    // the project name renders bold inside the modal body
+    const strong = screen.getByText("order-demo", { selector: "strong" });
+    expect(strong).toBeInTheDocument();
+    const { saveAppConfig } = await import("../ipc/config.js");
+    fireEvent.click(screen.getAllByRole("button", { name: /remove/i }).at(-1)!);
+    await waitFor(() => expect(saveAppConfig).toHaveBeenCalled());
+    const saved = (saveAppConfig as ReturnType<typeof vi.fn>).mock.calls.at(-1)![0];
+    expect(saved.recentProjects.find((p: { id: string }) => p.id === "proj-1")).toBeUndefined();
+  });
 });
