@@ -1,10 +1,21 @@
+#!/usr/bin/env bash
+# Render the Homebrew cask for a cyoda-dev-console release.
+# Usage: render-cask.sh <tag> <arm_sha256> <intel_sha256>
+set -euo pipefail
+
+tag="${1:?tag required}"
+arm="${2:?arm sha256 required}"
+intel="${3:?intel sha256 required}"
+ver="${tag#v}"
+
+cat <<EOF
 cask "cyoda-dev-console" do
-  version "0.1.0"
-  sha256 arm:   "REPLACE_WITH_ARM_SHA",
-         intel: "REPLACE_WITH_X86_SHA"
+  version "${ver}"
+  sha256 arm:   "${arm}",
+         intel: "${intel}"
 
   arch arm: "aarch64", intel: "x86_64"
-  url "https://github.com/Cyoda-platform/cyoda-dev-console/releases/download/v#{version}/Cyoda-Dev-Console_#{version}_#{arch}.dmg"
+  url "https://github.com/cyoda/cyoda-dev-console/releases/download/v#{version}/cyoda-dev-console_#{version}_#{arch}.dmg"
 
   name "Cyoda Dev Console"
   desc "Local file-based editor for Cyoda workflows"
@@ -21,3 +32,4 @@ cask "cyoda-dev-console" do
     "~/Library/Saved Application State/com.cyoda.devconsole.savedState",
   ]
 end
+EOF
