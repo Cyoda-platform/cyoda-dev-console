@@ -6,7 +6,7 @@ Cyoda Dev Console ships as: a notarized macOS DMG (installed via the Homebrew ca
 
 1. Bump `version` in `apps/dev-console/src-tauri/tauri.conf.json` (SemVer) and commit.
 2. Push a tag `vX.Y.Z` (or `vX.Y.Z-rc.N` to rehearse without touching Homebrew).
-3. `release.yml` runs: `guard` (tag must equal the config version) → `create-release` (one draft) → build macOS ×2 (signed+notarized DMG), Linux ×2 (AppImage), Windows (compile gate, no upload) → `checksums` (SHA256SUMS + installer + icon, then un-draft) → `publish-cask` (validate notarization, regenerate the cask, commit it to the tap as `cyoda-go-release-bot`). Prerelease tags skip `publish-cask`.
+3. `release.yml` runs: `guard` (tag must equal the config version) → `create-release` (one draft) → build macOS ×2 (signed+notarized DMG), Linux ×2 (AppImage), Windows (compile gate, no upload) → `checksums` (SHA256SUMS + installer + icon, then un-draft) → `publish-cask` (validate notarization, regenerate the cask, commit it to the tap as `cyoda-release-bot`). Prerelease tags skip `publish-cask`.
 
 ## Rehearsing without cutting a release
 
@@ -44,7 +44,7 @@ The bundle lands under `apps/dev-console/src-tauri/target/release/bundle/`. The 
 
 - macOS: `brew install --cask cyoda/cyoda/cyoda-dev-console` on a clean account; app launches with no Gatekeeper warning; `spctl --assess --type execute --verbose "Cyoda Dev Console.app"` → "source=Notarized Developer ID".
 - Linux (both arches): installer round-trip — install → menu entry appears → re-run upgrades cleanly → a tampered file fails the checksum and aborts.
-- Cask commit landed in the tap with author `cyoda-go-release-bot` and correct per-arch SHAs; a prerelease tag did **not** touch the tap.
+- Cask commit landed in the tap with author `cyoda-release-bot` and correct per-arch SHAs; a prerelease tag did **not** touch the tap.
 
 ## No in-app auto-update
 
