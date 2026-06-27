@@ -197,13 +197,11 @@ Ops Console connection config is distinct from Dev Console project roots — nev
 
 ## Distribution
 
-Two separate Homebrew casks:
-```
-brew install --cask cyoda-dev-console
-brew install --cask cyoda-ops-console
-```
+- **macOS:** `brew install --cask cyoda/cyoda/cyoda-dev-console`
+- **Linux:** `curl --proto '=https' --tlsv1.2 -fsSL https://github.com/cyoda/cyoda-dev-console/releases/latest/download/install.sh | sh`
+- **Windows:** build from source — see `RELEASE.md`.
 
-Project root selection happens inside the app's first-run wizard, not during `brew install`. Release artifacts must be signed (Apple Developer ID), notarized, and stapled. MVP uses `brew upgrade` for updates — no in-app auto-update.
+Project root selection happens inside the app's first-run wizard, not during `brew install`. Release artifacts must be signed (Apple Developer ID), notarized, and stapled. MVP uses `brew upgrade` (macOS) or re-running the Linux installer for updates — no in-app auto-update.
 
 ---
 
