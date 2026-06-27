@@ -38,7 +38,7 @@ On the Mac, **Xcode → Settings → Accounts →** select the team **→ Manage
 
 ### 1.4 Base64-encode the certificate
 ```bash
-base64 -i DeveloperID.p12 -o DeveloperID.p12.b64
+base64 -i DeveloperID.p12 -o DeveloperID.p12.b64   # macOS base64 syntax
 # the contents of DeveloperID.p12.b64 is APPLE_CERTIFICATE
 ```
 
@@ -114,6 +114,8 @@ Casks/cyoda-dev-console.rb  # auto-committed by this repo's release.yml
 README.md
 ```
 
+> The install command `brew install --cask cyoda/cyoda/cyoda-dev-console` is not a typo: it is `<org>/<tap-suffix>/<cask>` — the tap `Cyoda/homebrew-cyoda` shortens to `cyoda/cyoda`, and `cyoda-dev-console` is the cask token.
+
 ---
 
 ## 3. Create the release-bot GitHub App
@@ -146,9 +148,9 @@ rm -f app-private-key.pem
 
 ---
 
-## 4. Harden the workflow: pin privileged actions to commit SHAs
+## 4. Harden the workflow: pin sensitive actions to commit SHAs
 
-The two actions that mint/use the tap token should be pinned to immutable SHAs (the rest can stay on major tags; Dependabot keeps them current). Do this as a PR to `staging`.
+Pin to immutable SHAs the action that **mints the tap token** (`actions/create-github-app-token`, used by `publish-cask`) and, as defense-in-depth, `actions/github-script` (used by `create-release`). The remaining build actions can stay on major tags; Dependabot keeps them current. Do this as a PR to `staging`.
 
 ```bash
 git clone https://github.com/Cyoda/cyoda-dev-console && cd cyoda-dev-console
@@ -178,33 +180,41 @@ gh pr create --base staging --fill && gh pr merge --merge --delete-branch
 
 Each step builds on the last. Stop and fix if any stage is not green.
 
-### 5.1 Re-run the build-only rehearsal (now exercises macOS signing)
-With the `APPLE_*` secrets in place, a dispatch run now signs **and notarizes** the macOS bundles during the build (notarization runs at bundle time, independent of upload). This is the first end-to-end check of signing without consuming a version.
+### 5.1 Re-run the build-only rehearsal (surfaces signing-credential errors)
+With the `APPLE_*` secrets in place, a dispatch run drives the macOS **signing/notarization code path** during the bundle step, so an invalid cert, wrong identity, or bad app-specific password fails the build here — a cheap credential smoke-test that consumes no version. **What it does *not* do:** a dispatch run uploads nothing, so there is no artifact to validate, and a green run is *not* proof of a valid notarization ticket. The first **verifiable** notarization checks are the `-rc` DMG (`spctl`, §5.3) and the fail-closed `xcrun stapler validate` inside `publish-cask` (§5.4).
 
 ```bash
 gh workflow run Release --ref staging
 gh run watch "$(gh run list --workflow Release --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
-**Expect:** all five build legs green (macOS x2 now pass through signing+notarization; Linux x2 and Windows already pass). Publish-path jobs skip (dispatch never publishes).
+**Expect:** all five build legs green — macOS x2 (now through signing), Linux x2, Windows. Publish-path jobs skip (dispatch never publishes).
 
 ### 5.2 Bump the version to match the tag
-The `guard` job requires the tag base to equal `tauri.conf.json` `.version` (currently `0.1.0`). For a `0.2.0` release:
+The `guard` job requires the tag base to equal `tauri.conf.json` `.version` (currently `0.1.0`; the tag may add `-rc.N`). For a `0.2.0` release, bump it via a normal PR to `staging`:
 ```bash
-# on a short-lived branch -> PR -> merge to staging
-# edit apps/dev-console/src-tauri/tauri.conf.json: "version": "0.2.0"
+git checkout -b release/v0.2.0
+# edit apps/dev-console/src-tauri/tauri.conf.json -> "version": "0.2.0"
+git commit -am "chore(release): bump version to 0.2.0"
+git push -u origin release/v0.2.0
+gh pr create --base staging --fill && gh pr merge --merge --delete-branch
+git checkout staging && git pull
 ```
 
 ### 5.3 Cut a release-candidate tag (validates the publish path, tap untouched)
-A `-rc` tag builds, signs, notarizes, **uploads** the DMGs + AppImages, writes `SHA256SUMS`, attaches `install.sh`, and un-drafts — but **skips the cask** (prerelease). This is the safe rehearsal of everything except the tap commit.
+A `-rc` tag builds, signs, notarizes, **uploads** the DMGs + AppImages, writes `SHA256SUMS`, attaches `install.sh` (the `checksums` job attaches the repo's `scripts/install.sh` as a release asset), and un-drafts — but **skips the cask** (prerelease). This is the safe rehearsal of everything except the tap commit. Tag from the merged `staging`:
 
 ```bash
 git tag v0.2.0-rc.1 && git push origin v0.2.0-rc.1
-# watch the run; then verify the artifacts:
+# watch the run, then verify the artifacts:
 ```
-- Download a DMG from the pre-release and confirm notarization on a Mac:
-  `spctl --assess --type execute --verbose "Cyoda Dev Console.app"` → `source=Notarized Developer ID`.
-- On Linux, run the installer end-to-end:
-  `curl --proto '=https' --tlsv1.2 -fsSL https://github.com/Cyoda/cyoda-dev-console/releases/download/v0.2.0-rc.1/install.sh | sh` (or `VERSION=v0.2.0-rc.1 …`), confirm it installs, creates a menu entry, and a re-run upgrades cleanly.
+- **macOS notarization** — download a DMG from the pre-release, **mount it**, copy `Cyoda Dev Console.app` out (it's inside the DMG, not a separate asset), then:
+  `spctl --assess --type execute --verbose /path/to/Cyoda\ Dev\ Console.app` → `source=Notarized Developer ID`.
+- **Linux installer** — note `latest` does **not** resolve to a prerelease, so use the explicit `-rc` tag URL. `VERSION` is read by the script, so it goes before `sh`:
+  ```bash
+  curl --proto '=https' --tlsv1.2 -fsSL \
+    https://github.com/Cyoda/cyoda-dev-console/releases/download/v0.2.0-rc.1/install.sh | sh
+  ```
+  Confirm it installs, creates a menu entry, and a re-run upgrades cleanly.
 
 > Note: the **cask publish job runs only on a non-prerelease tag**, so the tap commit itself is first exercised in 5.4. Its logic (`scripts/render-cask.sh`) is unit-tested, the job is the last in the graph, and a failure there does not affect the already-published DMGs/AppImages — it can be re-run after a fix without re-releasing.
 
@@ -219,7 +229,7 @@ This runs the whole pipeline including `publish-cask`, which validates notarizat
 ## 6. Post-release verification checklist
 
 - [ ] GitHub Release `v0.2.0` carries: 2 DMGs, 2 AppImages, `SHA256SUMS`, `install.sh`, `cyoda-dev-console.png`, and **no** `.deb`/`.rpm`/`.app` (the `checksums` job asserts this and exactly 2+2 assets).
-- [ ] `Casks/cyoda-dev-console.rb` was committed to the tap by `cyoda-release-bot` with correct per-arch SHAs.
+- [ ] `Casks/cyoda-dev-console.rb` was committed to the tap by `cyoda-release-bot <noreply@cyoda.com>` with correct per-arch SHAs.
 - [ ] On a clean Mac: `brew install --cask cyoda/cyoda/cyoda-dev-console` installs, the app launches with **no Gatekeeper warning**, `spctl --assess` reports Notarized.
 - [ ] On Linux (both arches if available): AppImage launches; `install.sh` round-trips (install → menu entry → re-run upgrades → tampered file fails checksum).
 - [ ] Windows: build-from-source per `RELEASE.md` produces a launchable app (no published artifact expected).
