@@ -223,7 +223,7 @@ jobs:
             "${{ steps.sha.outputs.arm }}" "${{ steps.sha.outputs.intel }}" \
             > tap/Casks/cyoda-dev-console.rb
           cd tap
-          git config user.name  "cyoda-go-release-bot"
+          git config user.name  "cyoda-release-bot"
           git config user.email "noreply@cyoda.com"
           git add Casks/cyoda-dev-console.rb
           git commit -m "Cask update for cyoda-dev-console version ${GITHUB_REF_NAME}"
