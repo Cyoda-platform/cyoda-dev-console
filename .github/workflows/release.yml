@@ -76,9 +76,10 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           projectPath: apps/dev-console
+          tauriScript: pnpm exec tauri
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target ${{ matrix.target }} --bundles dmg
-          releaseAssetNamePattern: cyoda-dev-console_[version]_[arch].[ext]
+          assetNamePattern: cyoda-dev-console_[version]_[arch].[ext]
 
   build-linux:
     needs: create-release
@@ -107,9 +108,10 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         with:
           projectPath: apps/dev-console
+          tauriScript: pnpm exec tauri
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --bundles appimage
-          releaseAssetNamePattern: cyoda-dev-console_[version]_[arch].[ext]
+          assetNamePattern: cyoda-dev-console_[version]_[arch].[ext]
 
   build-windows:
     needs: create-release
@@ -127,6 +129,7 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         with:
           projectPath: apps/dev-console
+          tauriScript: pnpm exec tauri
           args: --bundles nsis,msi
 
   checksums:
