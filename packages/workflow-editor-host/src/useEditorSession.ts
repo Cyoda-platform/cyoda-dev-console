@@ -6,6 +6,7 @@ import {
   type ValidationIssue,
 } from "@cyoda/workflow-core";
 import { synthesizeImportPayload } from "./synthesizeImportPayload.js";
+import { dropNullCriteria } from "./nullCriterion.js";
 
 export interface EditorSessionIO {
   write: (path: string, contents: string) => Promise<{ lastModified: string; sizeBytes: number }>;
@@ -38,6 +39,12 @@ export interface EditorSession {
   applyExternalDocument: (doc: WorkflowEditorDocument) => void;
   /** Increments whenever the document is replaced externally (apply/revert). */
   externalRevision: number;
+  /**
+   * Re-parse the current content with every `criterion: null` dropped — the
+   * remediation for a workflow that only fails to parse because cyoda-go emitted
+   * explicit null criteria. Leaves the session dirty so the fix can be saved.
+   */
+  remediateNullCriteria: () => void;
   /** True when an AI-applied snapshot is available to undo (cleared by manual edits or save). */
   canUndoAi: boolean;
   /** Roll back the last AI-applied document. No-op if no snapshot available. */
@@ -64,6 +71,7 @@ export function useEditorSession({
   );
   const [issues, setIssues] = useState<ValidationIssue[]>(initialParsed.issues);
   const [parseOk, setParseOk] = useState<boolean>(initialParsed.ok);
+  const [rawContent, setRawContent] = useState<string>(initialContents);
   const [baseline, setBaseline] = useState<string>(() =>
     initialParsed.document ? serializeImportPayload(initialParsed.document) : "",
   );
@@ -100,6 +108,18 @@ export function useEditorSession({
     setDocumentState(snapshot);
     setExternalRevision((r) => r + 1);
   }, []);
+
+  const remediateNullCriteria = useCallback(() => {
+    const cleaned = dropNullCriteria(rawContent);
+    const result = parseImportPayload(cleaned, document?.meta);
+    setDocumentState(result.document ?? null);
+    setIssues(result.issues);
+    setParseOk(result.ok);
+    setRawContent(cleaned);
+    // Baseline is left unchanged so the remediated document reads as dirty —
+    // the file on disk still has the null criteria until the user saves.
+    setExternalRevision((r) => r + 1);
+  }, [rawContent, document]);
 
   const save = useCallback(async () => {
     if (!document) return;
@@ -149,10 +169,11 @@ export function useEditorSession({
     dirty,
     saving,
     saveError,
-    rawContent: initialContents,
+    rawContent,
     setDocument,
     applyExternalDocument,
     externalRevision,
+    remediateNullCriteria,
     canUndoAi,
     undoAiApply,
     save,
