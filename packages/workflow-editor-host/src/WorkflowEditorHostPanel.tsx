@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { WorkflowEditor, type WorkflowJsonEditorConfig } from "@cyoda/workflow-react";
 import type { WorkflowEditorDocument } from "@cyoda/workflow-core";
 import type { EditorSession } from "./useEditorSession.js";
 import { ParseErrorView } from "./ParseErrorView.js";
+import { NullCriterionModal } from "./NullCriterionModal.js";
+import { nullCriterionPaths } from "./nullCriterion.js";
 
 import type { WorkflowUiMeta } from "@cyoda/workflow-core";
 
@@ -18,8 +21,22 @@ export function WorkflowEditorHostPanel({
   onSaveRequest,
   onWorkflowUiChange,
 }: WorkflowEditorHostPanelProps) {
+  const [remediationDismissed, setRemediationDismissed] = useState(false);
+
   if (!session.parseOk || !session.document) {
-    return <ParseErrorView issues={session.issues} rawContent={session.rawContent} />;
+    const nullPaths = nullCriterionPaths(session.rawContent, session.issues);
+    return (
+      <>
+        <ParseErrorView issues={session.issues} rawContent={session.rawContent} />
+        {nullPaths.length > 0 && !remediationDismissed && (
+          <NullCriterionModal
+            paths={nullPaths}
+            onApply={() => session.remediateNullCriteria()}
+            onDismiss={() => setRemediationDismissed(true)}
+          />
+        )}
+      </>
+    );
   }
 
   const handleChange = (doc: WorkflowEditorDocument) => session.setDocument(doc);
