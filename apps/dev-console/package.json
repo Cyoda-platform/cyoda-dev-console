@@ -43,7 +43,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@types/uuid": "^10.0.0",
+    "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "catalog:",
     "happy-dom": "^20.10.6",
     "typescript": "catalog:",
