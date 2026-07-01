@@ -25,7 +25,7 @@ tauri = { version = "2.11.2", features = [] }
 tauri-plugin-log = "2"
 tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros", "fs", "time", "process"] }
 tokio-util = { version = "0.7" }
-notify = "7"
+notify = "8"
 notify-debouncer-full = "0.4"
 ignore = "0.4"
 thiserror = "2"
