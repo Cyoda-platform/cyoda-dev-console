@@ -1,0 +1,10 @@
+# Single source of truth for the Rust toolchain (the Rust analogue of
+# `node-version` in CI). Kept at the repo root so BOTH honour it:
+#   - local dev: rustup walks up from apps/dev-console/src-tauri and reads this;
+#   - CI: actions-rust-lang/setup-rust-toolchain reads it (root only) — see
+#     .github/workflows/ci.yml.
+# Pinning keeps clippy's lint set, rustfmt's rules, and the Cargo.lock format
+# identical everywhere; a floating `stable` drifts all three. Bump deliberately.
+[toolchain]
+channel = "1.96.0"
+components = ["rustfmt", "clippy"]
