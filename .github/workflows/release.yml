@@ -16,7 +16,7 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: ./scripts/check-release-version.sh "${{ github.ref_name }}" apps/dev-console/src-tauri/tauri.conf.json
 
   create-release:
@@ -58,9 +58,9 @@ jobs:
       matrix:
         target: [aarch64-apple-darwin, x86_64-apple-darwin]
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
       # rust-toolchain.toml pins the build to 1.96.0, so add the cross target
@@ -97,9 +97,9 @@ jobs:
     env:
       APPIMAGE_EXTRACT_AND_RUN: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
       - name: Install Linux bundle dependencies
@@ -123,9 +123,9 @@ jobs:
     if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.create-release.result == 'success') }}
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
       - run: pnpm install --frozen-lockfile
@@ -144,7 +144,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Download published bundles
         run: |
           mkdir -p dist && cd dist
@@ -182,7 +182,7 @@ jobs:
     if: ${{ github.event_name == 'push' && !contains(github.ref_name, '-') }}
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Download DMGs + checksums
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
