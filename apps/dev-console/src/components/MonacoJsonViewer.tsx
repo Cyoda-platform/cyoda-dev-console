@@ -18,8 +18,13 @@ export function MonacoJsonViewer({
   const onSaveRef = useRef(onSave);
   const onDirtyChangeRef = useRef(onDirtyChange);
   const baselineRef = useRef(contents);
-  onSaveRef.current = onSave;
-  onDirtyChangeRef.current = onDirtyChange;
+  // Keep the "latest" refs in sync after render (writing refs during render is
+  // disallowed by react-hooks 7 / React Compiler). The editor's command/change
+  // handlers read `.current` at fire time, so they still see the freshest props.
+  useEffect(() => {
+    onSaveRef.current = onSave;
+    onDirtyChangeRef.current = onDirtyChange;
+  });
 
   useEffect(() => {
     if (!containerRef.current) return;
