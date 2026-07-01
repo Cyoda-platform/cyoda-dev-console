@@ -10,6 +10,11 @@ updates:
         update-types:
           - minor
           - patch
+      # Group majors too so they arrive as one review-me PR per ecosystem
+      # instead of one PR per dependency.
+      npm-major:
+        update-types:
+          - major
     ignore:
       # Hand-pinned lockstep deps — bumped manually, not by Dependabot.
       - dependency-name: "@cyoda/workflow-*"
@@ -20,10 +25,21 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # notify-debouncer-full re-exports `notify`, so the two must upgrade in
+      # lockstep — even across majors. Bumping one alone puts two notify
+      # versions in the tree and the file watcher fails to compile. Listed
+      # first so these always group together regardless of bump type.
+      notify:
+        patterns:
+          - "notify"
+          - "notify-debouncer-full"
       cargo-minor-patch:
         update-types:
           - minor
           - patch
+      cargo-major:
+        update-types:
+          - major
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -35,3 +51,6 @@ updates:
         update-types:
           - minor
           - patch
+      actions-major:
+        update-types:
+          - major
