@@ -25,10 +25,10 @@
     "@cyoda/workflow-project-model": "workspace:*",
     "@cyoda/workflow-react": "0.3.0",
     "@cyoda/workflow-viewer": "0.3.0",
-    "@tanstack/react-query": "^5.62.0",
-    "@tanstack/react-virtual": "^3.11.0",
+    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-virtual": "^3.14.5",
     "@tauri-apps/api": "^2.1.0",
-    "lucide-react": "^1.17.0",
+    "lucide-react": "^1.23.0",
     "monaco-editor": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -37,7 +37,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.1.0",
+    "@tauri-apps/cli": "^2.11.4",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "^14.6.1",

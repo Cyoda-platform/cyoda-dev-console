@@ -121,16 +121,6 @@ export function WorkflowRoute({
   const layoutSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [layoutReady, setLayoutReady] = useState(false);
 
-  const handleWorkflowUiChange = useCallback((workflowUi: Record<string, WorkflowUiMeta>) => {
-    if (layoutSaveTimer.current) clearTimeout(layoutSaveTimer.current);
-    layoutSaveTimer.current = setTimeout(() => {
-      if (Object.keys(workflowUi).length === 0) return;
-      const transitionIds = sessionDocRef.current?.meta.ids.transitions ?? {};
-      const payload = { ...workflowUi, _transitionIds: transitionIds };
-      void writeTextFileWithConfirmedOverwrite(layoutFilePath, JSON.stringify(payload, null, 2));
-    }, 800);
-  }, [layoutFilePath]);
-
   const session = useEditorSession({
     projectId,
     filePath,
@@ -148,8 +138,24 @@ export function WorkflowRoute({
     },
   });
 
+  // "Latest document" ref for the debounced layout saver below. Declared before
+  // the callback that reads it and synced in an effect (not during render), so
+  // react-hooks 7 / React Compiler is satisfied: the ref is mutated before it is
+  // captured (frozen) by the useCallback, and never written during render.
   const sessionDocRef = useRef(session.document);
-  sessionDocRef.current = session.document;
+  useEffect(() => {
+    sessionDocRef.current = session.document;
+  });
+
+  const handleWorkflowUiChange = useCallback((workflowUi: Record<string, WorkflowUiMeta>) => {
+    if (layoutSaveTimer.current) clearTimeout(layoutSaveTimer.current);
+    layoutSaveTimer.current = setTimeout(() => {
+      if (Object.keys(workflowUi).length === 0) return;
+      const transitionIds = sessionDocRef.current?.meta.ids.transitions ?? {};
+      const payload = { ...workflowUi, _transitionIds: transitionIds };
+      void writeTextFileWithConfirmedOverwrite(layoutFilePath, JSON.stringify(payload, null, 2));
+    }, 800);
+  }, [layoutFilePath]);
 
   // On mount: load layout file → remap UUID keys → seed localStorage → let editor pick it up
   useEffect(() => {

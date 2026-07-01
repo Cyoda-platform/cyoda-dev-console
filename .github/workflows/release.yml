@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Find or create the draft release
         id: rel
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
@@ -71,7 +71,7 @@ jobs:
         run: rustup target add ${{ matrix.target }}
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter './packages/*' build
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -110,7 +110,7 @@ jobs:
             libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter './packages/*' build
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         with:
           projectPath: apps/dev-console
           tauriScript: pnpm exec tauri
@@ -131,7 +131,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter './packages/*' build
       # Compile/bundle gate only — no releaseId, so nothing is uploaded.
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         with:
           projectPath: apps/dev-console
           tauriScript: pnpm exec tauri
@@ -207,7 +207,7 @@ jobs:
           echo "intel=${intel}" >> "$GITHUB_OUTPUT"
       - name: Mint tap token
         id: token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.HOMEBREW_TAP_APP_ID }}
           private-key: ${{ secrets.HOMEBREW_TAP_APP_KEY }}

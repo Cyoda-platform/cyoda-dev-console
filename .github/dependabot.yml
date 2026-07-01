@@ -4,7 +4,8 @@ updates:
     directory: "/"
     target-branch: staging
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
     groups:
       npm-minor-patch:
         update-types:
@@ -23,7 +24,8 @@ updates:
     directory: "/apps/dev-console/src-tauri"
     target-branch: staging
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
     groups:
       # notify-debouncer-full re-exports `notify`, so the two must upgrade in
       # lockstep — even across majors. Bumping one alone puts two notify
@@ -45,7 +47,8 @@ updates:
     directory: "/"
     target-branch: staging
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
     groups:
       actions-minor-patch:
         update-types:
