@@ -39,4 +39,47 @@ describe("validateAndCanonicalize", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.issues.length).toBeGreaterThan(0);
   });
+
+  // The assistant apply path rewrites the whole payload and canonicalizes it via
+  // parseImportPayload -> serializeImportPayload. Lock down that annotations
+  // (engine-opaque client metadata) survive that canonicalization at the
+  // workflow, state, and transition levels — the AI path the prompt guards.
+  it("preserves annotations at root, state, and transition through canonicalization", () => {
+    const annotated = JSON.stringify({
+      importMode: "MERGE",
+      workflows: [
+        {
+          version: "1.0",
+          name: "annotated",
+          initialState: "start",
+          active: true,
+          annotations: { roles: ["reviewer"], label: "Annotated flow" },
+          states: {
+            start: {
+              annotations: { ui: { collapsed: false } },
+              transitions: [
+                {
+                  name: "go",
+                  next: "end",
+                  manual: false,
+                  disabled: false,
+                  annotations: { ui: { color: "green" } },
+                },
+              ],
+            },
+            end: { transitions: [] },
+          },
+        },
+      ],
+    });
+
+    const result = validateAndCanonicalize(annotated);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const wf = JSON.parse(result.canonical).workflows[0];
+      expect(wf.annotations).toEqual({ roles: ["reviewer"], label: "Annotated flow" });
+      expect(wf.states.start.annotations).toEqual({ ui: { collapsed: false } });
+      expect(wf.states.start.transitions[0].annotations).toEqual({ ui: { color: "green" } });
+    }
+  });
 });

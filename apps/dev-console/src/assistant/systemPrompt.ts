@@ -17,6 +17,10 @@ export function buildSystemPrompt(args: { workflowRelPath?: string; currentJson?
     "",
     "Cyoda workflows model an entity moving through named states via transitions; processors",
     "and criteria attach to transitions.",
+    "",
+    "Workflows, states, and transitions may each carry an optional `annotations` object:",
+    "client-owned metadata (e.g. roles, display labels, UI hints) that the engine never",
+    "interprets. Treat it as opaque — preserve it exactly as-is.",
   ];
 
   if (!args.currentJson) {
@@ -38,7 +42,8 @@ export function buildSystemPrompt(args: { workflowRelPath?: string; currentJson?
       "Rules:",
       "- To change the workflow, call the `propose_workflow_update` tool with `workflow_json` set",
       "  to the COMPLETE updated import payload as a JSON string — never a diff or fragment.",
-      "- Preserve everything the user did not ask to change.",
+      "- Preserve everything the user did not ask to change, including any `annotations` objects —",
+      "  copy them through verbatim; never drop or rewrite them unless explicitly asked.",
       "- The tool argument must be valid JSON.",
       "- If the user only asks a question, answer in text and do not call the tool.",
     ].join("\n"),
