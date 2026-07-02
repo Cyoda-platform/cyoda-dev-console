@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
+import { serializeImportPayload } from "@cyoda/workflow-core";
 import { useEditorSession } from "../useEditorSession.js";
 
 /**
@@ -8,20 +9,19 @@ import { useEditorSession } from "../useEditorSession.js";
  * It is client-owned metadata that the engine never interprets
  * (see `cyoda help workflows`).
  *
- * Step one of supporting it is purely tolerance: the editor must keep rendering
- * a workflow that carries `annotations`. The underlying `@cyoda/workflow-core`
- * parser uses lenient `z.object()` schemas, so unknown fields are *stripped*,
- * not rejected — these tests guard that contract so a future dependency bump
- * can't silently start failing to render annotated workflows.
+ * As of `@cyoda/workflow-core` 0.4.0, `annotations` is a first-class field on the
+ * Workflow/State/Transition domain model: the parser keeps it (rather than
+ * stripping it as an unknown key) and the serializer re-emits it at the 0.8
+ * dialect — which is the dialect the host always parses/serializes at, since it
+ * never overrides `sourceVersion`. These tests guard both halves:
  *
- * `parseOk === true && document !== null` is the host's render predicate:
- * WorkflowEditorHostPanel shows ParseErrorView only when `!parseOk || !document`,
- * otherwise it renders the editor. So asserting both is the established proxy
- * for "this workflow renders" (same convention as standalone.test.ts).
- *
- * NOTE: annotations are currently dropped on parse and on save — round-trip
- * *preservation* is the later "full support" step and lives in workflow-core,
- * not here (see the it.todo at the bottom).
+ * 1. Tolerance — an annotated workflow still renders. `parseOk === true &&
+ *    document !== null` is the host's render predicate: WorkflowEditorHostPanel
+ *    shows ParseErrorView only when `!parseOk || !document`, otherwise it renders
+ *    the editor. Asserting both is the established proxy for "this workflow
+ *    renders" (same convention as standalone.test.ts).
+ * 2. Preservation — annotations survive a parse -> serialize round-trip at every
+ *    level, so a future dependency bump can't silently start dropping them.
  */
 
 // Annotations at every level the cyoda-go schema allows: workflow root, state,
@@ -85,8 +85,19 @@ describe("useEditorSession — annotations tolerance", () => {
     expect(errors).toEqual([]);
   });
 
-  // Full support (a later step, implemented in @cyoda/workflow-core): preserve
-  // annotations through an import -> edit -> save round-trip instead of
-  // silently dropping them.
-  it.todo("preserves annotations on round-trip (full support — not yet implemented)");
+  // Full support (implemented in @cyoda/workflow-core 0.4.0): annotations survive
+  // an import -> edit -> save round-trip instead of being silently dropped. The
+  // session serializes via serializeImportPayload, so re-parsing its output is a
+  // faithful proxy for what `save()` writes to disk.
+  it("preserves annotations at root, state, and transition through a round-trip", () => {
+    const { result } = openSession(annotatedPayload);
+    expect(result.current.document).not.toBeNull();
+
+    const roundTripped = JSON.parse(serializeImportPayload(result.current.document!));
+    const wf = roundTripped.workflows[0];
+
+    expect(wf.annotations).toEqual({ roles: ["reviewer"], label: "Prize lifecycle" });
+    expect(wf.states.NEW.annotations).toEqual({ ui: { collapsed: false } });
+    expect(wf.states.NEW.transitions[0].annotations).toEqual({ ui: { color: "green" } });
+  });
 });
