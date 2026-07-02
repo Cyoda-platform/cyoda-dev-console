@@ -71,7 +71,7 @@ const openSession = (initialContents: string) =>
     }),
   );
 
-describe("useEditorSession — annotations tolerance", () => {
+describe("useEditorSession — annotations tolerance and preservation", () => {
   it("renders a workflow that carries annotations at root, state, and transition", () => {
     const { result } = openSession(annotatedPayload);
     // render predicate: ParseErrorView is shown only when !parseOk || !document.
