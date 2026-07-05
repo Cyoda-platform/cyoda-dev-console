@@ -14,8 +14,11 @@ export async function validateWorkflowTool(args: unknown, ctx: ToolContext): Pro
   const entry = findByName(await ctx.discover(), name);
   if (!entry) throw err("NOT_FOUND", `no workflow named "${name}"`);
 
+  // `parseImportPayload` already runs `validateSemantics` into `parsed.issues`;
+  // a follow-up `ctx.validate(parsed.document)` would return the identical set,
+  // so use `parsed.issues` alone rather than concatenating (which double-emits).
   const parsed = ctx.parseImport(synthesizeImportPayload((await ctx.read(entry.relativePath)).contents));
-  const diagnostics = parsed.document ? [...parsed.issues, ...ctx.validate(parsed.document)] : parsed.issues;
+  const diagnostics = parsed.issues;
   const valid = !!parsed.document && diagnostics.filter((i) => i.severity === "error").length === 0;
   return ok({ name, valid, diagnostics });
 }

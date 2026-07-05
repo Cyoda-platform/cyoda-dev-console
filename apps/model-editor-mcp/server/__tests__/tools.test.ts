@@ -13,6 +13,13 @@ const PLEDGE = JSON.stringify({
     states: { none: { transitions: [{ name: "create", next: "created", manual: false, disabled: false }] }, created: { transitions: [] } } }],
 });
 
+/** Schema-valid but semantically invalid: `create` targets a state that does not exist. */
+const DANGLING = JSON.stringify({
+  importMode: "MERGE",
+  workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true,
+    states: { none: { transitions: [{ name: "create", next: "ghost", manual: false, disabled: false }] } } }],
+});
+
 function entry(over: Partial<WorkflowFileIndexEntry> = {}): WorkflowFileIndexEntry {
   return { path: "/r/Pledge.json", relativePath: "Pledge.json", status: "valid-workflow", workflows: [{ name: "Pledge" }], lastModified: "t", sizeBytes: 1, ...over };
 }
@@ -74,6 +81,17 @@ describe("validateWorkflowTool", () => {
     expect(out.valid).toBe(true);
     expect(out.diagnostics.filter((d: { severity: string }) => d.severity === "error")).toHaveLength(0);
   });
+  it("emits each non-error diagnostic exactly once (no dedup double-emit)", async () => {
+    // `created` is a terminal, non-initial state → one `terminal-state-derived` info.
+    const r = await validateWorkflowTool({ name: "Pledge" }, ctx({ "Pledge.json": PLEDGE }));
+    const out = JSON.parse(r.content[0]!.text) as { diagnostics: Array<{ code: string; severity: string }> };
+    expect(out.diagnostics.filter((d) => d.code === "terminal-state-derived")).toHaveLength(1);
+  });
+  it("throws NOT_FOUND for an unknown name", async () => {
+    await expect(validateWorkflowTool({ name: "Nope" }, ctx({ "Pledge.json": PLEDGE }))).rejects.toMatchObject({
+      isError: true, content: [{ type: "text", text: expect.stringContaining("NOT_FOUND") }],
+    });
+  });
 });
 
 describe("updateWorkflowTool", () => {
@@ -98,6 +116,24 @@ describe("updateWorkflowTool", () => {
     const r = await updateWorkflowTool({ name: "Pledge", content: '{"foo":"bar"}' }, c);
     expect(r.isError).toBe(true);
     expect((r.structuredContent as { code: string }).code).toBe("VALIDATION_FAILED");
+    expect(c.write).not.toHaveBeenCalled();
+  });
+  it("rejects a semantically-invalid (dangling target) workflow without writing, error listed once", async () => {
+    const c = ctx({ "Pledge.json": PLEDGE });
+    const r = await updateWorkflowTool({ name: "Pledge", content: DANGLING }, c);
+    expect(r.isError).toBe(true);
+    expect((r.structuredContent as { code: string }).code).toBe("VALIDATION_FAILED");
+    expect(c.write).not.toHaveBeenCalled();
+    const diags = (r.structuredContent as { diagnostics: Array<{ code: string; severity: string }> }).diagnostics;
+    const dangling = diags.filter((d) => d.code === "unknown-transition-target");
+    expect(dangling).toHaveLength(1); // deduped: pre-fix this appeared twice
+    expect(dangling[0]!.severity).toBe("error");
+  });
+  it("throws NOT_FOUND for an unknown name without writing", async () => {
+    const c = ctx({ "Pledge.json": PLEDGE });
+    await expect(updateWorkflowTool({ name: "Nope", content: PLEDGE }, c)).rejects.toMatchObject({
+      isError: true, content: [{ type: "text", text: expect.stringContaining("NOT_FOUND") }],
+    });
     expect(c.write).not.toHaveBeenCalled();
   });
 });
