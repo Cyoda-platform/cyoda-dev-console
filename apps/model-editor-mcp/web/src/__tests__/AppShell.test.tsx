@@ -80,6 +80,31 @@ describe("App shell — picker + navigation", () => {
     await waitFor(() => expect(capturedEditorProps).toMatchObject({ workflow: "Pledge", content: "pushed-content" }));
   });
 
+  it("a Claude show_entity push drives the browser to that entity's Tree view with the pushed contents", async () => {
+    const App = await importApp();
+    render(<ThemeProvider><App /></ThemeProvider>);
+    await waitFor(() => expect(screen.getByText("CollateralAsset")).toBeInTheDocument());
+
+    onEventCb?.({ type: "showEntity", entity: "PushedEntity", revision: 1, contents: '{"pushedKey":"pushedVal"}' });
+
+    // Entity Tree pane is now shown, rendered from the SSE-pushed contents (not a fetch).
+    await waitFor(() => expect(screen.getByPlaceholderText("Search keys and values…")).toBeInTheDocument());
+    expect(screen.getByText("pushedKey")).toBeInTheDocument();
+  });
+
+  it("a Claude show_entity push overrides the human's current workflow view — last one wins", async () => {
+    const App = await importApp();
+    render(<ThemeProvider><App /></ThemeProvider>);
+    await waitFor(() => expect(screen.getByText("Pledge")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Pledge"));
+    await waitFor(() => expect(capturedEditorProps).toMatchObject({ workflow: "Pledge", content: "wf-content" }));
+
+    onEventCb?.({ type: "showEntity", entity: "PushedEntity", revision: 1, contents: '{"a":1}' });
+
+    await waitFor(() => expect(screen.getByPlaceholderText("Search keys and values…")).toBeInTheDocument());
+    expect(screen.queryByTestId("graph-pane")).not.toBeInTheDocument();
+  });
+
   it("a content push for a workflow the human is NOT currently viewing is ignored", async () => {
     const App = await importApp();
     render(<ThemeProvider><App /></ThemeProvider>);

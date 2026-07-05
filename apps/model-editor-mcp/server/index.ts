@@ -27,6 +27,8 @@ import { validateWorkflowTool } from "./tools/validate.js";
 import { optimizeLayoutTool } from "./tools/optimize_layout.js";
 import { connectionInfoTool } from "./tools/connection_info.js";
 import { listEntitiesTool, getEntityTool, createEntityTool, updateEntityTool, deleteEntityTool } from "./tools/entities.js";
+import { showEntityTool } from "./tools/show_entity.js";
+import type { ShownEntityPayload } from "./tools/show_entity.js";
 import { getProjectTool, configureProjectTool } from "./tools/project.js";
 
 /**
@@ -179,6 +181,8 @@ export async function main(argv: string[]): Promise<void> {
   const onChange = createOnChange(ctx, hub, pendingOrigins, nextRevision);
   const setShown = (p: ShownPayload): void =>
     hub.setShown({ type: "show", workflow: p.workflow, revision: nextRevision(), content: p.content, layout: p.layout });
+  const setShownEntity = (p: ShownEntityPayload): void =>
+    hub.setShown({ type: "showEntity", entity: p.entity, revision: nextRevision(), contents: p.contents });
 
   /**
    * Read-only browser-navigation backing for `GET /api/workflow/:name` — mirrors
@@ -223,6 +227,7 @@ export async function main(argv: string[]): Promise<void> {
     connection_info: (a) => connectionInfoTool(a, ctx),
     list_entities: (a) => listEntitiesTool(a, ctx),
     get_entity: (a) => getEntityTool(a, ctx),
+    show_entity: (a) => showEntityTool(a, ctx, setShownEntity),
     create_entity: (a) => createEntityTool(a, ctx),
     update_entity: (a) => updateEntityTool(a, ctx),
     delete_entity: (a) => deleteEntityTool(a, ctx),

@@ -16,6 +16,15 @@ describe("SseHub", () => {
     hub.addClient(c, "A");
     expect(c.events).toEqual([show]);
   });
+  it("replays the current shown entity to a newly connected client", () => {
+    const hub = createSseHub();
+    const showEntity: Extract<SseEvent, { type: "showEntity" }> = { type: "showEntity", entity: "CollateralAsset", revision: 1, contents: '{"a":1}' };
+    hub.setShown(showEntity);
+    expect(hub.currentShown()).toEqual(showEntity);
+    const c = client();
+    hub.addClient(c, "A");
+    expect(c.events).toEqual([showEntity]);
+  });
   it("echo-suppresses a layout push to the originating tab but delivers to others", () => {
     const hub = createSseHub();
     const a = client(), b = client();

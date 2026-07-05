@@ -3,7 +3,8 @@ import type { WorkflowUiMeta } from "@cyoda/workflow-core";
 export type SseEvent =
   | { type: "show"; workflow: string; revision: number; content: string; layout: Record<string, WorkflowUiMeta> }
   | { type: "content"; workflow: string; revision: number; content: string }
-  | { type: "layout"; workflow: string; revision: number; layout: Record<string, WorkflowUiMeta>; origin?: string };
+  | { type: "layout"; workflow: string; revision: number; layout: Record<string, WorkflowUiMeta>; origin?: string }
+  | { type: "showEntity"; entity: string; revision: number; contents: string };
 
 /** Subscribe to `/events` for this tab's origin; the browser auto-retries + the
  *  server replays the shown workflow on (re)connect. */

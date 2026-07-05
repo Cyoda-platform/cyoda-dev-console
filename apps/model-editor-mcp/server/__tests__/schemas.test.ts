@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   listWorkflowsInput, showWorkflowInput, updateWorkflowInput,
   optimizeLayoutInput, validateWorkflowInput, connectionInfoInput, layoutPostBody,
+  showEntityInput,
 } from "../schemas.js";
 
 describe("listWorkflowsInput / connectionInfoInput", () => {
@@ -21,6 +22,15 @@ describe("showWorkflowInput / validateWorkflowInput", () => {
     expect(showWorkflowInput.safeParse({}).success).toBe(false);
     expect(showWorkflowInput.safeParse({ name: "P", extra: 1 }).success).toBe(false);
     expect(validateWorkflowInput.safeParse({ name: "P", extra: 1 }).success).toBe(false);
+  });
+});
+
+describe("showEntityInput", () => {
+  it("requires a non-empty name and rejects unknown props", () => {
+    expect(showEntityInput.safeParse({ name: "CollateralAsset" }).success).toBe(true);
+    expect(showEntityInput.safeParse({ name: "" }).success).toBe(false);
+    expect(showEntityInput.safeParse({}).success).toBe(false);
+    expect(showEntityInput.safeParse({ name: "E", extra: 1 }).success).toBe(false);
   });
 });
 

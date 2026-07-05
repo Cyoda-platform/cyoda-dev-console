@@ -22,6 +22,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
   { name: "connection_info", description: "Return the browser URL/port for the live editor.", inputSchema: empty },
   { name: "list_entities", description: "List discovered entities (separate plain-JSON object files matched by entityGlobs): { entities: [{ name, path }] }.", inputSchema: empty },
   { name: "get_entity", description: "Read a single entity's raw JSON contents by name.", inputSchema: nameOnly },
+  { name: "show_entity", description: "Render an entity in the browser editor (make the browser switch to this entity's JSON/Tree view) and return its raw JSON contents. Read-only: unlike show_workflow there is no canonicalization — the on-disk bytes are shown and returned as-is.", inputSchema: nameOnly },
   { name: "create_entity", description: "Create a new entity file (name-based; destination directory derived from entityGlobs). Rejects if an entity with that name already exists.", inputSchema: nameAndContent },
   { name: "update_entity", description: "Overwrite an existing entity's whole-document JSON contents.", inputSchema: nameAndContent },
   { name: "delete_entity", description: "Delete an existing entity file.", inputSchema: nameOnly },

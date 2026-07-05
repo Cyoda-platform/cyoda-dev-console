@@ -67,11 +67,15 @@ export const listEntitiesInput = z.object({}).strict();
 export const getEntityInput = z.object({ name: z.string().min(1) }).strict();
 export const deleteEntityInput = z.object({ name: z.string().min(1) }).strict();
 
+/** `show_entity` — entity name; mirrors `showWorkflowInput`/`getEntityInput`. */
+export const showEntityInput = z.object({ name: z.string().min(1) }).strict();
+
 /** `create_entity` / `update_entity` — name + whole-document JSON string. */
 export const createEntityInput = z.object({ name: z.string().min(1), content: z.string() }).strict();
 export const updateEntityInput = z.object({ name: z.string().min(1), content: z.string() }).strict();
 
 export type GetEntityInput = z.infer<typeof getEntityInput>;
+export type ShowEntityInput = z.infer<typeof showEntityInput>;
 export type CreateEntityInput = z.infer<typeof createEntityInput>;
 export type UpdateEntityInput = z.infer<typeof updateEntityInput>;
 export type DeleteEntityInput = z.infer<typeof deleteEntityInput>;

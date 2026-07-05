@@ -79,6 +79,12 @@ export function App() {
         if (draggingRef.current) { deferredRef.current = e; return v; } // mid-drag defer
         return { ...v, layout: e.layout, layoutRev: v.layoutRev + 1 };
       });
+    } else if (e.type === "showEntity") {
+      // Claude's `show_entity` — symmetric with `show`: it always wins over whatever the human is
+      // currently browsing, switching the view to that entity's Tree/JSON pane. Same client-side
+      // effect as the sidebar picker's entity `onSelect`, just Claude-driven.
+      setExternalContent(null);
+      setView({ kind: "entity", name: e.entity, contents: e.contents });
     }
   }), []);
 
