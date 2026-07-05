@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline";
 import { makeDispatcher } from "./dispatch.js";
-import type { McpResult, ToolHandler } from "./envelope.js";
+import type { ToolHandler } from "./envelope.js";
 import { SERVER_NAME, SERVER_VERSION } from "./version.js";
 import { TOOL_MANIFEST } from "./manifest.js";
 
@@ -40,19 +40,11 @@ export function startMcpServer(opts: McpServerOptions): void {
         return;
       case "tools/call": {
         const result = await dispatch(String(req.params?.name ?? ""), req.params?.arguments);
-        send({ jsonrpc: "2.0", id: req.id, result: withConnection(result, opts.connectionUrl) });
+        send({ jsonrpc: "2.0", id: req.id, result });
         return;
       }
       default:
         if (req.id !== undefined && req.id !== null) send({ jsonrpc: "2.0", id: req.id, error: { code: -32601, message: `method not found: ${req.method}` } });
     }
   }
-}
-
-/** Echo the browser URL in every tool result's structured metadata (never to stdout). */
-function withConnection(result: McpResult, url: string): McpResult {
-  if (result.structuredContent && typeof result.structuredContent === "object" && !Array.isArray(result.structuredContent)) {
-    return { ...result, structuredContent: { ...(result.structuredContent as Record<string, unknown>), _connection: { url } } };
-  }
-  return result;
 }

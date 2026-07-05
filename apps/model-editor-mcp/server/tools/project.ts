@@ -10,6 +10,11 @@ import { getProjectInput, configureProjectInput } from "../schemas.js";
  * `list_entities` use — so the two can never drift (the parked branch's
  * whole-branch review flagged exactly this drift risk when the old code
  * re-implemented a second, narrower scan just for the count).
+ *
+ * Also surfaces `_connection.url` in its OWN shape (not via any blanket
+ * wrapper — the dispatcher no longer sprays `_connection` into every tool
+ * result, see `connection_info`'s dedicated `{url, port}` tool for the other
+ * place the URL is discoverable).
  */
 export async function getProjectTool(args: unknown, ctx: ToolContext): Promise<McpResult> {
   const input = getProjectInput.safeParse(args);
@@ -21,6 +26,7 @@ export async function getProjectTool(args: unknown, ctx: ToolContext): Promise<M
     workflowGlobs: ctx.workflowGlobs,
     entityGlobs: ctx.entityGlobs,
     counts: { workflows: workflows.length, entities: entities.length },
+    _connection: { url: ctx.connectionUrl },
   });
 }
 

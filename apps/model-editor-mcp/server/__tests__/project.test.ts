@@ -24,6 +24,7 @@ describe("getProjectTool", () => {
     expect(JSON.parse(r.content[0]!.text)).toEqual({
       root, workflowGlobs: ["models/workflow/**/*.json"], entityGlobs: ["models/schema/**/*.json"],
       counts: { workflows: 1, entities: 1 },
+      _connection: { url: "http://x" },
     });
   });
   it("rejects unknown args", async () => {

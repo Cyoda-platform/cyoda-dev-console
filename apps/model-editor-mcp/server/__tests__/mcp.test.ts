@@ -27,10 +27,10 @@ describe("startMcpServer (stdio JSON-RPC)", () => {
     const list = out.find((m) => m.id === 2) as { result: { tools: { name: string }[] } };
     expect(list.result.tools.map((t) => t.name)).toContain("show_workflow");
   });
-  it("dispatches tools/call and injects _connection.url into structuredContent", async () => {
+  it("dispatches tools/call and returns the tool's result unmodified — no blanket _connection injection", async () => {
     const out = await drive([JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "show_workflow", arguments: { name: "Pledge" } } })]);
-    const call = out.find((m) => m.id === 3) as { result: { structuredContent: { echoed: unknown; _connection: { url: string } } } };
+    const call = out.find((m) => m.id === 3) as { result: { structuredContent: { echoed: unknown; _connection?: unknown } } };
     expect(call.result.structuredContent.echoed).toEqual({ name: "Pledge" });
-    expect(call.result.structuredContent._connection.url).toBe("http://127.0.0.1:50000");
+    expect(call.result.structuredContent._connection).toBeUndefined();
   });
 });
