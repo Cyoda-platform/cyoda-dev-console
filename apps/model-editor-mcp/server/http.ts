@@ -5,7 +5,7 @@ import { extname, join, normalize } from "node:path";
 import { timingSafeEqual } from "node:crypto";
 import type { SseEvent, SseHub, SseClient } from "./sse.js";
 import { layoutPostBody } from "./schemas.js";
-import { findByName } from "./discovery.js";
+import { findByName, findEntityByName } from "./discovery.js";
 
 const MIME: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".map": "application/json", ".ico": "image/x-icon", ".woff2": "font/woff2" };
 
@@ -20,6 +20,9 @@ export interface HttpServerOptions {
   token: string;
   hub: SseHub;
   discover: () => Promise<{ relativePath: string; workflows: { name: string }[] }[]>;
+  discoverEntities: () => Promise<{ relativePath: string; name: string }[]>;
+  readWorkflow: (name: string) => Promise<{ name: string; path: string; content: string; layout: Record<string, unknown> } | null>;
+  readEntity: (name: string) => Promise<{ name: string; path: string; contents: string } | null>;
   writeLayout: (name: string, workflowUi: Record<string, unknown>, origin: string) => Promise<void>;
 }
 
@@ -66,6 +69,11 @@ export function createHttpServer(opts: HttpServerOptions): Server {
       }
       if (req.method === "GET" && url.pathname === "/events") { handleEvents(req, res, url); return; }
       if (req.method === "POST" && url.pathname === "/layout") { await handleLayout(req, res); return; }
+      if (req.method === "GET" && url.pathname.startsWith("/api/")) {
+        if (!isLoopback(req)) { res.writeHead(403).end(); return; }
+        await handleApi(url, res);
+        return;
+      }
       if (req.method === "GET") {
         if (!isLoopback(req)) { res.writeHead(403).end(); return; }
         await serveStatic(url.pathname, res); return;
@@ -116,6 +124,46 @@ export function createHttpServer(opts: HttpServerOptions): Server {
     if (!findByName(await opts.discover(), name)) { res.writeHead(404).end("unknown workflow"); return; }
     await opts.writeLayout(name, workflowUi as Record<string, unknown>, origin);
     res.writeHead(204).end();
+  }
+
+  /** Read-only browser navigation surface — every branch resolves `:name` against LIVE
+   *  discovery (`opts.discover`/`opts.discoverEntities`, which re-read the current, possibly
+   *  `configure_project`-mutated globs) BEFORE any lookup, and 404s on a miss without ever
+   *  calling `readWorkflow`/`readEntity`. This is the same allowlist-then-act shape `POST
+   *  /layout` uses via `findByName` — reused here (plus `findEntityByName`) rather than
+   *  reinvented, so the raw `:name` segment never reaches a filesystem path. The caller already
+   *  applied the loopback gate before invoking this. */
+  async function handleApi(url: URL, res: ServerResponse): Promise<void> {
+    if (url.pathname === "/api/index") {
+      const [workflows, entities] = await Promise.all([opts.discover(), opts.discoverEntities()]);
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({
+        workflows: workflows.map((w) => ({ name: w.workflows[0]?.name ?? w.relativePath.replace(/\.json$/, "").split("/").pop(), path: w.relativePath })),
+        entities: entities.map((e) => ({ name: e.name, path: e.relativePath })),
+      }));
+      return;
+    }
+    const wfMatch = /^\/api\/workflow\/(.+)$/.exec(url.pathname);
+    if (wfMatch) {
+      const name = decodeURIComponent(wfMatch[1]!);
+      if (!findByName(await opts.discover(), name)) { res.writeHead(404).end("unknown workflow"); return; }
+      const item = await opts.readWorkflow(name);
+      if (!item) { res.writeHead(404).end("unknown workflow"); return; }
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify(item));
+      return;
+    }
+    const enMatch = /^\/api\/entity\/(.+)$/.exec(url.pathname);
+    if (enMatch) {
+      const name = decodeURIComponent(enMatch[1]!);
+      if (!findEntityByName(await opts.discoverEntities(), name)) { res.writeHead(404).end("unknown entity"); return; }
+      const item = await opts.readEntity(name);
+      if (!item) { res.writeHead(404).end("unknown entity"); return; }
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify(item));
+      return;
+    }
+    res.writeHead(404).end("not found");
   }
 
   async function serveStatic(pathname: string, res: ServerResponse): Promise<void> {

@@ -14,7 +14,7 @@ import { createWatcher } from "./watch.js";
 import type { WorkflowChange } from "./watch.js";
 import { bindPort, DuplicateInstanceError } from "./port.js";
 import { mergeLayout, loadRemappedLayout } from "./layout.js";
-import { findByName } from "./discovery.js";
+import { findByName, findEntityByName } from "./discovery.js";
 import { startMcpServer } from "./mcp.js";
 import type { ToolHandler } from "./envelope.js";
 import { listWorkflowsTool } from "./tools/list.js";
@@ -177,6 +177,34 @@ export async function main(argv: string[]): Promise<void> {
   const setShown = (p: ShownPayload): void =>
     hub.setShown({ type: "show", workflow: p.workflow, revision: nextRevision(), content: p.content, layout: p.layout });
 
+  /**
+   * Read-only browser-navigation backing for `GET /api/workflow/:name` — mirrors
+   * `show_workflow`'s parse/serialize/layout-remap pipeline (`tools/show.ts`) but does NOT push a
+   * "show" event or bump `nextRevision`: navigating the browser to a workflow via its own `/api/*`
+   * fetch must not desync `hub.currentShown()` from what Claude last asked to show, or a later
+   * watch-driven content push (`createOnChange`) would compare against the wrong "currently
+   * shown" workflow.
+   */
+  const readWorkflowForApi = async (name: string): Promise<{ name: string; path: string; content: string; layout: Record<string, unknown> } | null> => {
+    const entry = findByName(await ctx.discover(), name);
+    if (!entry) return null;
+    const parsed = ctx.parseImport(synthesizeImportPayload((await ctx.read(entry.relativePath)).contents));
+    if (!parsed.document) return null;
+    const content = ctx.serializeImport(parsed.document);
+    const layout = await loadRemappedLayout(ctx, entry.relativePath, parsed.document.meta.ids.transitions);
+    return { name, path: entry.relativePath, content, layout };
+  };
+
+  /** Read-only browser-navigation backing for `GET /api/entity/:name` — `name` is resolved
+   *  against LIVE discovery by the caller (`http.ts`'s `handleApi`) before this ever runs, so the
+   *  read here is always confined to a known, allowlisted entity path. */
+  const readEntityForApi = async (name: string): Promise<{ name: string; path: string; contents: string } | null> => {
+    const entry = findEntityByName(await ctx.discoverEntities(), name);
+    if (!entry) return null;
+    const { contents } = await ctx.read(entry.relativePath);
+    return { name, path: entry.relativePath, contents };
+  };
+
   const tools: Record<string, ToolHandler> = {
     list_workflows: (a) => listWorkflowsTool(a, ctx),
     show_workflow: (a) => showWorkflowTool(a, ctx, setShown),
@@ -193,7 +221,12 @@ export async function main(argv: string[]): Promise<void> {
     get_project: (a) => getProjectTool(a, ctx),
   };
 
-  const http = createHttpServer({ root, distDir, token, hub, discover: ctx.discover, writeLayout });
+  const http = createHttpServer({
+    root, distDir, token, hub,
+    discover: ctx.discover, discoverEntities: ctx.discoverEntities,
+    readWorkflow: readWorkflowForApi, readEntity: readEntityForApi,
+    writeLayout,
+  });
   await new Promise<void>((r) => http.listen(port, "127.0.0.1", r));
   const watcher = createWatcher({ root, getWorkflowGlobs: () => ctx.workflowGlobs, onChange: (c) => { void onChange(c); } });
   process.on("SIGINT", () => { watcher.close(); http.close(); process.exit(0); });
