@@ -45,3 +45,19 @@ export type UpdateWorkflowInput = z.infer<typeof updateWorkflowInput>;
 export type OptimizeLayoutInput = z.infer<typeof optimizeLayoutInput>;
 export type ValidateWorkflowInput = z.infer<typeof validateWorkflowInput>;
 export type LayoutPostBody = z.infer<typeof layoutPostBody>;
+
+/** `list_entities` — no input. */
+export const listEntitiesInput = z.object({}).strict();
+
+/** `get_entity` / `delete_entity` — name only (name = file stem, resolved against `entityGlobs`). */
+export const getEntityInput = z.object({ name: z.string().min(1) }).strict();
+export const deleteEntityInput = z.object({ name: z.string().min(1) }).strict();
+
+/** `create_entity` / `update_entity` — name + whole-document JSON string. */
+export const createEntityInput = z.object({ name: z.string().min(1), content: z.string() }).strict();
+export const updateEntityInput = z.object({ name: z.string().min(1), content: z.string() }).strict();
+
+export type GetEntityInput = z.infer<typeof getEntityInput>;
+export type CreateEntityInput = z.infer<typeof createEntityInput>;
+export type UpdateEntityInput = z.infer<typeof updateEntityInput>;
+export type DeleteEntityInput = z.infer<typeof deleteEntityInput>;
