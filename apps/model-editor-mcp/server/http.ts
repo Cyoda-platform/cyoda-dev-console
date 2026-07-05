@@ -5,6 +5,7 @@ import { extname, join, normalize } from "node:path";
 import { timingSafeEqual } from "node:crypto";
 import type { SseEvent, SseHub, SseClient } from "./sse.js";
 import { layoutPostBody } from "./schemas.js";
+import { findByName } from "./discovery.js";
 
 const MIME: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".map": "application/json", ".ico": "image/x-icon", ".woff2": "font/woff2" };
 
@@ -94,9 +95,10 @@ export function createHttpServer(opts: HttpServerOptions): Server {
     const parsed = layoutPostBody.safeParse(json);
     if (!parsed.success) { res.writeHead(400).end("bad body"); return; }
     const { name, workflowUi } = parsed.data;
-    const entries = await opts.discover();
-    const allowed = entries.some((e) => e.workflows.some((w) => w.name === name) || e.relativePath.replace(/\.json$/, "").split("/").pop() === name);
-    if (!allowed) { res.writeHead(404).end("unknown workflow"); return; }
+    // Resolve the posted name with the SAME rule the tools use (declared name, else file
+    // basename) by reusing `findByName` — a future change to name-resolution can't desync the
+    // allowlist from the handlers.
+    if (!findByName(await opts.discover(), name)) { res.writeHead(404).end("unknown workflow"); return; }
     await opts.writeLayout(name, workflowUi as Record<string, unknown>, origin);
     res.writeHead(204).end();
   }

@@ -37,8 +37,16 @@ export async function discoverWorkflows(root: string, workflowGlobs: string[]): 
   return out;
 }
 
-/** Resolve a workflow by declared name first, then by file basename (`Foo.json` → `Foo`). */
-export function findByName(entries: WorkflowFileIndexEntry[], name: string): WorkflowFileIndexEntry | undefined {
+/**
+ * Resolve a workflow by declared name first, then by file basename (`Foo.json` → `Foo`).
+ * Generic over the minimal `{ relativePath, workflows }` shape it actually reads so both the
+ * tools (which pass full `WorkflowFileIndexEntry[]`) and `http.ts`'s `POST /layout` allowlist
+ * (which passes the narrower `discover` result) share ONE name-resolution rule — no drift.
+ */
+export function findByName<T extends { relativePath: string; workflows: { name: string }[] }>(
+  entries: T[],
+  name: string,
+): T | undefined {
   return (
     entries.find((e) => e.workflows.some((w) => w.name === name)) ??
     entries.find((e) => e.relativePath.replace(/\.json$/, "").split("/").pop() === name)

@@ -63,8 +63,12 @@ export function createWriteLayout(
     const sidecarRel = entry.relativePath.replace(/\.json$/, ".layout.json");
     let existing: Record<string, unknown> = {};
     try { existing = JSON.parse((await ctx.read(sidecarRel)).contents) as Record<string, unknown>; } catch { /* missing/invalid sidecar → {} */ }
-    if (origin) pendingOrigins.set(entry.relativePath, origin);
     await ctx.write(sidecarRel, JSON.stringify(mergeLayout(existing, workflowUi), null, 2));
+    // Record the origin ONLY after a successful write: it exists solely to echo-suppress the
+    // watch event that write is about to fire. If the write threw, no event will come to consume
+    // it — leaving it set would let a LATER unrelated change to this file wrongly suppress the
+    // tab. The watch is debounced (~120ms), so setting here still lands well before onChange reads it.
+    if (origin) pendingOrigins.set(entry.relativePath, origin);
   };
 }
 

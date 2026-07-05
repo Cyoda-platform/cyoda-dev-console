@@ -98,6 +98,17 @@ describe("createWriteLayout", () => {
     expect(c.write).not.toHaveBeenCalled();
   });
 
+  it("does NOT retain a pending origin when the write itself fails (no stale echo-suppression)", async () => {
+    // If the origin were recorded BEFORE the write, a failed write would leave it lingering with
+    // no fs event to consume it — and a LATER external change to the same file would wrongly
+    // echo-suppress that tab. So: origin is recorded only after a successful write.
+    const c = ctx({ "Pledge.json": PLEDGE }, { write: vi.fn(async () => { throw new Error("disk full"); }) });
+    const pendingOrigins: PendingOrigins = new Map();
+    const writeLayout = createWriteLayout(c, pendingOrigins);
+    await expect(writeLayout("Pledge", { Pledge: { layout: { nodes: {} } } }, "tabA")).rejects.toThrow("disk full");
+    expect(pendingOrigins.has("Pledge.json")).toBe(false);
+  });
+
   it("treats a missing/corrupt existing sidecar as {} rather than throwing", async () => {
     const c = ctx({ "Pledge.json": PLEDGE }); // no Pledge.layout.json at all
     const pendingOrigins: PendingOrigins = new Map();
