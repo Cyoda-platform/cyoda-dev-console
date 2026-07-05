@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import type { WorkflowEditorDocument } from "@cyoda/workflow-core";
+import { parseImportPayload, serializeImportPayload, validateAll } from "@cyoda/workflow-core";
 import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import type { ToolContext } from "../context.js";
 import { listWorkflowsTool } from "../tools/list.js";
@@ -26,7 +26,6 @@ function entry(over: Partial<WorkflowFileIndexEntry> = {}): WorkflowFileIndexEnt
 
 /** A ToolContext backed by an in-memory file map + the REAL workflow-core parse/serialize/validate. */
 function ctx(files: Record<string, string>, over: Partial<ToolContext> = {}): ToolContext {
-  const real = require("@cyoda/workflow-core");
   const writes: Record<string, string> = {};
   return {
     root: "/r",
@@ -39,9 +38,9 @@ function ctx(files: Record<string, string>, over: Partial<ToolContext> = {}): To
     }),
     write: vi.fn(async (rel: string, contents: string) => { writes[rel] = contents; return { path: `/r/${rel}`, lastModified: "t", sizeBytes: contents.length }; }),
     discover: vi.fn(async () => [entry()]),
-    parseImport: real.parseImportPayload,
-    serializeImport: real.serializeImportPayload,
-    validate: real.validateAll,
+    parseImport: parseImportPayload,
+    serializeImport: serializeImportPayload,
+    validate: validateAll,
     ...over,
   };
 }
