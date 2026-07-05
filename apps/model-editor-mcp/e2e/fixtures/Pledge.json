@@ -1,0 +1,16 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1",
+      "name": "Pledge",
+      "initialState": "none",
+      "active": true,
+      "states": {
+        "none": { "transitions": [{ "name": "create", "next": "created", "manual": false, "disabled": false }] },
+        "created": { "transitions": [{ "name": "settle", "next": "settled", "manual": false, "disabled": false }] },
+        "settled": { "transitions": [] }
+      }
+    }
+  ]
+}

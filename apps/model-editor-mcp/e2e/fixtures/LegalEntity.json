@@ -1,0 +1,16 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1",
+      "name": "LegalEntity",
+      "initialState": "draft",
+      "active": true,
+      "states": {
+        "draft": { "transitions": [{ "name": "submit", "next": "review", "manual": false, "disabled": false }] },
+        "review": { "transitions": [{ "name": "approve", "next": "active", "manual": true, "disabled": false }] },
+        "active": { "transitions": [] }
+      }
+    }
+  ]
+}

@@ -12,6 +12,9 @@ apps/dev-console/src-tauri/target/
 apps/dev-console/src-tauri/gen/
 coverage/
 .vite/
+test-results/
+playwright-report/
+blob-report/
 
 # IDE
 .idea/
