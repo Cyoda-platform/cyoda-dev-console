@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { mergeLayout, remapLayoutUuids } from "../layout.js";
+import { mergeLayout, remapLayoutUuids, loadRemappedLayout } from "../layout.js";
+import type { ToolContext } from "../context.js";
+
+/** Minimal ToolContext whose `read` returns canned contents (or throws). `loadRemappedLayout`
+ *  only ever touches `ctx.read`, so the rest is cast away. */
+function ctxWithRead(read: (rel: string) => Promise<{ contents: string; lastModified: string; sizeBytes: number }>): ToolContext {
+  return { read } as unknown as ToolContext;
+}
 
 describe("mergeLayout", () => {
   it("overwrites only layout.nodes, preserving everything else", () => {
@@ -46,5 +53,51 @@ describe("remapLayoutUuids", () => {
     const newIds = { new1: { workflow: "A", state: "s", transitionUuid: "new1" } };
     const out = remapLayoutUuids(workflowUi, oldIds, newIds);
     expect(out.A!.transitionPositions).toEqual({ new1: { x: 1, y: 1 }, old2: { x: 2, y: 2 } });
+  });
+  it("maps 2 old → 2 new by ordinal (a→x, b→y — never crosses)", () => {
+    const workflowUi = { W: { transitionPositions: { a: { x: 1, y: 1 }, b: { x: 2, y: 2 } }, edgeAnchors: { a: { source: "top" }, b: { source: "bottom" } } } } as never;
+    const oldIds = { a: { workflow: "W", state: "s", transitionUuid: "a" }, b: { workflow: "W", state: "s", transitionUuid: "b" } };
+    const newIds = { x: { workflow: "W", state: "s", transitionUuid: "x" }, y: { workflow: "W", state: "s", transitionUuid: "y" } };
+    const out = remapLayoutUuids(workflowUi, oldIds, newIds);
+    expect(out.W!.transitionPositions).toEqual({ x: { x: 1, y: 1 }, y: { x: 2, y: 2 } });
+    expect(out.W!.edgeAnchors).toEqual({ x: { source: "top" }, y: { source: "bottom" } });
+  });
+});
+
+describe("loadRemappedLayout", () => {
+  const ENOENT = Object.assign(new Error("ENOENT: no such file"), { code: "ENOENT" });
+
+  it("resolves to {} when the sidecar is missing (read rejects)", async () => {
+    const ctx = ctxWithRead(() => Promise.reject(ENOENT));
+    const out = await loadRemappedLayout(ctx, "Pledge.json", {});
+    expect(out).toEqual({});
+  });
+  it("resolves to {} when the sidecar is corrupt JSON (graceful swallow)", async () => {
+    const ctx = ctxWithRead(() => Promise.resolve({ contents: "{not json", lastModified: "", sizeBytes: 9 }));
+    const out = await loadRemappedLayout(ctx, "Pledge.json", {});
+    expect(out).toEqual({});
+  });
+  it("remaps transitionPositions/edgeAnchors to currentIds when _transitionIds is present", async () => {
+    const sidecar = {
+      _transitionIds: { old1: { workflow: "Pledge", state: "none", transitionUuid: "old1" } },
+      Pledge: { transitionPositions: { old1: { x: 1, y: 1 } }, edgeAnchors: { old1: { source: "right" } } },
+    };
+    let requested = "";
+    const ctx = ctxWithRead((rel) => { requested = rel; return Promise.resolve({ contents: JSON.stringify(sidecar), lastModified: "", sizeBytes: 0 }); });
+    const currentIds = { new1: { workflow: "Pledge", state: "none", transitionUuid: "new1" } };
+    const out = await loadRemappedLayout(ctx, "Pledge.json", currentIds);
+    expect(requested).toBe("Pledge.layout.json");
+    expect(out.Pledge!.transitionPositions).toEqual({ new1: { x: 1, y: 1 } });
+    expect(out.Pledge!.edgeAnchors).toEqual({ new1: { source: "right" } });
+    expect(out).not.toHaveProperty("_transitionIds");
+  });
+  it("returns the layout meta unremapped when _transitionIds is absent", async () => {
+    const sidecar = { Pledge: { transitionPositions: { keepme: { x: 3, y: 4 } }, layout: { nodes: { none: { x: 0, y: 0 } } } } };
+    const ctx = ctxWithRead(() => Promise.resolve({ contents: JSON.stringify(sidecar), lastModified: "", sizeBytes: 0 }));
+    const currentIds = { new1: { workflow: "Pledge", state: "none", transitionUuid: "new1" } };
+    const out = await loadRemappedLayout(ctx, "Pledge.json", currentIds);
+    expect(out.Pledge!.transitionPositions).toEqual({ keepme: { x: 3, y: 4 } });
+    expect(out.Pledge!.layout).toEqual({ nodes: { none: { x: 0, y: 0 } } });
+    expect(out).not.toHaveProperty("_transitionIds");
   });
 });
