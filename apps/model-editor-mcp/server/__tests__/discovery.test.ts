@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { discoverWorkflows, findByName, discoverEntities, findEntityByName, resolveEntityCreatePath } from "../discovery.js";
+import { discoverWorkflows, findByName, discoverEntities, findEntityByName, resolveEntityCreatePath, resolveWorkflowCreatePath } from "../discovery.js";
 
 /** Partial mock of `node:fs/promises`: every export passes through to the real
  *  implementation EXCEPT `readdir`, which is intercepted so a specific directory
@@ -112,5 +112,21 @@ describe("resolveEntityCreatePath", () => {
   });
   it("throws when no entityGlobs are configured", () => {
     expect(() => resolveEntityCreatePath([], "Foo")).toThrow();
+  });
+});
+
+describe("resolveWorkflowCreatePath", () => {
+  it("derives the literal directory prefix before the first wildcard segment", () => {
+    expect(resolveWorkflowCreatePath(["models/workflow/**/*.json"], "Foo")).toBe("models/workflow/Foo.json");
+    expect(resolveWorkflowCreatePath(["models/workflow/v1/*.json"], "Foo")).toBe("models/workflow/v1/Foo.json");
+  });
+  it("falls back to the project root when the pattern has no directory", () => {
+    expect(resolveWorkflowCreatePath(["*.json"], "Foo")).toBe("Foo.json");
+  });
+  it("uses the FIRST configured glob when several are set", () => {
+    expect(resolveWorkflowCreatePath(["a/*.json", "b/*.json"], "Foo")).toBe("a/Foo.json");
+  });
+  it("throws when no workflowGlobs are configured", () => {
+    expect(() => resolveWorkflowCreatePath([], "Foo")).toThrow();
   });
 });

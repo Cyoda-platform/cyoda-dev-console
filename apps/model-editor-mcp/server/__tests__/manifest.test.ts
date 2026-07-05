@@ -10,7 +10,7 @@ import { listEntitiesTool, getEntityTool, createEntityTool, updateEntityTool, de
 import { getProjectTool, configureProjectTool } from "../tools/project.js";
 
 const EXPECTED = [
-  "list_workflows", "show_workflow", "get_workflow", "update_workflow", "optimize_layout", "validate_workflow", "connection_info",
+  "list_workflows", "show_workflow", "get_workflow", "create_workflow", "update_workflow", "delete_workflow", "optimize_layout", "validate_workflow", "connection_info",
   "list_entities", "get_entity", "create_entity", "update_entity", "delete_entity",
   "configure_project", "get_project",
 ];

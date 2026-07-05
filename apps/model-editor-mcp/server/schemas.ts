@@ -15,6 +15,13 @@ export const getWorkflowInput = z.object({ name: z.string().min(1) }).strict();
 /** `update_workflow` — name + whole-document JSON string (JSON validity is the handler's job). */
 export const updateWorkflowInput = z.object({ name: z.string().min(1), content: z.string() }).strict();
 
+/** `create_workflow` — name + a full import-payload JSON string (`{importMode, workflows:[...]}`),
+ *  mirroring `updateWorkflowInput`'s shape exactly (JSON validity is the handler's job). */
+export const createWorkflowInput = z.object({ name: z.string().min(1), content: z.string() }).strict();
+
+/** `delete_workflow` — name only, mirrors `deleteEntityInput`. */
+export const deleteWorkflowInput = z.object({ name: z.string().min(1) }).strict();
+
 /** Real `PinnedNode` from `@cyoda/workflow-layout` — explicit coordinates only. */
 const pinnedNode = z.object({ id: z.string(), x: z.number(), y: z.number() }).strict();
 
@@ -47,6 +54,8 @@ export type ListWorkflowsInput = z.infer<typeof listWorkflowsInput>;
 export type ShowWorkflowInput = z.infer<typeof showWorkflowInput>;
 export type GetWorkflowInput = z.infer<typeof getWorkflowInput>;
 export type UpdateWorkflowInput = z.infer<typeof updateWorkflowInput>;
+export type CreateWorkflowInput = z.infer<typeof createWorkflowInput>;
+export type DeleteWorkflowInput = z.infer<typeof deleteWorkflowInput>;
 export type OptimizeLayoutInput = z.infer<typeof optimizeLayoutInput>;
 export type ValidateWorkflowInput = z.infer<typeof validateWorkflowInput>;
 export type LayoutPostBody = z.infer<typeof layoutPostBody>;

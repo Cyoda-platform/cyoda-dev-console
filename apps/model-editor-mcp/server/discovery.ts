@@ -138,3 +138,20 @@ export function resolveEntityCreatePath(entityGlobs: string[], name: string): st
   const dirSegments = wildcardIdx === -1 ? segments.slice(0, -1) : segments.slice(0, wildcardIdx);
   return dirSegments.length > 0 ? `${dirSegments.join("/")}/${name}.json` : `${name}.json`;
 }
+
+/**
+ * Derive a NEW workflow's destination path from `name` alone — mirrors
+ * {@link resolveEntityCreatePath} exactly (same derivation rule: the literal
+ * directory prefix of the FIRST configured glob pattern, before its first
+ * wildcard segment), but reads `workflowGlobs` instead of `entityGlobs`. Used
+ * by `create_workflow`, which — like `create_entity` — is a name-based tool
+ * with no explicit destination-path argument.
+ */
+export function resolveWorkflowCreatePath(workflowGlobs: string[], name: string): string {
+  const pattern = workflowGlobs[0];
+  if (pattern === undefined) throw new Error("no workflowGlobs configured — call configure_project first");
+  const segments = pattern.split("/");
+  const wildcardIdx = segments.findIndex((seg) => seg.includes("*"));
+  const dirSegments = wildcardIdx === -1 ? segments.slice(0, -1) : segments.slice(0, wildcardIdx);
+  return dirSegments.length > 0 ? `${dirSegments.join("/")}/${name}.json` : `${name}.json`;
+}
