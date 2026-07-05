@@ -90,10 +90,47 @@ describe("App — SSE-driven state", () => {
     expect(subscribedOrigin!.length).toBeGreaterThan(0);
   });
 
-  it("on `content` for the shown workflow, surfaces externalContent without touching the shown content", async () => {
+  // Clean viewer (no local edits reported via onDirtyChange): a content push
+  // is applied by remounting the editor on the new content — the shown content
+  // is swapped and NO banner (externalContent) is raised.
+  it("on `content` for a clean viewer, swaps the shown content and raises no banner", async () => {
     const App = await importApp();
     render(<App />);
     act(() => { onEventCb?.({ type: "show", workflow: "Pledge", revision: 1, content: "original", layout: layoutA }); });
+
+    act(() => { onEventCb?.({ type: "content", workflow: "Pledge", revision: 2, content: "claude-edited" }); });
+
+    expect(capturedProps?.content).toBe("claude-edited");
+    expect(capturedProps?.externalContent).toBeNull();
+  });
+
+  // Repeated clean pushes must ALL swap content (the bug the remount fixes:
+  // applyExternalDocument left the session dirty, so only the first push
+  // auto-applied and the 2nd+ wrongly raised the banner).
+  it("on repeated `content` pushes for a clean viewer, each swaps the shown content with no banner", async () => {
+    const App = await importApp();
+    render(<App />);
+    act(() => { onEventCb?.({ type: "show", workflow: "Pledge", revision: 1, content: "v0", layout: layoutA }); });
+
+    act(() => { onEventCb?.({ type: "content", workflow: "Pledge", revision: 2, content: "v1" }); });
+    expect(capturedProps?.content).toBe("v1");
+    expect(capturedProps?.externalContent).toBeNull();
+
+    act(() => { onEventCb?.({ type: "content", workflow: "Pledge", revision: 3, content: "v2" }); });
+    expect(capturedProps?.content).toBe("v2");
+    expect(capturedProps?.externalContent).toBeNull();
+  });
+
+  // Dirty viewer (EditorView reported local unsaved edits via onDirtyChange):
+  // a content push must NOT clobber them — it raises the banner instead,
+  // leaving the shown content untouched.
+  it("on `content` for a dirty viewer, raises the banner without swapping the shown content", async () => {
+    const App = await importApp();
+    render(<App />);
+    act(() => { onEventCb?.({ type: "show", workflow: "Pledge", revision: 1, content: "original", layout: layoutA }); });
+
+    // Simulate EditorView reporting the human's unsaved local edits upward.
+    act(() => { (capturedProps?.onDirtyChange as (d: boolean) => void)(true); });
 
     act(() => { onEventCb?.({ type: "content", workflow: "Pledge", revision: 2, content: "claude-edited" }); });
 
@@ -109,6 +146,7 @@ describe("App — SSE-driven state", () => {
     act(() => { onEventCb?.({ type: "content", workflow: "LegalEntity", revision: 2, content: "unrelated" }); });
 
     expect(capturedProps?.externalContent).toBeNull();
+    expect(capturedProps?.content).toBe("original");
   });
 
   it("applies a `layout` event from another tab immediately when not dragging", async () => {
@@ -161,6 +199,9 @@ describe("App — SSE-driven state", () => {
     const App = await importApp();
     render(<App />);
     act(() => { onEventCb?.({ type: "show", workflow: "Pledge", revision: 1, content: "original", layout: layoutA }); });
+    // Dirty the viewer so the next content push raises the banner (rather than
+    // remounting), giving us a pending externalContent to clear.
+    act(() => { (capturedProps?.onDirtyChange as (d: boolean) => void)(true); });
     act(() => { onEventCb?.({ type: "content", workflow: "Pledge", revision: 2, content: "claude-edited" }); });
     expect(capturedProps?.externalContent).toBe("claude-edited");
 

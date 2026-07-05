@@ -48,22 +48,6 @@ const updatedFixture = JSON.stringify({
   ],
 });
 
-// A distinct "Claude pushed this" payload — kept different from `updatedFixture`
-// (used below as the human's *local* edit) so a dirty session's content and an
-// incoming push never coincidentally serialize to the same string.
-const claudePushFixture = JSON.stringify({
-  importMode: "MERGE",
-  workflows: [
-    {
-      version: "1.0",
-      name: "demo",
-      initialState: "S",
-      active: true,
-      states: { S: { transitions: [{ name: "go2", next: "T", manual: false, disabled: false }] }, T: { transitions: [] } },
-    },
-  ],
-});
-
 function wrap(props: Partial<React.ComponentProps<typeof EditorView>> = {}) {
   const defaults: React.ComponentProps<typeof EditorView> = {
     token: "tok-123",
@@ -74,6 +58,7 @@ function wrap(props: Partial<React.ComponentProps<typeof EditorView>> = {}) {
     layoutRev: 0,
     externalContent: null,
     onDismissExternal: vi.fn(),
+    onDirtyChange: vi.fn(),
   };
   return render(
     <ThemeProvider>
@@ -130,6 +115,7 @@ describe("EditorView — layout seeding", () => {
           layoutRev={1}
           externalContent={null}
           onDismissExternal={vi.fn()}
+          onDirtyChange={vi.fn()}
         />
       </ThemeProvider>,
     );
@@ -215,101 +201,68 @@ describe("EditorView — content save warns instead of persisting", () => {
 // Simulates the human typing/dragging in the graph — the editor's real
 // `onChange` wiring (`WorkflowEditorHostPanel`'s `handleChange`), which
 // funnels into `session.setDocument` and is what actually makes
-// `session.dirty` true. Distinct from Claude's content pushes, which go
-// through `session.applyExternalDocument` instead.
+// `session.dirty` true.
 function simulateLocalEdit() {
   const localDoc = parseImportPayload(updatedFixture).document!;
   const onChange = workflowEditorProps?.onChange as (doc: WorkflowEditorDocument) => void;
   act(() => onChange(localDoc));
 }
 
-function rerenderWithExternalContent(
-  rerender: (el: React.ReactElement) => void,
-  externalContent: string | null,
-  onDismissExternal: () => void,
-) {
-  rerender(
-    <ThemeProvider>
-      <EditorView token="tok-123" origin="origin-abc" workflow="demo" content={fixture} layout={{}} layoutRev={0} externalContent={externalContent} onDismissExternal={onDismissExternal} />
-    </ThemeProvider>,
-  );
-}
+describe("EditorView — dirty reporting (drives App's auto-apply-vs-banner decision)", () => {
+  it("reports dirty=false on mount and dirty=true after a local edit", () => {
+    const onDirtyChange = vi.fn();
+    wrap({ onDirtyChange });
+    // Mount: fresh session is clean. App keeps its dirtyRef in sync from this.
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
 
-describe("EditorView — external-change banner (Claude edited underneath)", () => {
+    onDirtyChange.mockClear();
+    simulateLocalEdit();
+
+    // A local graph edit flips the session dirty → reported up so App now
+    // shows the banner (instead of remounting) on the next content push.
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe("EditorView — external-change banner (Claude edited a viewer that has local edits)", () => {
+  // App only routes a content push through `externalContent` when the human has
+  // unsaved local edits (clean viewers get a silent remount upstream), so the
+  // banner is derived straight from the prop.
+  it("shows the banner when externalContent is set (the dirty-viewer path)", () => {
+    wrap({ externalContent: updatedFixture });
+    expect(screen.getByText(/changed on disk/i)).toBeInTheDocument();
+  });
+
   it("does not show the banner while externalContent is null", () => {
     wrap({ externalContent: null });
     expect(screen.queryByText(/changed on disk/i)).not.toBeInTheDocument();
   });
 
-  // The human never persists content edits here (content is Claude-owned,
-  // read-only) — so a push that arrives while the session is clean is just a
-  // live re-render of Claude's latest version, applied via the same
-  // `session.applyExternalDocument` call the banner's "Reload" button uses.
-  // No banner should ever be visible for this case.
-  it("auto-applies a content push and shows no banner when the human has no local unsaved edits", () => {
+  // EditorView does not own "is the banner open" state — clicking a banner
+  // button only calls `onDismissExternal`; it's the parent (App.tsx:
+  // `onDismissExternal={() => setExternalContent(null)}`) that clears the prop,
+  // which is what makes the banner disappear. Simulate that round-trip.
+  it("'Keep editing' calls onDismissExternal without applying; parent clearing the prop then hides the banner", () => {
     const onDismissExternal = vi.fn();
-    const { rerender } = wrap({ externalContent: null, onDismissExternal });
-
-    rerenderWithExternalContent(rerender, claudePushFixture, onDismissExternal);
-
-    // The effect applied the push itself (no click) and asked the parent to
-    // clear `externalContent` — mirroring App.tsx's `onDismissExternal={() =>
-    // setExternalContent(null)}`, batched into the same commit in the real
-    // app. This standalone test simulates that round-trip via a follow-up
-    // rerender, same as the "Keep editing"/"Reload" tests below.
-    expect(onDismissExternal).toHaveBeenCalledTimes(1);
-    const doc = workflowEditorProps?.document as WorkflowEditorDocument;
-    expect(doc.session.workflows[0]?.states.S?.transitions[0]?.name).toBe("go2");
-
-    rerenderWithExternalContent(rerender, null, onDismissExternal);
-    expect(screen.queryByText(/changed on disk/i)).not.toBeInTheDocument();
-  });
-
-  // Mirror case: the human has typed/dragged something unsaved. Auto-applying
-  // here would silently clobber their in-progress edit, so the banner (reload
-  // / keep editing) is shown instead, exactly as before this change.
-  it("shows the banner (does not auto-apply) when a content push arrives while the human has local unsaved edits", () => {
-    const onDismissExternal = vi.fn();
-    const { rerender } = wrap({ externalContent: null, onDismissExternal });
-    simulateLocalEdit();
-
-    rerenderWithExternalContent(rerender, claudePushFixture, onDismissExternal);
-
-    expect(screen.getByText(/changed on disk/i)).toBeInTheDocument();
-    expect(onDismissExternal).not.toHaveBeenCalled();
-    const doc = workflowEditorProps?.document as WorkflowEditorDocument;
-    expect(doc.session.workflows[0]?.states.S?.transitions).toEqual([]); // still the local edit, not the push
-  });
-
-  // The banner is derived straight from the `externalContent` prop (see
-  // EditorView.tsx) — EditorView itself does not own "is the banner open"
-  // state. So clicking a banner button is only responsible for calling
-  // `onDismissExternal`; it's the parent (App.tsx: `onDismissExternal={() =>
-  // setExternalContent(null)}`) that actually clears the prop, which is what
-  // makes the banner disappear. Simulate that round-trip with `rerender`.
-  it("'Keep editing' calls onDismissExternal without applying the external content; parent clearing the prop then hides the banner", () => {
-    const onDismissExternal = vi.fn();
-    const { rerender } = wrap({ externalContent: null, onDismissExternal });
-    simulateLocalEdit();
-    rerenderWithExternalContent(rerender, claudePushFixture, onDismissExternal);
+    const { rerender } = wrap({ externalContent: updatedFixture, onDismissExternal });
 
     fireEvent.click(screen.getByRole("button", { name: /keep editing/i }));
     expect(onDismissExternal).toHaveBeenCalledTimes(1);
 
-    rerenderWithExternalContent(rerender, null, onDismissExternal);
+    rerender(
+      <ThemeProvider>
+        <EditorView token="tok-123" origin="origin-abc" workflow="demo" content={fixture} layout={{}} layoutRev={0} externalContent={null} onDismissExternal={onDismissExternal} onDirtyChange={vi.fn()} />
+      </ThemeProvider>,
+    );
     expect(screen.queryByText(/changed on disk/i)).not.toBeInTheDocument();
   });
 
   it("'Reload from disk' applies the pushed content and calls onDismissExternal", () => {
     const onDismissExternal = vi.fn();
-    const { rerender } = wrap({ externalContent: null, onDismissExternal });
-    simulateLocalEdit();
-    rerenderWithExternalContent(rerender, claudePushFixture, onDismissExternal);
+    wrap({ externalContent: updatedFixture, onDismissExternal });
 
     fireEvent.click(screen.getByRole("button", { name: /reload from disk/i }));
 
     expect(onDismissExternal).toHaveBeenCalledTimes(1);
-    const doc = workflowEditorProps?.document as WorkflowEditorDocument;
-    expect(doc.session.workflows[0]?.states.S?.transitions[0]?.name).toBe("go2");
   });
 });
