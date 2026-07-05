@@ -24,6 +24,8 @@ import { updateWorkflowTool } from "./tools/update.js";
 import { validateWorkflowTool } from "./tools/validate.js";
 import { optimizeLayoutTool } from "./tools/optimize_layout.js";
 import { connectionInfoTool } from "./tools/connection_info.js";
+import { listEntitiesTool, getEntityTool, createEntityTool, updateEntityTool, deleteEntityTool } from "./tools/entities.js";
+import { getProjectTool, configureProjectTool } from "./tools/project.js";
 
 /**
  * ONE monotonic source for every SSE push's `revision` (show / content / layout) — closes the
@@ -182,6 +184,13 @@ export async function main(argv: string[]): Promise<void> {
     optimize_layout: (a) => optimizeLayoutTool(a, ctx),
     validate_workflow: (a) => validateWorkflowTool(a, ctx),
     connection_info: (a) => connectionInfoTool(a, ctx),
+    list_entities: (a) => listEntitiesTool(a, ctx),
+    get_entity: (a) => getEntityTool(a, ctx),
+    create_entity: (a) => createEntityTool(a, ctx),
+    update_entity: (a) => updateEntityTool(a, ctx),
+    delete_entity: (a) => deleteEntityTool(a, ctx),
+    configure_project: (a) => configureProjectTool(a, ctx),
+    get_project: (a) => getProjectTool(a, ctx),
   };
 
   const http = createHttpServer({ root, distDir, token, hub, discover: ctx.discover, writeLayout });
