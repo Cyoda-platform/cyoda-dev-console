@@ -12,7 +12,14 @@ export function classifyChange(root: string, absPath: string, workflowGlobs: str
   const rel = relative(root, absPath).split(sep).join("/");
   if (rel.startsWith("..") || rel === "") return null;
   if (rel.split("/").some((seg) => EXCLUDED_DIRS.has(seg))) return null;
-  if (rel.endsWith(".layout.json")) return { kind: "layout", workflowFile: rel.replace(/\.layout\.json$/, ".json") };
+  // A sidecar's scope is its content file's scope: derive the sibling .json rel and apply the
+  // SAME glob guard as the content branch, so a layout write outside the globbed scope is
+  // ignored symmetrically (no push for a file whose content changes we'd also ignore).
+  if (rel.endsWith(".layout.json")) {
+    const workflowFile = rel.replace(/\.layout\.json$/, ".json");
+    if (workflowGlobs.length > 0 && !workflowGlobs.some((g) => matchGlob(workflowFile, g))) return null;
+    return { kind: "layout", workflowFile };
+  }
   if (rel.endsWith(".json")) {
     if (workflowGlobs.length > 0 && !workflowGlobs.some((g) => matchGlob(rel, g))) return null;
     return { kind: "content", workflowFile: rel };
@@ -40,5 +47,9 @@ export function createWatcher(opts: { root: string; workflowGlobs: string[]; onC
     if (prev) clearTimeout(prev);
     timers.set(key, setTimeout(() => { timers.delete(key); opts.onChange(change); }, opts.debounceMs ?? 120));
   });
+  // The FSWatcher is an EventEmitter: an unheard "error" event throws and would crash the
+  // process. Log a transient fs error (watched root removed, EMFILE, ...) to STDERR — never
+  // stdout, which is the MCP JSON-RPC channel — and degrade instead of dying.
+  handle.on("error", (e) => { process.stderr.write(`[watch] error: ${String(e)}\n`); });
   return { close: () => { for (const t of timers.values()) clearTimeout(t); timers.clear(); handle.close(); } };
 }

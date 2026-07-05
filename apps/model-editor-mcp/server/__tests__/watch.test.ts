@@ -16,6 +16,11 @@ describe("classifyChange", () => {
     expect(classifyChange("/r", "/r/other/Pledge.json", ["flows/**/*.json"])).toBeNull();
     expect(classifyChange("/r", "/r/notes.txt", ["**/*.json"])).toBeNull();
   });
+  it("ignores a .layout.json write outside workflowGlobs (symmetric with the content branch)", () => {
+    // flows/Pledge.layout.json is in scope; other/Pledge.layout.json is not.
+    expect(classifyChange("/r", "/r/flows/Pledge.layout.json", ["flows/**/*.json"])).toEqual({ kind: "layout", workflowFile: "flows/Pledge.json" });
+    expect(classifyChange("/r", "/r/other/Pledge.layout.json", ["flows/**/*.json"])).toBeNull();
+  });
   it("ignores paths outside the root", () => {
     expect(classifyChange("/r", "/elsewhere/x.json", ["**/*.json"])).toBeNull();
   });
