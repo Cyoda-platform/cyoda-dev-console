@@ -5,7 +5,9 @@ import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { matchGlob } from "./glob.js";
 import { readConfined } from "./files.js";
 
-const EXCLUDED_DIRS = new Set(["node_modules", ".git", "dist", "target", ".model-editor"]);
+/** Directory names never scanned/watched — shared with `watch.ts` so a live edit inside
+ *  one of these can never trigger a push for a file `discoverWorkflows` would never surface. */
+export const EXCLUDED_DIRS = new Set(["node_modules", ".git", "dist", "target", ".model-editor"]);
 
 async function* walk(dir: string): AsyncGenerator<string> {
   const entries = await readdir(dir, { withFileTypes: true });
