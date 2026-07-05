@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./synthesizeImportPayload": {
+      "types": "./dist/synthesizeImportPayload.d.ts",
+      "import": "./dist/synthesizeImportPayload.js"
     }
   },
   "scripts": {
