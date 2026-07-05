@@ -99,7 +99,13 @@ export async function writeConfined(root: string, relativePath: string, contents
 /** Delete `relativePath` inside `root`, confined via `resolveInsideRoot` — the
  *  same canonicalize+prefix-check every other confined op uses. Existence is the
  *  CALLER's job (entity tools already check via `findEntityByName` before calling
- *  this); a nonexistent-but-confined path surfaces as a normal ENOENT. */
+ *  this): a path that does not exist (or that escapes root) fails inside
+ *  `resolveInsideRoot` — `realpath()` throws, and that throw is unconditionally
+ *  rewrapped as a `ConfinementError` (message `cannot resolve "…": ENOENT: …`,
+ *  and crucially `.code` is `undefined`, NOT `"ENOENT"`) — so `rm()` is never
+ *  reached. There is no ENOENT-passthrough path here; callers that need
+ *  idempotent "already gone" semantics must check existence themselves (e.g.
+ *  via discovery) rather than rely on an ENOENT code from `rmConfined`. */
 export async function rmConfined(root: string, relativePath: string): Promise<void> {
   const abs = await resolveInsideRoot(root, relativePath);
   await rm(abs, { force: false });

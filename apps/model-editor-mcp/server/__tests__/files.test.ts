@@ -86,7 +86,10 @@ describe("rmConfined", () => {
     await expect(rmConfined(root, "link.json")).rejects.toBeInstanceOf(ConfinementError);
     await rm(outside, { recursive: true, force: true });
   });
-  it("propagates ENOENT for a nonexistent (but confined) path", async () => {
-    await expect(rmConfined(root, "nope.json")).rejects.toThrow();
+  it("fails with ConfinementError (not a passthrough ENOENT) for a nonexistent path", async () => {
+    await expect(rmConfined(root, "nope.json")).rejects.toBeInstanceOf(ConfinementError);
+    const err: NodeJS.ErrnoException = await rmConfined(root, "nope.json").catch((e) => e);
+    expect(err.code).toBeUndefined();
+    expect(err.message).toMatch(/cannot resolve/);
   });
 });
