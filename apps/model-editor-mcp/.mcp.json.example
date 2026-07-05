@@ -2,7 +2,12 @@
   "mcpServers": {
     "model-editor": {
       "command": "node",
-      "args": ["apps/model-editor-mcp/dist/index.js", "--project", "."]
+      "args": [
+        "apps/model-editor-mcp/dist/index.js",
+        "--project", ".",
+        "--workflow-globs", "models/workflow/**/*.json",
+        "--entity-globs", "models/schema/**/*.json"
+      ]
     }
   }
 }
