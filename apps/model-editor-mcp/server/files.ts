@@ -1,4 +1,4 @@
-import { mkdir, readFile, realpath, rename, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, sep } from "node:path";
 import { randomBytes } from "node:crypto";
 
@@ -42,23 +42,56 @@ export async function readConfined(root: string, relativePath: string): Promise<
 }
 
 /**
+ * Create the directory portion of `relativeDir` under the canonical root, one
+ * segment at a time. Each segment is created non-recursively beneath an
+ * already-canonical parent, then re-canonicalised and confinement-checked
+ * *before* descending. Because every `mkdir` target's parent is already a real
+ * path inside the root, creation can never follow a symlink out; a symlinked
+ * ancestor (immediate or not, pre-existing or freshly encountered) is caught by
+ * the post-`realpath` check and rejected with **zero directories created
+ * outside the root**. An existing segment (`EEXIST`) is still re-canonicalised
+ * and checked. Returns the canonical parent directory of the write target.
+ */
+async function mkdirConfined(rootReal: string, relativeDir: string): Promise<string> {
+  const segments =
+    relativeDir === "." || relativeDir === ""
+      ? []
+      : relativeDir.split(/[\\/]/).filter((s) => s.length > 0);
+  let currentReal = rootReal;
+  for (const segment of segments) {
+    const next = join(currentReal, segment);
+    try {
+      await mkdir(next);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+    }
+    const nextReal = await realpath(next);
+    if (!isInside(nextReal, rootReal)) throw new ConfinementError("path outside project root");
+    currentReal = nextReal;
+  }
+  return currentReal;
+}
+
+/**
  * Write `contents` to `relativePath` inside `root`, atomically and confined.
- * Faithful port of `write_confined`: create intermediate dirs, re-canonicalise
- * the parent after creation (defends against a symlinked parent), then temp +
- * rename into the *canonical* parent to close the TOCTOU window.
+ * Faithful port of `write_confined`, hardened: create intermediate dirs
+ * segment-by-segment with a confinement check after each (see `mkdirConfined`),
+ * then temp + rename into the *canonical* parent to close the TOCTOU window. On
+ * a failed rename the leftover temp file is unlinked so nothing dangles.
  */
 export async function writeConfined(root: string, relativePath: string, contents: string): Promise<WriteResult> {
   assertRelative(relativePath);
   const rootReal = await realpath(root);
-  const target = join(rootReal, relativePath);
-  const parent = dirname(target);
-  await mkdir(parent, { recursive: true });
-  const parentReal = await realpath(parent);
-  if (!isInside(parentReal, rootReal)) throw new ConfinementError("path outside project root");
-  const finalTarget = join(parentReal, basename(target));
-  const tmp = join(parentReal, `.${basename(target)}.${randomBytes(6).toString("hex")}.tmp`);
+  const parentReal = await mkdirConfined(rootReal, dirname(relativePath));
+  const name = basename(relativePath);
+  const finalTarget = join(parentReal, name);
+  const tmp = join(parentReal, `.${name}.${randomBytes(6).toString("hex")}.tmp`);
   await writeFile(tmp, contents, { encoding: "utf8", mode: 0o600 });
-  await rename(tmp, finalTarget);
+  try {
+    await rename(tmp, finalTarget);
+  } finally {
+    await rm(tmp, { force: true });
+  }
   const st = await stat(finalTarget);
   return { path: finalTarget, lastModified: st.mtime.toISOString(), sizeBytes: st.size };
 }

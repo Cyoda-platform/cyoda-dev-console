@@ -22,6 +22,13 @@ describe("readConfined", () => {
   it("rejects an absolute path", async () => {
     await expect(readConfined(root, "/etc/passwd")).rejects.toBeInstanceOf(ConfinementError);
   });
+  it("rejects a read whose path symlinks outside the root", async () => {
+    const outside = await mkdtemp(join(tmpdir(), "mem-out-"));
+    await writeFile(join(outside, "secret.json"), '{"secret":true}');
+    await symlink(outside, join(root, "sub"));
+    await expect(readConfined(root, "sub/secret.json")).rejects.toBeInstanceOf(ConfinementError);
+    await rm(outside, { recursive: true, force: true });
+  });
 });
 
 describe("writeConfined", () => {
@@ -46,6 +53,17 @@ describe("writeConfined", () => {
     await rm(join(root, "sub"), { recursive: true, force: true });
     await symlink(outside, join(root, "sub"));
     await expect(writeConfined(root, "sub/evil.json", "{}")).rejects.toBeInstanceOf(ConfinementError);
+    await rm(outside, { recursive: true, force: true });
+  });
+  it("creates no directories outside root when a non-immediate ancestor symlinks out", async () => {
+    const outside = await mkdtemp(join(tmpdir(), "mem-out-"));
+    await symlink(outside, join(root, "sub"));
+    const { readdir } = await import("node:fs/promises");
+    const before = await readdir(outside);
+    await expect(writeConfined(root, "sub/nested/deep/evil.json", "{}")).rejects.toBeInstanceOf(ConfinementError);
+    const after = await readdir(outside);
+    expect(after).toEqual(before);
+    expect(after).toHaveLength(0);
     await rm(outside, { recursive: true, force: true });
   });
 });
