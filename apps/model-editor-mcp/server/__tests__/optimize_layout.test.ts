@@ -26,22 +26,33 @@ function ctx(files: Record<string, string>): ToolContext {
 }
 
 describe("optimizeLayoutTool", () => {
-  it("lays out via ELK and merges { x, y } per state code into the sidecar", async () => {
+  it("lays out via ELK, writes { x, y } per state code into the sidecar, and returns a lean result", async () => {
     const c = ctx({ "Pledge.json": PLEDGE });
     const r = await optimizeLayoutTool({ name: "Pledge", options: { orientation: "vertical" } }, c);
     expect(r.isError).toBeFalsy();
     const out = JSON.parse(r.content[0]!.text);
-    expect(out.path).toBe("Pledge.layout.json");
-    expect(Object.keys(out.positions.Pledge.layout.nodes).sort()).toEqual(["created", "none"]);
-    for (const pos of Object.values(out.positions.Pledge.layout.nodes) as Array<{ x: number; y: number }>) {
+    // Lean response: no bloat, no internal state.
+    expect(out).toEqual({ name: "Pledge", path: "Pledge.layout.json", ok: true, nodeCount: 2 });
+    expect(out.positions).toBeUndefined();
+    expect(out._transitionIds).toBeUndefined();
+
+    // The sidecar itself is still written to disk with the full positions.
+    const written = JSON.parse((c.write as unknown as { mock: { calls: unknown[][] } }).mock.calls.at(-1)![1] as string);
+    expect(Object.keys(written.Pledge.layout.nodes).sort()).toEqual(["created", "none"]);
+    for (const pos of Object.values(written.Pledge.layout.nodes) as Array<{ x: number; y: number }>) {
       expect(typeof pos.x).toBe("number");
       expect(typeof pos.y).toBe("number");
     }
     expect(c.write).toHaveBeenCalledWith("Pledge.layout.json", expect.stringContaining('"nodes"'));
   });
-  it("preserves existing sibling sidecar fields via mergeLayout", async () => {
+  it("preserves existing sibling sidecar fields (incl. _transitionIds) on disk via mergeLayout, but keeps them out of the response", async () => {
     const c = ctx({ "Pledge.json": PLEDGE, "Pledge.layout.json": JSON.stringify({ _transitionIds: { u: { workflow: "Pledge", state: "none" } }, Pledge: { transitionPositions: { u: { x: 9, y: 9 } } } }) });
-    await optimizeLayoutTool({ name: "Pledge" }, c);
+    const r = await optimizeLayoutTool({ name: "Pledge" }, c);
+    const out = JSON.parse(r.content[0]!.text);
+    expect(out).toEqual({ name: "Pledge", path: "Pledge.layout.json", ok: true, nodeCount: 2 });
+    expect(out._transitionIds).toBeUndefined();
+    expect(out.positions).toBeUndefined();
+
     const written = JSON.parse((c.write as unknown as { mock: { calls: unknown[][] } }).mock.calls.at(-1)![1] as string);
     expect(written.Pledge.transitionPositions).toEqual({ u: { x: 9, y: 9 } });
     expect(written._transitionIds).toEqual({ u: { workflow: "Pledge", state: "none" } });
