@@ -1,0 +1,48 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1",
+      "name": "Order",
+      "initialState": "cart",
+      "active": true,
+      "states": {
+        "cart": {
+          "transitions": [
+            { "name": "checkout", "next": "pending", "manual": true, "disabled": false }
+          ]
+        },
+        "pending": {
+          "transitions": [
+            { "name": "confirm", "next": "confirmed", "manual": false, "disabled": false },
+            { "name": "cancel", "next": "cancelled", "manual": true, "disabled": false }
+          ]
+        },
+        "confirmed": {
+          "transitions": [
+            { "name": "ship", "next": "shipped", "manual": false, "disabled": false },
+            { "name": "cancel", "next": "cancelled", "manual": true, "disabled": false }
+          ]
+        },
+        "shipped": {
+          "transitions": [
+            { "name": "deliver", "next": "delivered", "manual": false, "disabled": false },
+            { "name": "return", "next": "returned", "manual": true, "disabled": false }
+          ]
+        },
+        "delivered": {
+          "transitions": [
+            { "name": "return", "next": "returned", "manual": true, "disabled": false }
+          ]
+        },
+        "returned": {
+          "transitions": [
+            { "name": "refund", "next": "refunded", "manual": false, "disabled": false }
+          ]
+        },
+        "cancelled": { "transitions": [] },
+        "refunded": { "transitions": [] }
+      }
+    }
+  ]
+}

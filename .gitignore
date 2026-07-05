@@ -26,3 +26,4 @@ docs/phases/
 .superpowers/
 # Local environment overrides — use apps/dev-console/.env.example as the template
 apps/dev-console/.env
+.playwright-mcp/
