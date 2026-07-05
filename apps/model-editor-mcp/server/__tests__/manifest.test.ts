@@ -5,12 +5,13 @@ import { makeDispatcher } from "../dispatch.js";
 import type { ToolHandler } from "../envelope.js";
 import type { ToolContext } from "../context.js";
 import { listWorkflowsTool } from "../tools/list.js";
+import { validateWorkflowsTool } from "../tools/validate.js";
 import { connectionInfoTool } from "../tools/connection_info.js";
 import { listEntitiesTool, getEntityTool, createEntityTool, updateEntityTool, deleteEntityTool } from "../tools/entities.js";
 import { getProjectTool, configureProjectTool } from "../tools/project.js";
 
 const EXPECTED = [
-  "list_workflows", "show_workflow", "get_workflow", "create_workflow", "update_workflow", "delete_workflow", "optimize_layout", "validate_workflow", "connection_info",
+  "list_workflows", "show_workflow", "get_workflow", "create_workflow", "update_workflow", "delete_workflow", "optimize_layout", "validate_workflow", "validate_workflows", "connection_info",
   "list_entities", "get_entity", "show_entity", "create_entity", "update_entity", "delete_entity",
   "configure_project", "get_project",
 ];
@@ -52,7 +53,7 @@ function ctx(over: Partial<ToolContext> = {}): ToolContext {
     write: vi.fn(async (rel: string, contents: string) => { writes[rel] = contents; deleted.delete(rel); return { path: `/r/${rel}`, lastModified: "t", sizeBytes: contents.length }; }),
     deleteFile: vi.fn(async (rel: string) => { deleted.add(rel); }),
     discover: vi.fn(async () => []),
-    discoverEntities: vi.fn(async () => [{ relativePath: "models/schema/Foo.json", name: "Foo" }]),
+    discoverEntities: vi.fn(async () => [{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }]),
     setGlobs: vi.fn(),
     parseImport: parseImportPayload,
     serializeImport: serializeImportPayload,
@@ -67,6 +68,7 @@ describe("dispatcher wiring (Task 18)", () => {
   // bound to the same fake `ToolContext` above.
   const tools: Record<string, ToolHandler> = {
     list_workflows: (a) => listWorkflowsTool(a, c),
+    validate_workflows: (a) => validateWorkflowsTool(a, c),
     connection_info: (a) => connectionInfoTool(a, c),
     list_entities: (a) => listEntitiesTool(a, c),
     get_entity: (a) => getEntityTool(a, c),
@@ -79,6 +81,8 @@ describe("dispatcher wiring (Task 18)", () => {
   const dispatch = makeDispatcher(tools);
 
   it.each([
+    ["list_workflows", {}],
+    ["validate_workflows", {}],
     ["list_entities", {}],
     ["get_entity", { name: "Foo" }],
     ["create_entity", { name: "Bar", content: "{}" }],

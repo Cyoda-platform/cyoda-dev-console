@@ -8,12 +8,16 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** `list_entities()` → `{ entities: [{ name, path }] }`. */
+/** `list_entities()` → `{ entities: [{ name, path, lastModified, sizeBytes }] }`. `lastModified`/
+ *  `sizeBytes` come straight from `discoverEntities`' own confined read during discovery — no
+ *  extra per-entity read here. */
 export async function listEntitiesTool(args: unknown, ctx: ToolContext): Promise<McpResult> {
   const input = listEntitiesInput.safeParse(args);
   if (!input.success) throw err("INVALID_ARGS", input.error.message);
   const entries = await ctx.discoverEntities();
-  return ok({ entities: entries.map((e) => ({ name: e.name, path: e.relativePath })) });
+  return ok({
+    entities: entries.map((e) => ({ name: e.name, path: e.relativePath, lastModified: e.lastModified, sizeBytes: e.sizeBytes })),
+  });
 }
 
 /** `get_entity(name)` — read a single entity's raw JSON contents. */

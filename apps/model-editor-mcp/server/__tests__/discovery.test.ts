@@ -78,7 +78,10 @@ describe("discoverEntities", () => {
     await writeFile(join(root, "models/schema/v1/Broken.json"), "{not json");
     await writeFile(join(root, "unrelated.json"), JSON.stringify({ foo: "bar" }));
     const entities = await discoverEntities(root, ["models/schema/**/*.json"]);
-    expect(entities).toEqual([{ relativePath: "models/schema/v1/CollateralAsset.json", name: "CollateralAsset" }]);
+    expect(entities).toEqual([{
+      relativePath: "models/schema/v1/CollateralAsset.json", name: "CollateralAsset",
+      lastModified: expect.any(String), sizeBytes: expect.any(Number),
+    }]);
   });
   it("returns nothing when entityGlobs is empty — no full-tree fallback", async () => {
     await writeFile(join(root, "x.json"), JSON.stringify({ a: 1 }));
@@ -93,7 +96,7 @@ describe("discoverEntities", () => {
 
 describe("findEntityByName", () => {
   it("matches by file stem", () => {
-    const entities = [{ relativePath: "models/schema/v1/CollateralAsset.json", name: "CollateralAsset" }];
+    const entities = [{ relativePath: "models/schema/v1/CollateralAsset.json", name: "CollateralAsset", lastModified: "t", sizeBytes: 1 }];
     expect(findEntityByName(entities, "CollateralAsset")?.relativePath).toBe("models/schema/v1/CollateralAsset.json");
     expect(findEntityByName(entities, "Nope")).toBeUndefined();
   });

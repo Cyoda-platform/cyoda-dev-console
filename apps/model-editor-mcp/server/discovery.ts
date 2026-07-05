@@ -68,7 +68,7 @@ export function findByName<T extends { relativePath: string; workflows: { name: 
   );
 }
 
-export interface EntityFileEntry { relativePath: string; name: string }
+export interface EntityFileEntry { relativePath: string; name: string; lastModified: string; sizeBytes: number }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -95,9 +95,9 @@ export async function discoverEntities(root: string, entityGlobs: string[]): Pro
     const rel = relative(root, abs).split(sep).join("/");
     if (!rel.endsWith(".json") || rel.endsWith(".layout.json")) continue;
     if (!entityGlobs.some((g) => matchGlob(rel, g))) continue;
-    let contents: string;
+    let contents: string, lastModified: string, sizeBytes: number;
     try {
-      contents = (await readConfined(root, rel)).contents;
+      ({ contents, lastModified, sizeBytes } = await readConfined(root, rel));
     } catch {
       continue; // vanished mid-scan — same tolerance as discoverWorkflows
     }
@@ -109,7 +109,7 @@ export async function discoverEntities(root: string, entityGlobs: string[]): Pro
       continue;
     }
     if (!isPlainObject(parsed)) continue; // arrays/primitives are not entities
-    out.push({ relativePath: rel, name: fileStem(rel) });
+    out.push({ relativePath: rel, name: fileStem(rel), lastModified, sizeBytes });
   }
   out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
   return out;

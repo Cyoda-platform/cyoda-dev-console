@@ -8,6 +8,10 @@ export const connectionInfoInput = z.object({}).strict();
 export const showWorkflowInput = z.object({ name: z.string().min(1) }).strict();
 export const validateWorkflowInput = z.object({ name: z.string().min(1) }).strict();
 
+/** `validate_workflows` — batch form of `validate_workflow`, no args (YAGNI on a name filter:
+ *  add one later if a caller actually needs to validate a subset). */
+export const validateWorkflowsInput = z.object({}).strict();
+
 /** `get_workflow` — name only, mirrors `getEntityInput`. Raw/byte-faithful read: unlike
  *  `showWorkflowInput`'s handler, this one never calls parseImport/serializeImport. */
 export const getWorkflowInput = z.object({ name: z.string().min(1) }).strict();
@@ -58,6 +62,7 @@ export type CreateWorkflowInput = z.infer<typeof createWorkflowInput>;
 export type DeleteWorkflowInput = z.infer<typeof deleteWorkflowInput>;
 export type OptimizeLayoutInput = z.infer<typeof optimizeLayoutInput>;
 export type ValidateWorkflowInput = z.infer<typeof validateWorkflowInput>;
+export type ValidateWorkflowsInput = z.infer<typeof validateWorkflowsInput>;
 export type LayoutPostBody = z.infer<typeof layoutPostBody>;
 
 /** `list_entities` — no input. */

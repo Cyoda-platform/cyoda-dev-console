@@ -23,7 +23,7 @@ import type { ShownPayload } from "./tools/show.js";
 import { getWorkflowTool } from "./tools/get_workflow.js";
 import { updateWorkflowTool } from "./tools/update.js";
 import { createWorkflowTool, deleteWorkflowTool } from "./tools/workflows_crud.js";
-import { validateWorkflowTool } from "./tools/validate.js";
+import { validateWorkflowTool, validateWorkflowsTool } from "./tools/validate.js";
 import { optimizeLayoutTool } from "./tools/optimize_layout.js";
 import { connectionInfoTool } from "./tools/connection_info.js";
 import { listEntitiesTool, getEntityTool, createEntityTool, updateEntityTool, deleteEntityTool } from "./tools/entities.js";
@@ -224,6 +224,7 @@ export async function main(argv: string[]): Promise<void> {
     delete_workflow: (a) => deleteWorkflowTool(a, ctx),
     optimize_layout: (a) => optimizeLayoutTool(a, ctx),
     validate_workflow: (a) => validateWorkflowTool(a, ctx),
+    validate_workflows: (a) => validateWorkflowsTool(a, ctx),
     connection_info: (a) => connectionInfoTool(a, ctx),
     list_entities: (a) => listEntitiesTool(a, ctx),
     get_entity: (a) => getEntityTool(a, ctx),

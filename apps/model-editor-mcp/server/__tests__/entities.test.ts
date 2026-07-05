@@ -32,9 +32,13 @@ function ctx(entities: EntityFileEntry[], files: Record<string, string> = {}, ov
 }
 
 describe("listEntitiesTool", () => {
-  it("returns { entities: [{ name, path }] } from discoverEntities", async () => {
-    const r = await listEntitiesTool({}, ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }]));
-    expect(JSON.parse(r.content[0]!.text)).toEqual({ entities: [{ name: "Foo", path: "models/schema/Foo.json" }] });
+  it("returns { entities: [{ name, path, lastModified, sizeBytes }] } from discoverEntities, with no extra read (metadata comes straight from discovery)", async () => {
+    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "2024-01-01T00:00:00.000Z", sizeBytes: 42 }]);
+    const r = await listEntitiesTool({}, c);
+    expect(JSON.parse(r.content[0]!.text)).toEqual({
+      entities: [{ name: "Foo", path: "models/schema/Foo.json", lastModified: "2024-01-01T00:00:00.000Z", sizeBytes: 42 }],
+    });
+    expect(c.read).not.toHaveBeenCalled();
   });
   it("rejects unknown args", async () => {
     await expect(listEntitiesTool({ x: 1 }, ctx([]))).rejects.toMatchObject({ isError: true });
@@ -43,7 +47,7 @@ describe("listEntitiesTool", () => {
 
 describe("getEntityTool", () => {
   it("reads an existing entity's contents by name", async () => {
-    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }], { "models/schema/Foo.json": '{"a":1}' });
+    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }], { "models/schema/Foo.json": '{"a":1}' });
     const r = await getEntityTool({ name: "Foo" }, c);
     expect(JSON.parse(r.content[0]!.text)).toMatchObject({ name: "Foo", path: "models/schema/Foo.json", contents: '{"a":1}' });
   });
@@ -62,7 +66,7 @@ describe("createEntityTool", () => {
     expect(c.write).toHaveBeenCalledWith("models/schema/Foo.json", '{"a":1}');
   });
   it("creates the new entity NEXT TO the existing ones in a nested directory a ** glob spans, not at the glob's literal prefix (models/schema/v1/Bar.json, not models/schema/Bar.json)", async () => {
-    const c = ctx([{ relativePath: "models/schema/v1/Foo.json", name: "Foo" }]);
+    const c = ctx([{ relativePath: "models/schema/v1/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }]);
     const r = await createEntityTool({ name: "Bar", content: '{"a":1}' }, c);
     expect(JSON.parse(r.content[0]!.text)).toEqual({ ok: true, name: "Bar", path: "models/schema/v1/Bar.json" });
     expect(c.write).toHaveBeenCalledWith("models/schema/v1/Bar.json", '{"a":1}');
@@ -78,7 +82,7 @@ describe("createEntityTool", () => {
     expect(c.write).not.toHaveBeenCalled();
   });
   it("rejects an already-existing name (ALREADY_EXISTS) without writing", async () => {
-    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }]);
+    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }]);
     const r = createEntityTool({ name: "Foo", content: "{}" }, c);
     await expect(r).rejects.toMatchObject({ isError: true, content: [{ type: "text", text: expect.stringContaining("ALREADY_EXISTS") }] });
     expect(c.write).not.toHaveBeenCalled();
@@ -94,7 +98,7 @@ describe("createEntityTool", () => {
 
 describe("updateEntityTool", () => {
   it("overwrites an existing entity's whole-document contents", async () => {
-    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }], { "models/schema/Foo.json": "{}" });
+    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }], { "models/schema/Foo.json": "{}" });
     const r = await updateEntityTool({ name: "Foo", content: '{"a":2}' }, c);
     expect(JSON.parse(r.content[0]!.text)).toEqual({ ok: true, name: "Foo", path: "models/schema/Foo.json" });
     expect(c.write).toHaveBeenCalledWith("models/schema/Foo.json", '{"a":2}');
@@ -105,7 +109,7 @@ describe("updateEntityTool", () => {
     expect(c.write).not.toHaveBeenCalled();
   });
   it("rejects invalid JSON without writing, even for an existing entity", async () => {
-    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }], { "models/schema/Foo.json": "{}" });
+    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }], { "models/schema/Foo.json": "{}" });
     await expect(updateEntityTool({ name: "Foo", content: "{bad" }, c)).rejects.toMatchObject({ isError: true });
     expect(c.write).not.toHaveBeenCalled();
   });
@@ -113,7 +117,7 @@ describe("updateEntityTool", () => {
 
 describe("deleteEntityTool", () => {
   it("deletes an existing entity", async () => {
-    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }]);
+    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }]);
     const r = await deleteEntityTool({ name: "Foo" }, c);
     expect(JSON.parse(r.content[0]!.text)).toEqual({ ok: true, name: "Foo" });
     expect(c.deleteFile).toHaveBeenCalledWith("models/schema/Foo.json");

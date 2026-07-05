@@ -35,7 +35,7 @@ function ctx(entities: EntityFileEntry[], files: Record<string, string> = {}, ov
 describe("showEntityTool", () => {
   it("returns the raw entity read and pushes { entity, contents } via setShownEntity", async () => {
     const setShownEntity = vi.fn();
-    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }], { "models/schema/Foo.json": '{"a":1}' });
+    const c = ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }], { "models/schema/Foo.json": '{"a":1}' });
     const r = await showEntityTool({ name: "Foo" }, c, setShownEntity);
     expect(r.isError).toBeFalsy();
     expect(JSON.parse(r.content[0]!.text)).toMatchObject({ name: "Foo", path: "models/schema/Foo.json", contents: '{"a":1}', lastModified: "t" });
@@ -50,7 +50,7 @@ describe("showEntityTool", () => {
   });
   it("rejects unknown args (INVALID_ARGS) without calling setShownEntity", async () => {
     const setShownEntity = vi.fn();
-    await expect(showEntityTool({ name: "Foo", bogus: 1 }, ctx([{ relativePath: "models/schema/Foo.json", name: "Foo" }]), setShownEntity)).rejects.toMatchObject({ isError: true });
+    await expect(showEntityTool({ name: "Foo", bogus: 1 }, ctx([{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }]), setShownEntity)).rejects.toMatchObject({ isError: true });
     expect(setShownEntity).not.toHaveBeenCalled();
   });
 });
