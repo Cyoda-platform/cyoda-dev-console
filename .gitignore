@@ -12,6 +12,9 @@ apps/dev-console/src-tauri/target/
 apps/dev-console/src-tauri/gen/
 coverage/
 .vite/
+test-results/
+playwright-report/
+blob-report/
 
 # IDE
 .idea/
@@ -23,3 +26,4 @@ docs/phases/
 .superpowers/
 # Local environment overrides — use apps/dev-console/.env.example as the template
 apps/dev-console/.env
+.playwright-mcp/

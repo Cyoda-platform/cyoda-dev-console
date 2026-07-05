@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "title": "Payment",
+  "description": "A payment against an Order, moving through the Payment workflow.",
+  "properties": {
+    "paymentId": { "type": "string" },
+    "orderId": { "type": "string" },
+    "method": { "type": "string", "enum": ["card", "bank_transfer", "wallet"] },
+    "amount": { "type": "number" },
+    "currency": { "type": "string" },
+    "status": { "type": "string" }
+  },
+  "required": ["paymentId", "orderId", "amount"]
+}

@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "title": "Customer",
+  "description": "A customer who places Orders.",
+  "properties": {
+    "customerId": { "type": "string" },
+    "name": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "tier": { "type": "string", "enum": ["standard", "gold", "platinum"] },
+    "address": {
+      "type": "object",
+      "properties": {
+        "line1": { "type": "string" },
+        "city": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "country": { "type": "string" }
+      }
+    }
+  },
+  "required": ["customerId", "email"]
+}

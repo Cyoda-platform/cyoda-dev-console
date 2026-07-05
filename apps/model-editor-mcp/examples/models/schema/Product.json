@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "title": "Product",
+  "description": "A product that can be ordered.",
+  "properties": {
+    "productId": { "type": "string" },
+    "name": { "type": "string" },
+    "sku": { "type": "string" },
+    "price": { "type": "number" },
+    "currency": { "type": "string" },
+    "category": { "type": "string" },
+    "inStock": { "type": "boolean" }
+  },
+  "required": ["productId", "sku"]
+}

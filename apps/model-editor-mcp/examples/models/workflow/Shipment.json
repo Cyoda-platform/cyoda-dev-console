@@ -1,0 +1,41 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1",
+      "name": "Shipment",
+      "initialState": "label_created",
+      "active": true,
+      "states": {
+        "label_created": {
+          "transitions": [
+            { "name": "dispatch", "next": "in_transit", "manual": false, "disabled": false }
+          ]
+        },
+        "in_transit": {
+          "transitions": [
+            { "name": "arrive", "next": "out_for_delivery", "manual": false, "disabled": false },
+            { "name": "delay", "next": "delayed", "manual": false, "disabled": false }
+          ]
+        },
+        "delayed": {
+          "transitions": [
+            { "name": "resume", "next": "in_transit", "manual": true, "disabled": false }
+          ]
+        },
+        "out_for_delivery": {
+          "transitions": [
+            { "name": "deliver", "next": "delivered", "manual": false, "disabled": false },
+            { "name": "fail_delivery", "next": "failed_delivery", "manual": false, "disabled": false }
+          ]
+        },
+        "failed_delivery": {
+          "transitions": [
+            { "name": "retry", "next": "out_for_delivery", "manual": true, "disabled": false }
+          ]
+        },
+        "delivered": { "transitions": [] }
+      }
+    }
+  ]
+}

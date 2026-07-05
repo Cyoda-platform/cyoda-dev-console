@@ -1,0 +1,37 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1",
+      "name": "Payment",
+      "initialState": "initiated",
+      "active": true,
+      "states": {
+        "initiated": {
+          "transitions": [
+            { "name": "authorize", "next": "authorized", "manual": false, "disabled": false },
+            { "name": "fail", "next": "failed", "manual": false, "disabled": false }
+          ]
+        },
+        "authorized": {
+          "transitions": [
+            { "name": "capture", "next": "captured", "manual": false, "disabled": false },
+            { "name": "void", "next": "voided", "manual": true, "disabled": false }
+          ]
+        },
+        "captured": {
+          "transitions": [
+            { "name": "refund", "next": "refunded", "manual": true, "disabled": false }
+          ]
+        },
+        "failed": {
+          "transitions": [
+            { "name": "retry", "next": "initiated", "manual": true, "disabled": false }
+          ]
+        },
+        "refunded": { "transitions": [] },
+        "voided": { "transitions": [] }
+      }
+    }
+  ]
+}

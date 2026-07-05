@@ -1,0 +1,58 @@
+import { watch } from "node:fs";
+import { isAbsolute, join, relative, sep } from "node:path";
+import { matchGlob } from "./glob.js";
+import { EXCLUDED_DIRS } from "./discovery.js";
+
+export type ChangeKind = "content" | "layout";
+export interface WorkflowChange { kind: ChangeKind; workflowFile: string }
+
+/** Map a changed absolute path to a scoped workflow change (or null to ignore). Pure —
+ *  no fs access, so it's independently testable from the live watcher below. */
+export function classifyChange(root: string, absPath: string, workflowGlobs: string[]): WorkflowChange | null {
+  const rel = relative(root, absPath).split(sep).join("/");
+  if (rel.startsWith("..") || rel === "") return null;
+  if (rel.split("/").some((seg) => EXCLUDED_DIRS.has(seg))) return null;
+  // A sidecar's scope is its content file's scope: derive the sibling .json rel and apply the
+  // SAME glob guard as the content branch, so a layout write outside the globbed scope is
+  // ignored symmetrically (no push for a file whose content changes we'd also ignore).
+  if (rel.endsWith(".layout.json")) {
+    const workflowFile = rel.replace(/\.layout\.json$/, ".json");
+    if (workflowGlobs.length > 0 && !workflowGlobs.some((g) => matchGlob(workflowFile, g))) return null;
+    return { kind: "layout", workflowFile };
+  }
+  if (rel.endsWith(".json")) {
+    if (workflowGlobs.length > 0 && !workflowGlobs.some((g) => matchGlob(rel, g))) return null;
+    return { kind: "content", workflowFile: rel };
+  }
+  return null;
+}
+
+export interface Watcher { close(): void }
+
+/**
+ * `node:fs` recursive watch over `root`, scoped/classified via {@link classifyChange} and
+ * debounced per (kind, workflowFile) so the several raw fs events one save typically fires
+ * collapse into a single `onChange` callback. `getWorkflowGlobs` is called fresh on EVERY fs
+ * event (not read once at construction) so a runtime `configure_project` glob change (see
+ * `context.ts`'s `setGlobs`) takes effect on the very next event, with no need to tear down and
+ * recreate the watcher.
+ */
+export function createWatcher(opts: { root: string; getWorkflowGlobs: () => string[]; onChange: (c: WorkflowChange) => void; debounceMs?: number }): Watcher {
+  const timers = new Map<string, ReturnType<typeof setTimeout>>();
+  const handle = watch(opts.root, { recursive: true }, (_event, filename) => {
+    if (!filename) return;
+    const name = filename.toString();
+    const abs = isAbsolute(name) ? name : join(opts.root, name);
+    const change = classifyChange(opts.root, abs, opts.getWorkflowGlobs());
+    if (!change) return;
+    const key = `${change.kind}:${change.workflowFile}`;
+    const prev = timers.get(key);
+    if (prev) clearTimeout(prev);
+    timers.set(key, setTimeout(() => { timers.delete(key); opts.onChange(change); }, opts.debounceMs ?? 120));
+  });
+  // The FSWatcher is an EventEmitter: an unheard "error" event throws and would crash the
+  // process. Log a transient fs error (watched root removed, EMFILE, ...) to STDERR — never
+  // stdout, which is the MCP JSON-RPC channel — and degrade instead of dying.
+  handle.on("error", (e) => { process.stderr.write(`[watch] error: ${String(e)}\n`); });
+  return { close: () => { for (const t of timers.values()) clearTimeout(t); timers.clear(); handle.close(); } };
+}
