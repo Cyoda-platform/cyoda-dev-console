@@ -37,18 +37,34 @@ export function EditorView({
   }
   const layoutReady = seededKey === seedKey;
 
-  // Claude changed the shown file underneath the human → ExternalChangeBanner.
-  // Derived directly from the prop rather than mirrored into local state: the
-  // banner's dismissal (`onDismissExternal`) clears `externalContent` in the
-  // parent, which is what actually makes it disappear on the next render.
-  const banner = externalContent != null;
-  const onReload = () => {
+  // Claude changed the shown file underneath the human. Two paths converge on
+  // the same document swap: this effect (silent live re-render — no local
+  // edits to protect) and the ExternalChangeBanner's "Reload" button (explicit
+  // consent because local edits ARE present). `applyExternal` is the shared
+  // primitive; only the "run automatically vs wait for a click" gate differs.
+  const applyExternal = () => {
     if (externalContent != null) {
       const r = parseImportPayload(externalContent, session.document?.meta);
       if (r.document) session.applyExternalDocument(r.document);
     }
     onDismissExternal();
   };
+
+  useEffect(() => {
+    if (externalContent != null && !session.dirty) applyExternal();
+    // Narrowed deps are intentional: this should fire exactly once per new
+    // push while clean (or when a push already in flight stops being
+    // protected because dirty flips false) — not on every session/document
+    // identity churn `applyExternal` closes over. `applyExternal` and
+    // `onDismissExternal` already read the latest render's values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalContent, session.dirty]);
+
+  // Shown only when local edits exist to protect — see the effect above for
+  // the auto-apply (clean) path, which resolves before the human ever sees a
+  // banner (derived directly from the prop; no mirrored local state).
+  const banner = externalContent != null && session.dirty;
+  const onReload = () => applyExternal();
 
   // Layout write-back: debounce → POST /layout with the session token + tab origin.
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
