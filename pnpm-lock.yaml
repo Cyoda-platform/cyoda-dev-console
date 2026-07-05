@@ -250,6 +250,12 @@ importers:
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.61.1
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@types/node':
         specifier: 'catalog:'
         version: 26.1.0
@@ -262,6 +268,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.0.3(vite@8.1.2(@types/node@26.1.0))
+      happy-dom:
+        specifier: ^20.10.6
+        version: 20.10.6
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
