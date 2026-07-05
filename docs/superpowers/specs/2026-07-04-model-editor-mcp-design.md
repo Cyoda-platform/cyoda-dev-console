@@ -337,19 +337,33 @@ review's point that the render smoke alone doesn't guard the risky new paths:
 
 ## Scope
 
-**v1 (this spec):** workflows only — `list` / `show` / `update` / `optimize_layout`
-/ `validate`; the full-`editor`-mode browser editor with human-owned layout
-write-back and content owned by Claude (browser content-edits warned, not wired);
-the `remapLayoutUuids` port; the hardened `POST /layout`; `connection_info`; and
-the tests above.
+**SCOPE EXPANDED (2026-07-05):** the "workflows-only" framing below was a reaction
+to the WKWebView wall (now gone). The original intent — the *full* editor — is
+restored. Entities, a read-only JSON view, self-service navigation, and explicit
+Claude-set locations (`configure_project`) are now **in scope**. See
+**"Full-editor scope expansion"** at the end of this document for the detailed
+design; the tool/component/data-flow sections above describe the workflow core
+that expansion builds on.
 
-**Out of scope for v1** (deliberate):
-- Entity + project-configuration tools (follow-on; same tool shape, same server).
-- **Content write-back from the browser** (collaborative content editing) — the
-  affordance is present but warns; wiring it later reuses the same conflict banners.
-- An upstream `@cyoda/workflow-react` change (e.g. a `contentReadOnly` prop).
+**In scope (single release):** workflows (`list`/`show`/`update`/`optimize_layout`/
+`validate`) **and** entities (`list`/`get`/`create`/`update`/`delete_entity`) **and**
+project config (`configure_project`/`get_project`, explicit narrow locations); the
+full-`editor`-mode browser editor with human-owned layout write-back, a **read-only
+Monaco JSON view**, a **read-only entity JSON-tree view**, and **self-service
+navigation** (a workflow/entity picker); content owned by Claude throughout
+(browser content-edits warned/read-only, never saved); hardened `POST /layout` +
+loopback-gated read endpoints; `connection_info`; deterministic port.
+
+**Still out of scope** (deliberate):
+- **Content write-back from the browser** (collaborative content editing) — content
+  stays Claude-owned; the graph warns, the JSON is read-only.
+- An upstream `@cyoda/workflow-react` change (e.g. a per-pane `contentReadOnly`
+  prop) — we use a *separate* read-only Monaco pane instead of the editor's JSON
+  tab, so no upstream change is needed.
+- A graphical **entity-schema diagram** — entities render as a searchable JSON tree
+  (that is what `entity-model-viewer` is); a bespoke schema visualizer is a
+  separate, much larger effort.
 - Auth / multi-user / remote access (localhost, single user, one project/server).
-- The Monaco JSON editor tab in the browser (not needed to view; addable later).
 
 ## Reuse / salvage inventory (logic, not modules)
 
@@ -390,3 +404,117 @@ hand-wave are decided here:
   updated positions only; ELK returns no crossing count and v1 does not compute
   one. The human's eyes close the layout loop. A computed crossing count for
   autonomous iteration is a documented follow-on, not v1.
+
+---
+
+# Full-editor scope expansion (2026-07-05)
+
+Restores the original intent (AI CRUDs workflows AND entities AND project config,
+with a full live UI you can navigate) on the now-proven browser-served runtime.
+Grounded in a code survey of the real packages + the parked branch's already-built
+entity/project tools.
+
+## Explicit narrow locations — no auto-discovery
+The human's requirement: no whole-tree scan + classifier guessing (it produces
+false positives). Instead, **Claude Code sets the locations explicitly and
+narrowly**, and discovery reads *only* those globs.
+
+- The `ToolContext` gains **`entityGlobs`**, and its `workflowGlobs`/`entityGlobs`
+  become **runtime-mutable** (a small holder, not the current frozen literal) so
+  `configure_project` can update them mid-session; `discover*` and the watcher read
+  the *current* globs.
+- CLI: `--workflow-globs` / `--entity-globs` set the initial values; sensible
+  narrow defaults follow the observed convention (`models/workflow/**/*.json`,
+  `models/schema/**/*.json`) rather than `**/*.json`.
+- **Discovery is narrow-glob, not scan-and-classify.** `discoverWorkflows` globs
+  `workflowGlobs`; a new **`discoverEntities(root, entityGlobs)`** globs
+  `entityGlobs` and takes each matched file that parses to a JSON *object* as an
+  entity (skip parse-errors; no `**/*.json` full-tree walk). Because the globs
+  point at the real workflow/entity dirs, there are no false positives.
+
+## Entities (Claude CRUD; human read-only view)
+Grounded fact: an **entity is a separate plain-JSON object file** (e.g.
+`models/schema/v1/CollateralAsset.json`), NOT embedded in a workflow. (The
+classifier's `export-payload` = `entityName+modelVersion+workflows` is a *workflow
+export bundle*, a workflow file — not an entity.) Entities relate to workflows only
+by name/convention + `annotations.entity`.
+
+- **Tools** (ported from `docs/mcp-service-design:.../tools/entities.ts`, IO swapped
+  to the confined layer): `list_entities()`, `get_entity(name)`,
+  `create_entity(name, content)`, `update_entity(name, content)`,
+  `delete_entity(name)`. **Name-based** (name = file stem, resolved against
+  `entityGlobs`), consistent with the workflow tools. `create`/`update` JSON-parse-
+  guard (`INVALID_JSON`), `create` rejects existing (`ALREADY_EXISTS`), `update`/
+  `delete` require existing (`NOT_FOUND`), whole-document writes.
+- Requires a confined **`rmConfined`** added to `files.ts` (guard via the existing
+  `resolveInsideRoot`) exposed as `ctx.deleteFile`.
+- **View (read-only):** the `EntityViewer` component (a searchable/collapsible JSON
+  tree — ported from the dev-console's local copy `src/components/{EntityViewer,
+  JsonTree}.tsx`; peers react/react-dom + `@cyoda/console-design-system` tokens, no
+  CSS) plus a read-only Monaco JSON tab. Claude owns entity content; the human
+  browses/inspects. `EntityViewer` takes `contents: string` (raw JSON).
+
+## Project config
+Ported from `docs/mcp-service-design:.../tools/project.ts` (session-only, never
+persisted — already matches the headless model):
+- `configure_project({ name?, workflowGlobs?, entityGlobs? })` → updates the mutable
+  context globs; `get_project()` → `{ root, workflowGlobs, entityGlobs, counts:
+  { workflows, entities } }`.
+
+## Read-only Monaco JSON view (workflows)
+Grounded constraint: the editor's built-in JSON tab is read-only **only** in
+`mode:"viewer"`, which *also* freezes the graph (kills layout drag) — there is no
+per-pane toggle, and `editorOptions.readOnly` is overridden. So the JSON view is a
+**separate read-only Monaco pane**, NOT the editor's `jsonEditor` tab:
+- Port the dev-console's `MonacoJsonViewer` (a plain `monaco.editor.create(...)`)
+  with **`readOnly: true`**, and `getMonacoRuntime()` (the two `?worker` imports:
+  `monaco-editor/esm/vs/editor/editor.worker?worker` and
+  `.../language/json/json.worker?worker`, wired via `window.MonacoEnvironment`).
+- The graph stays full `editor` mode (drag + inspect + warn-on-content-edit); the
+  JSON is genuinely un-editable. Content is view-only on both surfaces.
+
+## Self-service navigation
+The browser navigates independently of Claude:
+- New loopback-gated read endpoints: `GET /api/index` → the current workflow +
+  entity lists (from the narrow discovery); `GET /api/workflow/:name` /
+  `GET /api/entity/:name` → the item's content (server read+parse; name allowlisted
+  against discovery before any path use — same guard as `POST /layout`). No new
+  *write* surface (content stays Claude-only).
+- The browser tracks a **current view** (set by the human's picker OR Claude's
+  `show_workflow` SSE push — last one wins). Live `content`/`layout` pushes apply
+  only to the current view; pushes for other items are ignored until viewed.
+
+## Browser layout / ergonomics
+- **Collapsible left sidebar** = the picker (Workflows / Entities groups,
+  filterable; toggle to hide → full-width canvas).
+- **Contextual tabbed main:** a workflow → **Graph | JSON** (JSON = the read-only
+  Monaco pane); an entity → **Tree | JSON** (both read-only). One pane at a time —
+  no stacked clutter.
+- Reuse the editor's **built-in dockable/minimizable inspector + control menu +
+  minimap** (no second inspector added).
+- Read-only status is a **quiet chip**, not a banner; `ExternalChangeBanner` only on
+  an actual clash.
+
+## Security delta
+The `GET /api/*` read endpoints serve project file contents, so they carry the
+**same loopback Origin/Host gate** as `/events`/`/_id` (DNS-rebinding protection),
+and the `:name` is allowlisted against discovery before it is used as a path. There
+is **no new write endpoint** — `POST /layout` is unchanged and remains the only
+state-changing browser surface.
+
+## Salvage delta
+Ports from `docs/mcp-service-design`: `tools/entities.ts` (entity CRUD),
+`tools/project.ts` (`configure_project`/`get_project`), their zod schemas
+(`getProjectInput`/`configureProjectInput`/`{list,get,create,update,delete}
+EntityInput`, all `.strict()`). Ports from the dev-console: `EntityViewer` +
+`JsonTree`, `MonacoJsonViewer`, `monacoRuntime.ts` worker setup. New: `rmConfined`
+(+ `ctx.deleteFile`), `discoverEntities`, mutable-globs `ToolContext`, the
+`GET /api/*` read endpoints, and the web-shell sidebar/tabs/entity-view/JSON-view
+layout. `entity-model-viewer` peers only react/react-dom + design-system tokens.
+
+## Testing delta
+Extend the vitest suites for the entity tools + `configure_project` + `discoverEntities`
++ `rmConfined` + the read endpoints (loopback-gate + name-allowlist rejections);
+extend the Playwright smoke to also drive an **entity** into the read-only JSON-tree
+view and exercise the **self-service picker** switching between a workflow and an
+entity (real render, headless Chromium).
