@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "assetId": { "type": "string" },
+    "valuationCcy": { "type": "string" }
+  },
+  "required": ["assetId"]
+}
