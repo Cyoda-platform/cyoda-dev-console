@@ -234,10 +234,11 @@ what this avoids: crossings are ELK's job; Claude's job is orientation + pins.
 
 ## Data flow, layout & reconciliation
 
-**Scoped pushes:** the file-watch push carries `{ workflow, revision, origin? }`;
-the browser re-renders only if the changed workflow is the one it is showing.
-`show_workflow` is the one command that *switches* which workflow is shown, and
-its push carries content + remapped layout metadata.
+**Scoped pushes:** the file-watch push carries `{ workflow, revision, origin?,
+content, layoutMeta }` — the server re-reads the file and includes the fresh
+content + remapped layout, because the browser cannot touch disk; the browser
+re-renders only if the changed workflow is the one it is showing. `show_workflow`
+is the one command that *switches* which workflow is shown.
 
 **Replay-on-connect:** the server holds "current shown workflow"; a (re)connecting
 tab immediately receives it (content + layout). Refresh is seamless.
@@ -251,8 +252,9 @@ tab immediately receives it (content + layout). Refresh is seamless.
   arrangement persists until overwritten (another drag, or asking Claude to
   re-optimize). Layout is just positions, so there is no merge.
 
-**Echo suppression (specified, not "mirrored"):** each tab has an **origin id**
-(from its session token). A `POST /layout` carries that origin; the server tags
+**Echo suppression (specified, not "mirrored"):** each tab generates its own
+**origin id** (a per-tab UUID, distinct from the shared per-server session token,
+which stays the auth secret). A `POST /layout` carries that origin; the server tags
 the resulting file-watch push with it; the **originating tab ignores** a push
 bearing its own origin (so an in-flight drag is not disrupted), while **other
 tabs** (a second tab, the desktop app) apply it. This is per-tab origin scoping,
