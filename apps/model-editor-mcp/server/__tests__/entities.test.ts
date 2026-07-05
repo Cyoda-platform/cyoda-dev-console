@@ -61,6 +61,12 @@ describe("createEntityTool", () => {
     expect(JSON.parse(r.content[0]!.text)).toEqual({ ok: true, name: "Foo", path: "models/schema/Foo.json" });
     expect(c.write).toHaveBeenCalledWith("models/schema/Foo.json", '{"a":1}');
   });
+  it("creates the new entity NEXT TO the existing ones in a nested directory a ** glob spans, not at the glob's literal prefix (models/schema/v1/Bar.json, not models/schema/Bar.json)", async () => {
+    const c = ctx([{ relativePath: "models/schema/v1/Foo.json", name: "Foo" }]);
+    const r = await createEntityTool({ name: "Bar", content: '{"a":1}' }, c);
+    expect(JSON.parse(r.content[0]!.text)).toEqual({ ok: true, name: "Bar", path: "models/schema/v1/Bar.json" });
+    expect(c.write).toHaveBeenCalledWith("models/schema/v1/Bar.json", '{"a":1}');
+  });
   it("rejects invalid JSON without writing", async () => {
     const c = ctx([]);
     await expect(createEntityTool({ name: "Foo", content: "{bad" }, c)).rejects.toMatchObject({ isError: true });

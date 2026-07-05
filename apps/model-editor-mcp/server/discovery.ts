@@ -122,36 +122,83 @@ export function findEntityByName(entries: EntityFileEntry[], name: string): Enti
   return entries.find((e) => e.name === name);
 }
 
+function directoryOf(relativePath: string): string {
+  return relativePath.split("/").slice(0, -1).join("/");
+}
+
 /**
- * Derive a NEW entity's destination path from `name` alone. The name-based tool
- * design (`create_entity(name, content)`, no `path` argument) has no explicit
- * destination input, so this is the concrete rule that makes it buildable: take
- * the FIRST configured `entityGlobs` pattern's literal directory prefix — the
- * path segments before the first one containing a glob wildcard (`*`) — and
- * join `<name>.json` beneath it.
+ * The directory a NEW file should join when files already exist: the MAJORITY
+ * parent directory among `existing`'s `relativePath`s (most frequently
+ * occurring), with the sorted-first entry's directory (`existing[0]`, per the
+ * discovery functions' sort-ascending-by-relativePath contract) as the
+ * deterministic tiebreak. Iterating `existing` in its given order and keeping
+ * the first directory to reach the max count implements that tiebreak
+ * directly: `existing[0]`'s directory always wins ties it's part of, since it
+ * is necessarily the first candidate `find` considers.
  */
-export function resolveEntityCreatePath(entityGlobs: string[], name: string): string {
-  const pattern = entityGlobs[0];
-  if (pattern === undefined) throw new Error("no entityGlobs configured — call configure_project first");
+function majorityDirectory(existing: readonly { relativePath: string }[]): string {
+  const dirs = existing.map((e) => directoryOf(e.relativePath));
+  const counts = new Map<string, number>();
+  for (const d of dirs) counts.set(d, (counts.get(d) ?? 0) + 1);
+  const maxCount = Math.max(...counts.values());
+  return dirs.find((d) => counts.get(d) === maxCount)!;
+}
+
+/**
+ * Derive a NEW file's destination path from `name` alone. Shared by
+ * {@link resolveEntityCreatePath} and {@link resolveWorkflowCreatePath} — both
+ * name-based create tools (`create_entity`/`create_workflow`) have no explicit
+ * destination-path argument, so this is the concrete rule that makes them
+ * buildable.
+ *
+ * When files already exist (`existing` non-empty), target the MAJORITY
+ * directory those files actually live in (see {@link majorityDirectory}) —
+ * this is what fixes the `**`-glob wart: a glob like `models/workflow/**\/*.json`
+ * matches a versioned/nested layout (`models/workflow/v1/`) just fine, but its
+ * literal-prefix-before-`**` rule alone would land a new file one directory
+ * ABOVE where the rest actually live. Only when discovery is empty (nothing to
+ * sit "next to") does this fall back to that literal-prefix rule: the path
+ * segments of the FIRST configured glob pattern before its first wildcard (`*`)
+ * segment.
+ */
+function resolveCreatePath(
+  globs: string[],
+  name: string,
+  existing: readonly { relativePath: string }[],
+  globsParamName: string,
+): string {
+  if (existing.length > 0) {
+    const dir = majorityDirectory(existing);
+    return dir ? `${dir}/${name}.json` : `${name}.json`;
+  }
+  const pattern = globs[0];
+  if (pattern === undefined) throw new Error(`no ${globsParamName} configured — call configure_project first`);
   const segments = pattern.split("/");
   const wildcardIdx = segments.findIndex((seg) => seg.includes("*"));
   const dirSegments = wildcardIdx === -1 ? segments.slice(0, -1) : segments.slice(0, wildcardIdx);
   return dirSegments.length > 0 ? `${dirSegments.join("/")}/${name}.json` : `${name}.json`;
 }
 
+/** Derive a NEW entity's destination path — see {@link resolveCreatePath}. */
+export function resolveEntityCreatePath(
+  entityGlobs: string[],
+  name: string,
+  existing: readonly { relativePath: string }[],
+): string {
+  return resolveCreatePath(entityGlobs, name, existing, "entityGlobs");
+}
+
 /**
- * Derive a NEW workflow's destination path from `name` alone — mirrors
- * {@link resolveEntityCreatePath} exactly (same derivation rule: the literal
- * directory prefix of the FIRST configured glob pattern, before its first
- * wildcard segment), but reads `workflowGlobs` instead of `entityGlobs`. Used
- * by `create_workflow`, which — like `create_entity` — is a name-based tool
- * with no explicit destination-path argument.
+ * Derive a NEW workflow's destination path — mirrors {@link resolveEntityCreatePath}
+ * exactly (both delegate to the shared {@link resolveCreatePath}), but reads
+ * `workflowGlobs` instead of `entityGlobs`. Used by `create_workflow`, which —
+ * like `create_entity` — is a name-based tool with no explicit
+ * destination-path argument.
  */
-export function resolveWorkflowCreatePath(workflowGlobs: string[], name: string): string {
-  const pattern = workflowGlobs[0];
-  if (pattern === undefined) throw new Error("no workflowGlobs configured — call configure_project first");
-  const segments = pattern.split("/");
-  const wildcardIdx = segments.findIndex((seg) => seg.includes("*"));
-  const dirSegments = wildcardIdx === -1 ? segments.slice(0, -1) : segments.slice(0, wildcardIdx);
-  return dirSegments.length > 0 ? `${dirSegments.join("/")}/${name}.json` : `${name}.json`;
+export function resolveWorkflowCreatePath(
+  workflowGlobs: string[],
+  name: string,
+  existing: readonly { relativePath: string }[],
+): string {
+  return resolveCreatePath(workflowGlobs, name, existing, "workflowGlobs");
 }

@@ -28,7 +28,8 @@ export async function createWorkflowTool(args: unknown, ctx: ToolContext): Promi
 
   try { JSON.parse(content); } catch { throw err("INVALID_JSON", `content for "${name}" is not valid JSON`); }
 
-  const existing = findByName(await ctx.discover(), name);
+  const discovered = await ctx.discover();
+  const existing = findByName(discovered, name);
   if (existing) throw err("ALREADY_EXISTS", `a workflow named "${name}" already exists at "${existing.relativePath}"`);
 
   // `parseImportPayload` already runs `validateSemantics` into `parsed.issues` — source every
@@ -39,7 +40,9 @@ export async function createWorkflowTool(args: unknown, ctx: ToolContext): Promi
   }
 
   const canonical = ctx.serializeImport(parsed.document);
-  const path = resolveWorkflowCreatePath(ctx.workflowGlobs, name);
+  // Reuse `discovered` (already fetched for the existence check above) rather than discovering
+  // again — it's also what tells the resolver where the existing workflows actually live.
+  const path = resolveWorkflowCreatePath(ctx.workflowGlobs, name, discovered);
 
   // `findByName` only sees discovery's workflow-status subset (excludes `json-not-workflow`),
   // so a plain-JSON file sitting at the resolved target path can be entirely invisible to it —

@@ -100,33 +100,84 @@ describe("findEntityByName", () => {
 });
 
 describe("resolveEntityCreatePath", () => {
-  it("derives the literal directory prefix before the first wildcard segment", () => {
-    expect(resolveEntityCreatePath(["models/schema/**/*.json"], "Foo")).toBe("models/schema/Foo.json");
-    expect(resolveEntityCreatePath(["models/schema/v1/*.json"], "Foo")).toBe("models/schema/v1/Foo.json");
+  describe("empty discovery (fallback to the glob-literal prefix)", () => {
+    it("derives the literal directory prefix before the first wildcard segment", () => {
+      expect(resolveEntityCreatePath(["models/schema/**/*.json"], "Foo", [])).toBe("models/schema/Foo.json");
+      expect(resolveEntityCreatePath(["models/schema/v1/*.json"], "Foo", [])).toBe("models/schema/v1/Foo.json");
+    });
+    it("falls back to the project root when the pattern has no directory", () => {
+      expect(resolveEntityCreatePath(["*.json"], "Foo", [])).toBe("Foo.json");
+    });
+    it("uses the FIRST configured glob when several are set", () => {
+      expect(resolveEntityCreatePath(["a/*.json", "b/*.json"], "Foo", [])).toBe("a/Foo.json");
+    });
+    it("throws when no entityGlobs are configured", () => {
+      expect(() => resolveEntityCreatePath([], "Foo", [])).toThrow();
+    });
   });
-  it("falls back to the project root when the pattern has no directory", () => {
-    expect(resolveEntityCreatePath(["*.json"], "Foo")).toBe("Foo.json");
-  });
-  it("uses the FIRST configured glob when several are set", () => {
-    expect(resolveEntityCreatePath(["a/*.json", "b/*.json"], "Foo")).toBe("a/Foo.json");
-  });
-  it("throws when no entityGlobs are configured", () => {
-    expect(() => resolveEntityCreatePath([], "Foo")).toThrow();
+
+  describe("non-empty discovery (targets where the existing files actually live)", () => {
+    it("lands the new file in the SAME directory as a single existing entry, past where a ** glob's literal prefix would stop", () => {
+      const existing = [{ relativePath: "models/schema/v1/Existing.json" }];
+      expect(resolveEntityCreatePath(["models/schema/**/*.json"], "Foo", existing)).toBe("models/schema/v1/Foo.json");
+    });
+    it("picks the MAJORITY directory, not merely the sorted-first entry's directory", () => {
+      // First entry (by array/sort order) lives in "b"; the majority (2 of 3) lives in "a".
+      const existing = [
+        { relativePath: "b/three.json" },
+        { relativePath: "a/one.json" },
+        { relativePath: "a/two.json" },
+      ];
+      expect(resolveEntityCreatePath(["**/*.json"], "Foo", existing)).toBe("a/Foo.json");
+    });
+    it("breaks a frequency tie using the sorted-first entry's directory", () => {
+      const existing = [{ relativePath: "b/only.json" }, { relativePath: "a/one.json" }];
+      expect(resolveEntityCreatePath(["**/*.json"], "Foo", existing)).toBe("b/Foo.json");
+    });
+    it("targets the project root when the existing entries live at the root", () => {
+      const existing = [{ relativePath: "Existing.json" }];
+      expect(resolveEntityCreatePath(["**/*.json"], "Foo", existing)).toBe("Foo.json");
+    });
   });
 });
 
 describe("resolveWorkflowCreatePath", () => {
-  it("derives the literal directory prefix before the first wildcard segment", () => {
-    expect(resolveWorkflowCreatePath(["models/workflow/**/*.json"], "Foo")).toBe("models/workflow/Foo.json");
-    expect(resolveWorkflowCreatePath(["models/workflow/v1/*.json"], "Foo")).toBe("models/workflow/v1/Foo.json");
+  describe("empty discovery (fallback to the glob-literal prefix)", () => {
+    it("derives the literal directory prefix before the first wildcard segment", () => {
+      expect(resolveWorkflowCreatePath(["models/workflow/**/*.json"], "Foo", [])).toBe("models/workflow/Foo.json");
+      expect(resolveWorkflowCreatePath(["models/workflow/v1/*.json"], "Foo", [])).toBe("models/workflow/v1/Foo.json");
+    });
+    it("falls back to the project root when the pattern has no directory", () => {
+      expect(resolveWorkflowCreatePath(["*.json"], "Foo", [])).toBe("Foo.json");
+    });
+    it("uses the FIRST configured glob when several are set", () => {
+      expect(resolveWorkflowCreatePath(["a/*.json", "b/*.json"], "Foo", [])).toBe("a/Foo.json");
+    });
+    it("throws when no workflowGlobs are configured", () => {
+      expect(() => resolveWorkflowCreatePath([], "Foo", [])).toThrow();
+    });
   });
-  it("falls back to the project root when the pattern has no directory", () => {
-    expect(resolveWorkflowCreatePath(["*.json"], "Foo")).toBe("Foo.json");
-  });
-  it("uses the FIRST configured glob when several are set", () => {
-    expect(resolveWorkflowCreatePath(["a/*.json", "b/*.json"], "Foo")).toBe("a/Foo.json");
-  });
-  it("throws when no workflowGlobs are configured", () => {
-    expect(() => resolveWorkflowCreatePath([], "Foo")).toThrow();
+
+  describe("non-empty discovery (targets where the existing files actually live)", () => {
+    it("lands the new file in the SAME directory as the existing workflow, past where a ** glob's literal prefix would stop", () => {
+      const existing = [{ relativePath: "models/workflow/v1/Foo.json" }];
+      expect(resolveWorkflowCreatePath(["models/workflow/**/*.json"], "Bar", existing)).toBe("models/workflow/v1/Bar.json");
+    });
+    it("picks the MAJORITY directory, not merely the sorted-first entry's directory", () => {
+      const existing = [
+        { relativePath: "b/three.json" },
+        { relativePath: "a/one.json" },
+        { relativePath: "a/two.json" },
+      ];
+      expect(resolveWorkflowCreatePath(["**/*.json"], "Foo", existing)).toBe("a/Foo.json");
+    });
+    it("breaks a frequency tie using the sorted-first entry's directory", () => {
+      const existing = [{ relativePath: "b/only.json" }, { relativePath: "a/one.json" }];
+      expect(resolveWorkflowCreatePath(["**/*.json"], "Foo", existing)).toBe("b/Foo.json");
+    });
+    it("targets the project root when the existing entries live at the root", () => {
+      const existing = [{ relativePath: "Existing.json" }];
+      expect(resolveWorkflowCreatePath(["**/*.json"], "Foo", existing)).toBe("Foo.json");
+    });
   });
 });

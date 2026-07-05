@@ -149,6 +149,26 @@ describe("create_workflow + delete_workflow, end-to-end against real fs + discov
     expect(out.workflows).toContainEqual(expect.objectContaining({ name: "Pledge", path: "models/workflow/Pledge.json", valid: true }));
   });
 
+  it("creates the new workflow NEXT TO the existing ones in a nested directory a ** glob spans, not at the glob's literal prefix (models/workflow/v1/Bar.json, not models/workflow/Bar.json)", async () => {
+    await mkdir(join(root, "models/workflow/v1"), { recursive: true });
+    const foo = JSON.stringify({
+      importMode: "MERGE",
+      workflows: [{ version: "1", name: "Foo", initialState: "none", active: true,
+        states: { none: { transitions: [{ name: "create", next: "created", manual: false, disabled: false }] }, created: { transitions: [] } } }],
+    });
+    await writeFile(join(root, "models/workflow/v1/Foo.json"), foo);
+
+    const realCtx = createToolContext({ root, workflowGlobs: ["models/workflow/**/*.json"], entityGlobs: [], connectionUrl: "http://x" });
+    const created = await createWorkflowTool({ name: "Pledge", content: PLEDGE }, realCtx);
+    expect(created.isError).toBeFalsy();
+    const out = JSON.parse(created.content[0]!.text);
+    expect(out).toMatchObject({ ok: true, name: "Pledge", path: "models/workflow/v1/Pledge.json" });
+
+    const onDisk = await readFile(join(root, "models/workflow/v1/Pledge.json"), "utf8");
+    const parsed = parseImportPayload(PLEDGE);
+    expect(onDisk).toBe(serializeImportPayload(parsed.document!));
+  });
+
   it("does NOT overwrite an existing non-workflow-shaped file at the resolved target path, even though real discovery genuinely does not surface it (path-collision guard, not just a findByName gap)", async () => {
     const realCtx = createToolContext({ root, workflowGlobs: ["models/workflow/**/*.json"], entityGlobs: [], connectionUrl: "http://x" });
     const original = JSON.stringify({ note: "x" });

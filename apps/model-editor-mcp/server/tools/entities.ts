@@ -44,10 +44,13 @@ export async function createEntityTool(args: unknown, ctx: ToolContext): Promise
   try { parsed = JSON.parse(content); } catch { throw err("INVALID_JSON", `content for "${name}" is not valid JSON`); }
   if (!isPlainObject(parsed)) throw err("INVALID_JSON", `content for "${name}" must be a JSON object`);
 
-  const existing = findEntityByName(await ctx.discoverEntities(), name);
+  const discovered = await ctx.discoverEntities();
+  const existing = findEntityByName(discovered, name);
   if (existing) throw err("ALREADY_EXISTS", `an entity named "${name}" already exists at "${existing.relativePath}"`);
 
-  const path = resolveEntityCreatePath(ctx.entityGlobs, name);
+  // Reuse `discovered` (already fetched for the existence check above) rather than discovering
+  // again — it's also what tells the resolver where the existing entities actually live.
+  const path = resolveEntityCreatePath(ctx.entityGlobs, name, discovered);
 
   let occupied = true;
   try { await ctx.read(path); } catch { occupied = false; }
