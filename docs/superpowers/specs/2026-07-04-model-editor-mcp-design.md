@@ -196,9 +196,8 @@ Five tools; each does something Claude's native file tools cannot (Claude still
   nodeSize? }`. **There is no `direction`, no `spacing`.** Pinning requires
   explicit coordinates (`PinnedNode = {id,x,y}`); Claude pins by echoing a node's
   *current* saved position, so it still never invents coordinates. Returns the
-  updated positions summary. (ELK does not return a crossing count; if we want
-  Claude to iterate against a number, we compute one from the routed
-  `LayoutResult.edges` — scoped as an optional add, not an engine feature.)
+  updated positions summary. ELK returns no crossing count and v1 does not compute
+  one — the human's eyes close the layout loop (see Resolved plumbing decisions).
 - **`validate_workflow(name)`** → parse + `validateAll` → diagnostics; read-only.
 
 Properties:
@@ -366,11 +365,26 @@ lifting: `@cyoda/workflow-core`, `@cyoda/workflow-graph`, `@cyoda/workflow-layou
 (elkjs), `@cyoda/workflow-react`, `@cyoda/workflow-file-indexer`,
 `@cyoda/agent-bridge-contract` (`McpResult`).
 
-## Open details (resolved at implementation, not blocking)
+## Resolved plumbing decisions (locked)
 
-- Exact per-session token scheme for `POST /layout` (random token in the served
-  URL vs. a signed cookie).
-- Whether to ship the optional crossing-count metric in `optimize_layout` v1 or
-  defer it.
-- Precise deterministic-port function (hash of the absolute project path) and the
-  per-project lock mechanism.
+No items are left for the implementer to invent. The three that a first pass might
+hand-wave are decided here:
+
+- **`POST /layout` auth token.** At startup the server generates a random token
+  (`crypto.randomBytes(16).toString("hex")`), embeds it in the served page (so
+  same-origin JS has it) and in the URL that `connection_info` surfaces. The
+  browser sends it as an `X-Session-Token` header on `POST /layout`; the server
+  rejects mismatches. Combined with the loopback Origin/Host check, a cross-origin
+  page can neither read the token (same-origin policy) nor guess it. No cookies.
+- **Deterministic port + duplicate detection.**
+  `port = 49152 + (fnv1a(absoluteProjectPath) mod 16384)` — the dynamic/private
+  range, so the URL is stable and bookmarkable per project. On bind: if free, use
+  it. If in use, `GET /_id` on it — if it reports the *same* project root, this is
+  a duplicate instance, so the server exits with a clear message and the existing
+  URL (the running server + `/_id` *is* the lock; no lockfile). If a *different*
+  project (hash collision), bind the next free port and surface it via
+  `connection_info`.
+- **Crossing-count metric — deferred, not open.** `optimize_layout` returns the
+  updated positions only; ELK returns no crossing count and v1 does not compute
+  one. The human's eyes close the layout loop. A computed crossing count for
+  autonomous iteration is a documented follow-on, not v1.
