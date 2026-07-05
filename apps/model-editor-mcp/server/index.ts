@@ -78,10 +78,14 @@ export function createWriteLayout(
 /**
  * Build the watch-driven `onChange`: for every settled `(kind, workflowFile)` change the
  * watcher reports, re-read the file from disk (the browser can never touch it directly) and
- * broadcast the resulting push over `hub`. A `content` change is only pushed when it's for the
- * workflow currently shown in the browser; a `layout` change is pushed regardless (the browser
- * only applies it if it matches what's shown — see `web/src/App.tsx`), echo-suppressing
- * whichever tab's `POST /layout` triggered it via `pendingOrigins`.
+ * broadcast the resulting push over `hub`. Both `content` and `layout` changes are pushed
+ * UNCONDITIONALLY — regardless of `hub.currentShown()` (which only reflects Claude's last
+ * `show_workflow`, never the browser's own sidebar-picker navigation). The browser is the one
+ * that gates on its current view (`web/src/App.tsx`'s `content`/`layout` handlers each check
+ * `v.workflow === e.workflow` before applying), so a workflow the human is browsing via the
+ * picker still gets live content updates even though Claude never `show_workflow`'d it. Layout
+ * pushes additionally echo-suppress whichever tab's `POST /layout` triggered them via
+ * `pendingOrigins`.
  *
  * Deleted/renamed files are handled gracefully, never thrown: if `discover()` no longer lists
  * the file at all (the common case — a real delete/rename settles before this runs), the lookup
@@ -91,7 +95,7 @@ export function createWriteLayout(
  */
 export function createOnChange(
   ctx: Pick<ToolContext, "discover" | "read" | "parseImport" | "serializeImport">,
-  hub: Pick<SseHub, "broadcast" | "currentShown">,
+  hub: Pick<SseHub, "broadcast">,
   pendingOrigins: PendingOrigins,
   nextRevision: () => number,
 ): (change: WorkflowChange) => Promise<void> {
@@ -118,9 +122,6 @@ export function createOnChange(
       hub.broadcast({ type: "layout", workflow: name, revision: nextRevision(), layout, ...(origin !== undefined ? { origin } : {}) }, origin);
       return;
     }
-
-    const shown = hub.currentShown();
-    if (!shown || shown.workflow !== name) return; // browser only cares about the shown workflow
 
     let contents: string;
     try {
@@ -197,12 +198,15 @@ export async function main(argv: string[]): Promise<void> {
 
   /** Read-only browser-navigation backing for `GET /api/entity/:name` — `name` is resolved
    *  against LIVE discovery by the caller (`http.ts`'s `handleApi`) before this ever runs, so the
-   *  read here is always confined to a known, allowlisted entity path. */
-  const readEntityForApi = async (name: string): Promise<{ name: string; path: string; contents: string } | null> => {
+   *  read here is always confined to a known, allowlisted entity path. Includes `lastModified`
+   *  so this shape matches `get_entity`'s MCP tool result (`tools/entities.ts`) — the two
+   *  entity-read paths (browser-navigation vs Claude's tool call) should agree on what an
+   *  "entity read" returns. */
+  const readEntityForApi = async (name: string): Promise<{ name: string; path: string; contents: string; lastModified: string } | null> => {
     const entry = findEntityByName(await ctx.discoverEntities(), name);
     if (!entry) return null;
-    const { contents } = await ctx.read(entry.relativePath);
-    return { name, path: entry.relativePath, contents };
+    const { contents, lastModified } = await ctx.read(entry.relativePath);
+    return { name, path: entry.relativePath, contents, lastModified };
   };
 
   const tools: Record<string, ToolHandler> = {

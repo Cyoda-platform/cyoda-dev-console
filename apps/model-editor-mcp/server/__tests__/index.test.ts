@@ -146,20 +146,34 @@ describe("createOnChange", () => {
     expect(event.content).toContain("Pledge");
   });
 
-  it("does not broadcast a content change for a workflow that is not the currently shown one", async () => {
+  // A workflow the human navigated to via the browser's own sidebar picker (GET
+  // /api/workflow/:name) never calls `show_workflow`, so `hub.currentShown()` stays whatever
+  // Claude last showed (or null) — NOT this workflow. Content pushes must not be gated on that
+  // Claude-owned show-state: the browser's own current-view check (`web/src/App.tsx`'s `content`
+  // handler) is what decides whether to apply a push, so the server must broadcast regardless.
+  it("broadcasts a content change for the changed workflow even when it is NOT the currently shown one (picker-navigated)", async () => {
     const c = ctx({ "Pledge.json": PLEDGE });
     const hub = fakeHub({ workflow: "SomethingElse" });
-    const onChange = createOnChange(c, hub, new Map(), () => 1);
+    const nextRevision = vi.fn(() => 3);
+    const onChange = createOnChange(c, hub, new Map(), nextRevision);
     await onChange({ kind: "content", workflowFile: "Pledge.json" });
-    expect(hub.broadcast).not.toHaveBeenCalled();
+    expect(hub.broadcast).toHaveBeenCalledTimes(1);
+    const [event] = hub.broadcast.mock.calls[0]!;
+    expect(event).toMatchObject({ type: "content", workflow: "Pledge", revision: 3 });
+    expect(event.content).toContain("Pledge");
   });
 
-  it("does not broadcast (and does not throw) when nothing is currently shown", async () => {
+  // The picker scenario in full: Claude has never `show_workflow`'d anything this session at
+  // all (`currentShown()` is null), yet the human is browsing the workflow via the sidebar and
+  // needs live content updates when Claude edits it underneath them.
+  it("broadcasts a content change even when nothing has ever been show_workflow'd (browser picker navigation, no Claude push yet)", async () => {
     const c = ctx({ "Pledge.json": PLEDGE });
     const hub = fakeHub(null);
     const onChange = createOnChange(c, hub, new Map(), () => 1);
     await expect(onChange({ kind: "content", workflowFile: "Pledge.json" })).resolves.toBeUndefined();
-    expect(hub.broadcast).not.toHaveBeenCalled();
+    expect(hub.broadcast).toHaveBeenCalledTimes(1);
+    const [event] = hub.broadcast.mock.calls[0]!;
+    expect(event).toMatchObject({ type: "content", workflow: "Pledge" });
   });
 
   it("skips the push (no throw) for a content change on a file no longer in discover() (deleted/renamed)", async () => {

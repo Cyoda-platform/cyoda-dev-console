@@ -22,7 +22,7 @@ export interface HttpServerOptions {
   discover: () => Promise<{ relativePath: string; workflows: { name: string }[] }[]>;
   discoverEntities: () => Promise<{ relativePath: string; name: string }[]>;
   readWorkflow: (name: string) => Promise<{ name: string; path: string; content: string; layout: Record<string, unknown> } | null>;
-  readEntity: (name: string) => Promise<{ name: string; path: string; contents: string } | null>;
+  readEntity: (name: string) => Promise<{ name: string; path: string; contents: string; lastModified: string } | null>;
   writeLayout: (name: string, workflowUi: Record<string, unknown>, origin: string) => Promise<void>;
 }
 

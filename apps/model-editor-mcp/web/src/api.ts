@@ -19,6 +19,7 @@ export interface EntityApiPayload {
   name: string;
   path: string;
   contents: string;
+  lastModified: string;
 }
 
 async function getJson<T>(url: string): Promise<T> {

@@ -12,7 +12,7 @@ let dist: string, server: ReturnType<typeof createHttpServer>, base: string;
 let writeLayout: Mock<(name: string, workflowUi: Record<string, unknown>, origin: string) => Promise<void>>;
 let discoverEntities: Mock<() => Promise<{ relativePath: string; name: string }[]>>;
 let readWorkflow: Mock<(name: string) => Promise<{ name: string; path: string; content: string; layout: Record<string, unknown> } | null>>;
-let readEntity: Mock<(name: string) => Promise<{ name: string; path: string; contents: string } | null>>;
+let readEntity: Mock<(name: string) => Promise<{ name: string; path: string; contents: string; lastModified: string } | null>>;
 
 /** Raw HTTP client — lets us send an arbitrary `Host` header (undici `fetch`
  *  forbids overriding `Host`, which the DNS-rebinding tests need). */
@@ -35,7 +35,7 @@ beforeEach(async () => {
   writeLayout = vi.fn(async () => {});
   discoverEntities = vi.fn(async () => [{ relativePath: "models/schema/Foo.json", name: "Foo" }]);
   readWorkflow = vi.fn(async (name: string) => (name === "Pledge" ? { name: "Pledge", path: "Pledge.json", content: '{"workflows":[]}', layout: {} } : null));
-  readEntity = vi.fn(async (name: string) => (name === "Foo" ? { name: "Foo", path: "models/schema/Foo.json", contents: '{"a":1}' } : null));
+  readEntity = vi.fn(async (name: string) => (name === "Foo" ? { name: "Foo", path: "models/schema/Foo.json", contents: '{"a":1}', lastModified: "2024-01-01T00:00:00.000Z" } : null));
   server = createHttpServer({
     root: "/proj", distDir: dist, token: "secret", hub: createSseHub(),
     discover: async () => [{ relativePath: "Pledge.json", workflows: [{ name: "Pledge" }] }],
@@ -94,10 +94,10 @@ it("GET /api/workflow/:name 404s for a name not in discovery, and never calls re
   expect(res.status).toBe(404);
   expect(readWorkflow).not.toHaveBeenCalled();
 });
-it("GET /api/entity/:name returns the item for an allowlisted name", async () => {
+it("GET /api/entity/:name returns the item for an allowlisted name, including lastModified (parity with get_entity)", async () => {
   const res = await fetch(`${base}/api/entity/Foo`);
   expect(res.status).toBe(200);
-  expect(await res.json()).toEqual({ name: "Foo", path: "models/schema/Foo.json", contents: '{"a":1}' });
+  expect(await res.json()).toEqual({ name: "Foo", path: "models/schema/Foo.json", contents: '{"a":1}', lastModified: "2024-01-01T00:00:00.000Z" });
 });
 it("GET /api/entity/:name 404s for a name not in discovery, and never calls readEntity", async () => {
   const res = await fetch(`${base}/api/entity/Ghost`);
