@@ -46,10 +46,10 @@ function ctx(files: Record<string, string>, over: Partial<ToolContext> = {}): To
 }
 
 describe("listWorkflowsTool", () => {
-  it("returns { name, path, states, transitions, valid } per discovered workflow", async () => {
+  it("returns { workflows: [{ name, path, states, transitions, valid }] } per discovered workflow", async () => {
     const r = await listWorkflowsTool({}, ctx({ "Pledge.json": PLEDGE }));
     expect(r.isError).toBeFalsy();
-    expect(JSON.parse(r.content[0]!.text)).toEqual([{ name: "Pledge", path: "Pledge.json", states: 2, transitions: 1, valid: true }]);
+    expect(JSON.parse(r.content[0]!.text)).toEqual({ workflows: [{ name: "Pledge", path: "Pledge.json", states: 2, transitions: 1, valid: true }] });
   });
   it("rejects unknown args", async () => {
     await expect(listWorkflowsTool({ x: 1 }, ctx({}))).rejects.toMatchObject({ isError: true });

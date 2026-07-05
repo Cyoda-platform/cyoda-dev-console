@@ -66,6 +66,12 @@ it("accepts a valid POST /layout (204) and forwards to writeLayout with origin",
   expect(res.status).toBe(204);
   expect(writeLayout).toHaveBeenCalledWith("Pledge", { Pledge: { layout: { nodes: {} } } }, "tabA");
 });
+it("rejects a POST /layout body over the 1 MiB cap (413), no write", async () => {
+  const oversized = "x".repeat(1_048_577);
+  const res = await fetch(`${base}/layout`, { method: "POST", headers: { "content-type": "application/json", "x-session-token": "secret" }, body: JSON.stringify({ name: "Pledge", workflowUi: { blob: oversized } }) });
+  expect(res.status).toBe(413);
+  expect(writeLayout).not.toHaveBeenCalled();
+});
 
 // --- CRITICAL: token leak via DNS rebinding — static + /_id must be loopback-gated ---
 it("rejects GET / with a non-loopback Host (403) and never leaks the token", async () => {

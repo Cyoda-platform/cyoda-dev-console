@@ -9,8 +9,23 @@ import { readConfined } from "./files.js";
  *  one of these can never trigger a push for a file `discoverWorkflows` would never surface. */
 export const EXCLUDED_DIRS = new Set(["node_modules", ".git", "dist", "target", ".model-editor"]);
 
+/** `readdir(dir, { withFileTypes: true })`, degraded to `undefined` on failure instead of
+ *  throwing. A single unreadable (EACCES) or mid-scan-removed (ENOENT) directory anywhere under
+ *  root must not fail the ENTIRE discovery — every tool handler, the `/layout` allowlist, and
+ *  the watcher's `onChange` funnel through `discoverWorkflows`, so one transient fs error must
+ *  never break the whole server surface. */
+async function readdirOrSkip(dir: string) {
+  try {
+    return await readdir(dir, { withFileTypes: true });
+  } catch (err) {
+    process.stderr.write(`[discovery] skipping ${dir}: ${String(err)}\n`);
+    return undefined;
+  }
+}
+
 async function* walk(dir: string): AsyncGenerator<string> {
-  const entries = await readdir(dir, { withFileTypes: true });
+  const entries = await readdirOrSkip(dir);
+  if (entries === undefined) return;
   for (const e of entries) {
     const abs = join(dir, e.name);
     if (e.isDirectory()) {

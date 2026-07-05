@@ -9,6 +9,7 @@ describe("listWorkflowsInput / connectionInfoInput", () => {
     expect(listWorkflowsInput.safeParse({}).success).toBe(true);
     expect(connectionInfoInput.safeParse({}).success).toBe(true);
     expect(listWorkflowsInput.safeParse({ x: 1 }).success).toBe(false);
+    expect(connectionInfoInput.safeParse({ extra: 1 }).success).toBe(false);
   });
 });
 
@@ -19,6 +20,7 @@ describe("showWorkflowInput / validateWorkflowInput", () => {
     expect(showWorkflowInput.safeParse({ name: "" }).success).toBe(false);
     expect(showWorkflowInput.safeParse({}).success).toBe(false);
     expect(showWorkflowInput.safeParse({ name: "P", extra: 1 }).success).toBe(false);
+    expect(validateWorkflowInput.safeParse({ name: "P", extra: 1 }).success).toBe(false);
   });
 });
 
@@ -27,6 +29,7 @@ describe("updateWorkflowInput", () => {
     expect(updateWorkflowInput.safeParse({ name: "P", content: "{not json" }).success).toBe(true);
     expect(updateWorkflowInput.safeParse({ name: "P" }).success).toBe(false);
     expect(updateWorkflowInput.safeParse({ content: "{}" }).success).toBe(false);
+    expect(updateWorkflowInput.safeParse({ name: "P", content: "{}", extra: 1 }).success).toBe(false);
   });
 });
 
@@ -43,11 +46,17 @@ describe("optimizeLayoutInput", () => {
     expect(optimizeLayoutInput.safeParse({ name: "P", options: { direction: "TB" } }).success).toBe(false);
     expect(optimizeLayoutInput.safeParse({ name: "P", options: { spacing: 20 } }).success).toBe(false);
   });
+  it("rejects an unknown top-level key", () => {
+    expect(optimizeLayoutInput.safeParse({ name: "P", extra: 1 }).success).toBe(false);
+  });
 });
 
 describe("layoutPostBody", () => {
   it("accepts { name, workflowUi } and rejects a missing workflowUi", () => {
     expect(layoutPostBody.safeParse({ name: "P", workflowUi: { P: { layout: { nodes: {} } } } }).success).toBe(true);
     expect(layoutPostBody.safeParse({ name: "P" }).success).toBe(false);
+  });
+  it("rejects an unknown top-level key", () => {
+    expect(layoutPostBody.safeParse({ name: "P", workflowUi: {}, extra: 1 }).success).toBe(false);
   });
 });

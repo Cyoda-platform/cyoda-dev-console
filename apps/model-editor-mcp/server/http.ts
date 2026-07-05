@@ -9,6 +9,11 @@ import { findByName } from "./discovery.js";
 
 const MIME: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".map": "application/json", ".ico": "image/x-icon", ".woff2": "font/woff2" };
 
+/** Hard cap on the accumulated `POST /layout` request body. Layout write-backs are a debounced
+ *  node-position map for one workflow — 1 MiB is generous headroom while still bounding memory
+ *  an unauthenticated-by-size, loopback-reachable request could otherwise force us to buffer. */
+const MAX_LAYOUT_BODY_BYTES = 1_048_576;
+
 export interface HttpServerOptions {
   root: string;
   distDir: string;
@@ -88,8 +93,18 @@ export function createHttpServer(opts: HttpServerOptions): Server {
     if (!isLoopback(req)) { res.writeHead(403).end("bad origin"); return; }
     if (!tokenMatches(req.headers["x-session-token"], opts.token)) { res.writeHead(401).end("bad token"); return; }
     const origin = String(req.headers["x-origin"] ?? "");
-    let body = "";
-    for await (const chunk of req) body += chunk;
+    const chunks: Buffer[] = [];
+    let bodyBytes = 0;
+    for await (const chunk of req as AsyncIterable<Buffer>) {
+      bodyBytes += chunk.length;
+      if (bodyBytes > MAX_LAYOUT_BODY_BYTES) {
+        res.writeHead(413).end("body too large");
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    }
+    const body = Buffer.concat(chunks).toString("utf8");
     let json: unknown;
     try { json = JSON.parse(body); } catch { res.writeHead(400).end("bad json"); return; }
     const parsed = layoutPostBody.safeParse(json);

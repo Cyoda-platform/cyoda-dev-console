@@ -4,7 +4,9 @@ import type { ToolContext } from "../context.js";
 import { listWorkflowsInput } from "../schemas.js";
 import { synthesizeImportPayload } from "@cyoda/workflow-editor-host/synthesizeImportPayload";
 
-/** `list_workflows` → `[{ name, path, states, transitions, valid }]`. */
+/** `list_workflows` → `{ workflows: [{ name, path, states, transitions, valid }] }`. Wrapped in an
+ *  object (not a bare array) so `withConnection` (in `mcp.ts`) can inject `_connection.url` the
+ *  same way it does for every other tool's `structuredContent`. */
 export async function listWorkflowsTool(args: unknown, ctx: ToolContext): Promise<McpResult> {
   const input = listWorkflowsInput.safeParse(args);
   if (!input.success) throw err("INVALID_ARGS", input.error.message);
@@ -27,5 +29,5 @@ export async function listWorkflowsTool(args: unknown, ctx: ToolContext): Promis
     const name = entry.workflows[0]?.name ?? entry.relativePath.replace(/\.json$/, "").split("/").pop()!;
     out.push({ name, path: entry.relativePath, states, transitions, valid });
   }
-  return ok(out);
+  return ok({ workflows: out });
 }

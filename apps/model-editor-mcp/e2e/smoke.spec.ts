@@ -36,7 +36,10 @@ test.beforeAll(async () => {
   rpc("initialize");
 });
 
-test.afterAll(async () => { child.kill("SIGINT"); await rm(fixture, { recursive: true, force: true }); });
+test.afterAll(async () => {
+  await new Promise<void>((r) => { child.once("exit", () => r()); child.kill("SIGINT"); });
+  await rm(fixture, { recursive: true, force: true });
+});
 
 test("renders reactflow nodes and live-swaps between workflows over MCP stdio", async ({ page }) => {
   const url = await waitForUrl();

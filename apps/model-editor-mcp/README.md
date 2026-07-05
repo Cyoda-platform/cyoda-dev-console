@@ -9,7 +9,7 @@ and layout (`optimize_layout`); the human arranges the canvas (drags persist via
 `POST /layout`). Ask Claude for the URL any time via `connection_info`.
 
 ## Tools
-- `list_workflows()` → `[{ name, path, states, transitions, valid }]`
+- `list_workflows()` → `{ workflows: [{ name, path, states, transitions, valid }] }`
 - `show_workflow(name)` — render it in the browser + return the parsed document
 - `update_workflow(name, content)` — validated whole-document write + diff (writes nothing on failure)
 - `optimize_layout(name, options?)` — elkjs re-layout; `options`: `{ orientation?, preset?, nodeSize?, pinned? }`

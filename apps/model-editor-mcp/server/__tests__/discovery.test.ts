@@ -1,8 +1,25 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { discoverWorkflows, findByName } from "../discovery.js";
+
+/** Partial mock of `node:fs/promises`: every export passes through to the real
+ *  implementation EXCEPT `readdir`, which is intercepted so a specific directory
+ *  (named `bad-dir`) deterministically fails the way an EACCES/ENOENT mid-scan
+ *  directory would in production — without relying on a flaky chmod/removal race. */
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return {
+    ...actual,
+    readdir: vi.fn(async (dir: string, options: { withFileTypes: true }) => {
+      if (String(dir).endsWith("bad-dir")) {
+        throw new Error("ENOENT: no such file or directory, scandir 'bad-dir'");
+      }
+      return actual.readdir(dir, options);
+    }),
+  };
+});
 
 const PLEDGE = JSON.stringify({
   importMode: "MERGE",
@@ -31,6 +48,16 @@ describe("discoverWorkflows", () => {
     await writeFile(join(root, "other.json"), PLEDGE);
     const entries = await discoverWorkflows(root, ["flows/**/*.json"]);
     expect(entries.map((e) => e.relativePath)).toEqual(["flows/Pledge.json"]);
+  });
+  it("skips a directory whose readdir fails instead of rejecting the whole scan, and still returns the other workflows", async () => {
+    await writeFile(join(root, "Pledge.json"), PLEDGE);
+    await mkdir(join(root, "bad-dir"), { recursive: true });
+    await writeFile(join(root, "bad-dir", "Other.json"), PLEDGE);
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const entries = await discoverWorkflows(root, ["**/*.json"]);
+    expect(entries.map((e) => e.relativePath)).toEqual(["Pledge.json"]);
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining("[discovery] skipping"));
+    stderr.mockRestore();
   });
 });
 
