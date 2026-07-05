@@ -1,0 +1,51 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtemp, rm, mkdir, writeFile, readFile, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { ConfinementError, readConfined, writeConfined } from "../files.js";
+
+let root: string;
+beforeEach(async () => { root = await mkdtemp(join(tmpdir(), "mem-files-")); });
+afterEach(async () => { await rm(root, { recursive: true, force: true }); });
+
+describe("readConfined", () => {
+  it("reads a file inside the root and reports mtime + size", async () => {
+    await writeFile(join(root, "w.json"), "{}");
+    const r = await readConfined(root, "w.json");
+    expect(r.contents).toBe("{}");
+    expect(r.sizeBytes).toBe(2);
+    expect(typeof r.lastModified).toBe("string");
+  });
+  it("rejects a traversal path", async () => {
+    await expect(readConfined(root, "../etc/passwd")).rejects.toBeInstanceOf(ConfinementError);
+  });
+  it("rejects an absolute path", async () => {
+    await expect(readConfined(root, "/etc/passwd")).rejects.toBeInstanceOf(ConfinementError);
+  });
+});
+
+describe("writeConfined", () => {
+  it("atomically writes a file, creating intermediate dirs", async () => {
+    const res = await writeConfined(root, "flows/w.json", '{"a":1}');
+    expect(await readFile(join(root, "flows/w.json"), "utf8")).toBe('{"a":1}');
+    expect(res.sizeBytes).toBe(7);
+  });
+  it("leaves no .tmp file behind after a successful write", async () => {
+    await writeConfined(root, "w.json", "{}");
+    const { readdir } = await import("node:fs/promises");
+    const names = await readdir(root);
+    expect(names.filter((n) => n.endsWith(".tmp"))).toHaveLength(0);
+    expect(names).toContain("w.json");
+  });
+  it("rejects a traversal path without writing", async () => {
+    await expect(writeConfined(root, "../evil.json", "{}")).rejects.toBeInstanceOf(ConfinementError);
+  });
+  it("rejects a write whose parent symlinks outside the root", async () => {
+    const outside = await mkdtemp(join(tmpdir(), "mem-out-"));
+    await mkdir(join(root, "sub"), { recursive: true });
+    await rm(join(root, "sub"), { recursive: true, force: true });
+    await symlink(outside, join(root, "sub"));
+    await expect(writeConfined(root, "sub/evil.json", "{}")).rejects.toBeInstanceOf(ConfinementError);
+    await rm(outside, { recursive: true, force: true });
+  });
+});
