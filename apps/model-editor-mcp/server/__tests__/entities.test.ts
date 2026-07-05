@@ -77,6 +77,13 @@ describe("createEntityTool", () => {
     await expect(r).rejects.toMatchObject({ isError: true, content: [{ type: "text", text: expect.stringContaining("ALREADY_EXISTS") }] });
     expect(c.write).not.toHaveBeenCalled();
   });
+  it("rejects (ALREADY_EXISTS) without writing when a non-object JSON file already occupies the resolved target path — discoverEntities skips non-objects, so findEntityByName alone would miss this and silently overwrite", async () => {
+    const c = ctx([], { "models/schema/Foo.json": "[1,2,3]" });
+    await expect(createEntityTool({ name: "Foo", content: '{"a":1}' }, c)).rejects.toMatchObject({
+      isError: true, content: [{ type: "text", text: expect.stringContaining("ALREADY_EXISTS") }],
+    });
+    expect(c.write).not.toHaveBeenCalled();
+  });
 });
 
 describe("updateEntityTool", () => {

@@ -14,8 +14,12 @@ import { findByName, resolveWorkflowCreatePath } from "../discovery.js";
  *
  * Rejects (writing NOTHING) on: an already-existing name (`ALREADY_EXISTS`, checked via
  * `findByName` BEFORE any parse/write — mirrors `create_entity`'s existence-before-mutation
- * ordering); invalid JSON (`INVALID_JSON`); or a semantically-invalid document
- * (`VALIDATION_FAILED`, identical envelope shape to `update_workflow`'s).
+ * ordering); a file already occupying the resolved target path even under a DIFFERENT/no
+ * discoverable name (`ALREADY_EXISTS`, probed via `ctx.read` on the resolved path immediately
+ * before `ctx.write` — `findByName` alone can't catch this because discovery excludes
+ * `json-not-workflow`-status files, which are otherwise invisible but very much on disk);
+ * invalid JSON (`INVALID_JSON`); or a semantically-invalid document (`VALIDATION_FAILED`,
+ * identical envelope shape to `update_workflow`'s).
  */
 export async function createWorkflowTool(args: unknown, ctx: ToolContext): Promise<McpResult> {
   const input = createWorkflowInput.safeParse(args);
@@ -36,6 +40,14 @@ export async function createWorkflowTool(args: unknown, ctx: ToolContext): Promi
 
   const canonical = ctx.serializeImport(parsed.document);
   const path = resolveWorkflowCreatePath(ctx.workflowGlobs, name);
+
+  // `findByName` only sees discovery's workflow-status subset (excludes `json-not-workflow`),
+  // so a plain-JSON file sitting at the resolved target path can be entirely invisible to it —
+  // probe the target path directly so we never silently overwrite it.
+  let occupied = true;
+  try { await ctx.read(path); } catch { occupied = false; }
+  if (occupied) throw err("ALREADY_EXISTS", `a file already exists at "${path}"`);
+
   await ctx.write(path, canonical);
   return ok({ name, path, ok: true, diagnostics: parsed.issues });
 }

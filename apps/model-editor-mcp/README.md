@@ -23,21 +23,25 @@ sidecar.
 
 ## Discovery — explicit, narrow locations only, scanned fresh every call
 
-Every tool call re-walks the project tree from scratch (skipping
-`node_modules`, `.git`, `dist`, `target`, `.model-editor`) and keeps only the
-files matching `workflowGlobs`/`entityGlobs` (defaults:
-`models/workflow/**/*.json`, `models/schema/**/*.json` — override with
-`--workflow-globs`/`--entity-globs` at startup, or mid-session via
-`configure_project`). There is **no cached index**: a file created, edited,
-or renamed on disk is picked up on the very next tool call. An **entity** is
-a separate plain-JSON *object* file (never embedded in a workflow); entity
-tools are name-based, exactly like the workflow tools (name = file stem).
+Every content/discovery tool call re-walks the project tree from scratch
+(there's no cached index) — skipping `node_modules`, `.git`, `dist`,
+`target`, `.model-editor` — and keeps only the files matching
+`workflowGlobs`/`entityGlobs` (defaults: `models/workflow/**/*.json`,
+`models/schema/**/*.json` — override with `--workflow-globs`/`--entity-globs`
+at startup, or mid-session via `configure_project`). Only `connection_info`
+and `configure_project` (2 of 17 tools) never discover. A file created,
+edited, or renamed on disk is picked up on the very next tool call. An
+**entity** is a separate plain-JSON *object* file (never embedded in a
+workflow); entity tools are name-based, exactly like the workflow tools
+(name = file stem).
 
-Independently of tool calls, a file-watcher observes the same globbed
-locations and live-pushes any on-disk change — workflow content or a
-`.layout.json` sidecar — to the browser over SSE, whether or not Claude is
-the one who made the change (e.g. the human editing a file outside the app,
-or a git checkout).
+Independently of tool calls, a file-watcher observes the `workflowGlobs`-scoped
+locations only (never `entityGlobs`) and live-pushes any on-disk change —
+workflow content or a `.layout.json` sidecar — to the browser over SSE,
+whether or not Claude is the one who made the change (e.g. the human editing
+a file outside the app, or a git checkout). An entity edited on disk does
+**not** live-push; its content only refreshes on the next tool call that
+discovers it.
 
 ## Canonicalization — `show_workflow`/`update_workflow`/`create_workflow` vs. raw reads
 

@@ -30,7 +30,11 @@ export async function getEntityTool(args: unknown, ctx: ToolContext): Promise<Mc
 /** `create_entity(name, content)` — write a NEW entity file. Rejects invalid/non-object
  *  JSON (`INVALID_JSON`) or an already-existing name (`ALREADY_EXISTS`); writes nothing
  *  on either rejection. The destination path is derived from `entityGlobs` — see
- *  `resolveEntityCreatePath`. */
+ *  `resolveEntityCreatePath`. Existence is checked TWO ways before writing: by declared
+ *  name via `findEntityByName` (catches a same-named entity resolved at a different path),
+ *  and by probing the resolved target path directly via `ctx.read` (catches a file sitting
+ *  at that exact path that `discoverEntities` doesn't surface as an entity — e.g. a JSON
+ *  array or other non-object JSON, which discovery silently skips but is very much on disk). */
 export async function createEntityTool(args: unknown, ctx: ToolContext): Promise<McpResult> {
   const input = createEntityInput.safeParse(args);
   if (!input.success) throw err("INVALID_ARGS", input.error.message);
@@ -44,6 +48,11 @@ export async function createEntityTool(args: unknown, ctx: ToolContext): Promise
   if (existing) throw err("ALREADY_EXISTS", `an entity named "${name}" already exists at "${existing.relativePath}"`);
 
   const path = resolveEntityCreatePath(ctx.entityGlobs, name);
+
+  let occupied = true;
+  try { await ctx.read(path); } catch { occupied = false; }
+  if (occupied) throw err("ALREADY_EXISTS", `a file already exists at "${path}"`);
+
   await ctx.write(path, content);
   return ok({ ok: true, name, path });
 }

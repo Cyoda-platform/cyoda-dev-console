@@ -90,6 +90,14 @@ describe("createWorkflowTool", () => {
     const parsed = parseImportPayload(PLEDGE);
     expect(written).toBe(serializeImportPayload(parsed.document!)); // exactly what update_workflow would write
   });
+
+  it("rejects (ALREADY_EXISTS) without writing when a non-workflow-shaped file already occupies the resolved target path — discovery excludes json-not-workflow status, so findByName alone would miss this and silently overwrite", async () => {
+    const c = ctx([], { "models/workflow/Pledge.json": JSON.stringify({ note: "x" }) });
+    await expect(createWorkflowTool({ name: "Pledge", content: PLEDGE }, c)).rejects.toMatchObject({
+      isError: true, content: [{ type: "text", text: expect.stringContaining("ALREADY_EXISTS") }],
+    });
+    expect(c.write).not.toHaveBeenCalled();
+  });
 });
 
 describe("deleteWorkflowTool", () => {
@@ -139,6 +147,24 @@ describe("create_workflow + delete_workflow, end-to-end against real fs + discov
     const listed = await listWorkflowsTool({}, realCtx);
     const out = JSON.parse(listed.content[0]!.text) as { workflows: Array<{ name: string; path: string; valid: boolean }> };
     expect(out.workflows).toContainEqual(expect.objectContaining({ name: "Pledge", path: "models/workflow/Pledge.json", valid: true }));
+  });
+
+  it("does NOT overwrite an existing non-workflow-shaped file at the resolved target path, even though real discovery genuinely does not surface it (path-collision guard, not just a findByName gap)", async () => {
+    const realCtx = createToolContext({ root, workflowGlobs: ["models/workflow/**/*.json"], entityGlobs: [], connectionUrl: "http://x" });
+    const original = JSON.stringify({ note: "x" });
+    await writeFile(join(root, "models/workflow/Pledge.json"), original);
+
+    // Sanity: this file is genuinely invisible to discovery (json-not-workflow status, excluded
+    // from WORKFLOW_STATUSES) — proves the bug isn't reachable via findByName alone.
+    const discovered = await realCtx.discover();
+    expect(discovered.find((e) => e.relativePath === "models/workflow/Pledge.json")).toBeUndefined();
+
+    await expect(createWorkflowTool({ name: "Pledge", content: PLEDGE }, realCtx)).rejects.toMatchObject({
+      isError: true, content: [{ type: "text", text: expect.stringContaining("ALREADY_EXISTS") }],
+    });
+
+    const onDisk = await readFile(join(root, "models/workflow/Pledge.json"), "utf8");
+    expect(onDisk).toBe(original); // untouched — NOT silently overwritten
   });
 
   it("delete_workflow removes the file (gone from list_workflows) and its layout sidecar", async () => {
