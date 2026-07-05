@@ -18,13 +18,17 @@ export interface SseHub {
 export function createSseHub(): SseHub {
   const clients = new Map<SseClient, string>();
   let shown: Extract<SseEvent, { type: "show" }> | null = null;
+  /** Deliver to one client; a dead socket (throwing `write`) evicts itself and never propagates. */
+  const deliver = (client: SseClient, event: SseEvent): void => {
+    try { client.write(event); } catch { clients.delete(client); }
+  };
   return {
-    addClient(client, origin) { clients.set(client, origin); if (shown) client.write(shown); },
+    addClient(client, origin) { clients.set(client, origin); if (shown) deliver(client, shown); },
     removeClient(client) { clients.delete(client); },
     broadcast(event, exceptOrigin) {
-      for (const [client, origin] of clients) { if (exceptOrigin && origin === exceptOrigin) continue; client.write(event); }
+      for (const [client, origin] of clients) { if (exceptOrigin !== undefined && origin === exceptOrigin) continue; deliver(client, event); }
     },
-    setShown(event) { shown = event; for (const [client] of clients) client.write(event); },
+    setShown(event) { shown = event; for (const [client] of clients) deliver(client, event); },
     currentShown() { return shown; },
   };
 }

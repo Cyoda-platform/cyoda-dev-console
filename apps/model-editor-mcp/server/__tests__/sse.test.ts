@@ -32,4 +32,27 @@ describe("SseHub", () => {
     hub.broadcast({ type: "content", workflow: "P", revision: 3, content: "{}" });
     expect(a.events).toEqual([]);
   });
+  it("survives a throwing client: delivers to the others, removes the dead one, never propagates", () => {
+    const hub = createSseHub();
+    const a = client(), c = client();
+    const dead: SseClient = { write: () => { throw new Error("socket closed"); } };
+    hub.addClient(a, "A"); hub.addClient(dead, "B"); hub.addClient(c, "C");
+    const event: SseEvent = { type: "content", workflow: "P", revision: 4, content: "{}" };
+    expect(() => hub.broadcast(event)).not.toThrow();
+    expect(a.events).toEqual([event]);
+    expect(c.events).toEqual([event]);
+    // dead client was removed — a second broadcast that would throw again is a no-op
+    const event2: SseEvent = { type: "content", workflow: "P", revision: 5, content: "{}" };
+    expect(() => hub.broadcast(event2)).not.toThrow();
+    expect(a.events).toEqual([event, event2]);
+  });
+  it("echo-suppresses the empty-string origin tab but delivers to a different origin", () => {
+    const hub = createSseHub();
+    const a = client(), b = client();
+    hub.addClient(a, ""); hub.addClient(b, "B");
+    const event: SseEvent = { type: "content", workflow: "P", revision: 6, content: "{}" };
+    hub.broadcast(event, "");
+    expect(a.events).toEqual([]);
+    expect(b.events).toEqual([event]);
+  });
 });
