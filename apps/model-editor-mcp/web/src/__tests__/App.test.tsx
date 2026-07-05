@@ -11,6 +11,13 @@ import type { SseEvent } from "../sseClient.js";
 // own SSE-driven state machine (show/content/layout handling, drag-defer,
 // echo-suppression, token wiring) — so EditorView is stubbed to a prop-capturing
 // component and never actually renders a graph.
+// `WorkflowPane`'s "json" tab is never selected in these tests, so
+// `MonacoJsonViewer` never mounts — but `MonacoJsonViewer.tsx` calls
+// `getMonacoRuntime()` at MODULE SCOPE on import, and `WorkflowPane` imports it
+// unconditionally, so the mock is required regardless of which tab is active —
+// same discipline apps/dev-console uses.
+vi.mock("../monacoRuntime.js", () => ({ getMonacoRuntime: vi.fn() }));
+
 let capturedProps: Record<string, unknown> | null = null;
 vi.mock("../EditorView.js", () => ({
   EditorView: (props: Record<string, unknown>) => {
@@ -46,11 +53,16 @@ beforeEach(() => {
   subscribedOrigin = null;
   unsubscribe.mockClear();
   vi.resetModules();
+  // App now fetches `/api/index` unconditionally on mount (for the sidebar
+  // picker) — stub it so that call resolves instead of rejecting in every
+  // existing test, which only exercises the SSE-driven `view` state.
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ workflows: [], entities: [] }) })));
 });
 
 afterEach(() => {
   cleanup();
   delete (window as unknown as { __MODEL_EDITOR__?: unknown }).__MODEL_EDITOR__;
+  vi.unstubAllGlobals();
 });
 
 describe("App — token extraction", () => {

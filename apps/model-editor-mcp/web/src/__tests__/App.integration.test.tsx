@@ -7,11 +7,19 @@ import { parseImportPayload } from "@cyoda/workflow-core";
 import type { WorkflowEditorDocument } from "@cyoda/workflow-core";
 import type { SseEvent } from "../sseClient.js";
 
-// End-to-end wiring test: real App → real EditorView → real useEditorSession →
-// (stubbed) WorkflowEditor. This is the layer where the baseline-drift bug
-// actually manifests, so we drive real SSE `content` pushes through the real
-// session and assert the *remount* path keeps auto-applying. Only the reactflow
-// canvas is stubbed (happy-dom cannot lay it out); everything else is real.
+// End-to-end wiring test: real App → real WorkflowPane → real EditorView →
+// real useEditorSession → (stubbed) WorkflowEditor. This is the layer where
+// the baseline-drift bug actually manifests, so we drive real SSE `content`
+// pushes through the real session and assert the *remount* path keeps
+// auto-applying. Only the reactflow canvas is stubbed (happy-dom cannot lay it
+// out); everything else is real.
+//
+// `App` now renders through `WorkflowPane`, which imports `MonacoJsonViewer`
+// unconditionally — and `MonacoJsonViewer.tsx` calls `getMonacoRuntime()` at
+// MODULE SCOPE on import, so this mock is required even though the JSON tab is
+// never selected here (same discipline as App.test.tsx / AppShell.test.tsx).
+vi.mock("../monacoRuntime.js", () => ({ getMonacoRuntime: vi.fn() }));
+
 let workflowEditorProps: Record<string, unknown> | null = null;
 vi.mock("@cyoda/workflow-react", () => ({
   WorkflowEditor: (props: Record<string, unknown>) => {
@@ -74,6 +82,10 @@ beforeEach(() => {
   workflowEditorProps = null;
   onEventCb = null;
   vi.stubGlobal("localStorage", makeStorage());
+  // App now fetches `/api/index` unconditionally on mount (for the sidebar
+  // picker) — stub it so that call resolves instead of rejecting; this suite
+  // only exercises the SSE-driven content/dirty/banner machinery.
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ workflows: [], entities: [] }) })));
   vi.resetModules();
 });
 
