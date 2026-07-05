@@ -20,6 +20,7 @@ import type { ToolHandler } from "./envelope.js";
 import { listWorkflowsTool } from "./tools/list.js";
 import { showWorkflowTool } from "./tools/show.js";
 import type { ShownPayload } from "./tools/show.js";
+import { getWorkflowTool } from "./tools/get_workflow.js";
 import { updateWorkflowTool } from "./tools/update.js";
 import { validateWorkflowTool } from "./tools/validate.js";
 import { optimizeLayoutTool } from "./tools/optimize_layout.js";
@@ -212,6 +213,7 @@ export async function main(argv: string[]): Promise<void> {
   const tools: Record<string, ToolHandler> = {
     list_workflows: (a) => listWorkflowsTool(a, ctx),
     show_workflow: (a) => showWorkflowTool(a, ctx, setShown),
+    get_workflow: (a) => getWorkflowTool(a, ctx),
     update_workflow: (a) => updateWorkflowTool(a, ctx),
     optimize_layout: (a) => optimizeLayoutTool(a, ctx),
     validate_workflow: (a) => validateWorkflowTool(a, ctx),

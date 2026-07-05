@@ -33,8 +33,9 @@ workflow tools (name = file stem).
 
 Workflows:
 - `list_workflows()` → `{ workflows: [{ name, path, states, transitions, valid }] }`
-- `show_workflow(name)` — render it in the browser + return the parsed document
-- `update_workflow(name, content)` — validated whole-document write + diff (writes nothing on failure)
+- `show_workflow(name)` — render it in the browser + return the parsed document (**canonicalizes**: parse -> serialize renames `operatorType` -> `operation`, drops empty `context`, injects `disabled:false`)
+- `get_workflow(name)` — read the raw on-disk JSON contents, byte-faithfully — no canonicalization (unlike `show_workflow`/`update_workflow`)
+- `update_workflow(name, content)` — validated whole-document write + diff (writes nothing on failure); **canonicalizes** the content before writing, same normalization as `show_workflow`
 - `optimize_layout(name, options?)` — elkjs re-layout; `options`: `{ orientation?, preset?, nodeSize?, pinned? }`
 - `validate_workflow(name)` — diagnostics, read-only
 

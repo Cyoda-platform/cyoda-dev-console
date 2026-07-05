@@ -8,6 +8,10 @@ export const connectionInfoInput = z.object({}).strict();
 export const showWorkflowInput = z.object({ name: z.string().min(1) }).strict();
 export const validateWorkflowInput = z.object({ name: z.string().min(1) }).strict();
 
+/** `get_workflow` — name only, mirrors `getEntityInput`. Raw/byte-faithful read: unlike
+ *  `showWorkflowInput`'s handler, this one never calls parseImport/serializeImport. */
+export const getWorkflowInput = z.object({ name: z.string().min(1) }).strict();
+
 /** `update_workflow` — name + whole-document JSON string (JSON validity is the handler's job). */
 export const updateWorkflowInput = z.object({ name: z.string().min(1), content: z.string() }).strict();
 
@@ -41,6 +45,7 @@ export const layoutPostBody = z
 
 export type ListWorkflowsInput = z.infer<typeof listWorkflowsInput>;
 export type ShowWorkflowInput = z.infer<typeof showWorkflowInput>;
+export type GetWorkflowInput = z.infer<typeof getWorkflowInput>;
 export type UpdateWorkflowInput = z.infer<typeof updateWorkflowInput>;
 export type OptimizeLayoutInput = z.infer<typeof optimizeLayoutInput>;
 export type ValidateWorkflowInput = z.infer<typeof validateWorkflowInput>;
