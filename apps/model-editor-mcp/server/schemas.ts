@@ -61,3 +61,25 @@ export type GetEntityInput = z.infer<typeof getEntityInput>;
 export type CreateEntityInput = z.infer<typeof createEntityInput>;
 export type UpdateEntityInput = z.infer<typeof updateEntityInput>;
 export type DeleteEntityInput = z.infer<typeof deleteEntityInput>;
+
+/** `get_project` — no input. */
+export const getProjectInput = z.object({}).strict();
+
+/**
+ * `configure_project` — updates the session's `workflowGlobs`/`entityGlobs`
+ * (all fields optional; only supplied fields change) and never persists to
+ * disk. `name` is accepted for parity with the parked branch's schema/design
+ * text but is currently a no-op: this headless server has no project-"name"
+ * concept to store it in, and `get_project`'s own return shape (below) has no
+ * `name` field either — it's forward-compatible surface, not a bug.
+ */
+export const configureProjectInput = z
+  .object({
+    name: z.string().min(1).max(200).optional(),
+    workflowGlobs: z.array(z.string()).optional(),
+    entityGlobs: z.array(z.string()).optional(),
+  })
+  .strict();
+
+export type GetProjectInput = z.infer<typeof getProjectInput>;
+export type ConfigureProjectInput = z.infer<typeof configureProjectInput>;
