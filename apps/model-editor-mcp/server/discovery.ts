@@ -67,3 +67,74 @@ export function findByName<T extends { relativePath: string; workflows: { name: 
     entries.find((e) => e.relativePath.replace(/\.json$/, "").split("/").pop() === name)
   );
 }
+
+export interface EntityFileEntry { relativePath: string; name: string }
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function fileStem(relativePath: string): string {
+  return (relativePath.split("/").pop() ?? relativePath).replace(/\.json$/, "");
+}
+
+/**
+ * Narrow-glob entity discovery (design: "glob only `entityGlobs`; take each
+ * matched file that parses to a JSON object as an entity; skip parse-errors" —
+ * deliberately NOT the parked branch's full-tree scan+classify). An entity is a
+ * separate plain-JSON *object* file, never embedded in a workflow; its name is
+ * its file stem, matching the workflow tools' name-based convention. No
+ * `classifyWorkflowFile` call here — that machinery answers "is this a
+ * workflow?", a different question, and running it over every entity file
+ * would be pure waste.
+ */
+export async function discoverEntities(root: string, entityGlobs: string[]): Promise<EntityFileEntry[]> {
+  if (entityGlobs.length === 0) return [];
+  const out: EntityFileEntry[] = [];
+  for await (const abs of walk(root)) {
+    const rel = relative(root, abs).split(sep).join("/");
+    if (!rel.endsWith(".json") || rel.endsWith(".layout.json")) continue;
+    if (!entityGlobs.some((g) => matchGlob(rel, g))) continue;
+    let contents: string;
+    try {
+      contents = (await readConfined(root, rel)).contents;
+    } catch {
+      continue; // vanished mid-scan — same tolerance as discoverWorkflows
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(contents);
+    } catch {
+      process.stderr.write(`[discovery] skipping entity ${rel}: invalid JSON\n`);
+      continue;
+    }
+    if (!isPlainObject(parsed)) continue; // arrays/primitives are not entities
+    out.push({ relativePath: rel, name: fileStem(rel) });
+  }
+  out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  return out;
+}
+
+/** Entities have no declared-name concept distinct from the file stem (unlike
+ *  workflows, which can rename themselves inside the document) — so this is a
+ *  plain stem match, no basename fallback needed. */
+export function findEntityByName(entries: EntityFileEntry[], name: string): EntityFileEntry | undefined {
+  return entries.find((e) => e.name === name);
+}
+
+/**
+ * Derive a NEW entity's destination path from `name` alone. The name-based tool
+ * design (`create_entity(name, content)`, no `path` argument) has no explicit
+ * destination input, so this is the concrete rule that makes it buildable: take
+ * the FIRST configured `entityGlobs` pattern's literal directory prefix — the
+ * path segments before the first one containing a glob wildcard (`*`) — and
+ * join `<name>.json` beneath it.
+ */
+export function resolveEntityCreatePath(entityGlobs: string[], name: string): string {
+  const pattern = entityGlobs[0];
+  if (pattern === undefined) throw new Error("no entityGlobs configured — call configure_project first");
+  const segments = pattern.split("/");
+  const wildcardIdx = segments.findIndex((seg) => seg.includes("*"));
+  const dirSegments = wildcardIdx === -1 ? segments.slice(0, -1) : segments.slice(0, wildcardIdx);
+  return dirSegments.length > 0 ? `${dirSegments.join("/")}/${name}.json` : `${name}.json`;
+}

@@ -32,15 +32,18 @@ export interface Watcher { close(): void }
 /**
  * `node:fs` recursive watch over `root`, scoped/classified via {@link classifyChange} and
  * debounced per (kind, workflowFile) so the several raw fs events one save typically fires
- * collapse into a single `onChange` callback.
+ * collapse into a single `onChange` callback. `getWorkflowGlobs` is called fresh on EVERY fs
+ * event (not read once at construction) so a runtime `configure_project` glob change (see
+ * `context.ts`'s `setGlobs`) takes effect on the very next event, with no need to tear down and
+ * recreate the watcher.
  */
-export function createWatcher(opts: { root: string; workflowGlobs: string[]; onChange: (c: WorkflowChange) => void; debounceMs?: number }): Watcher {
+export function createWatcher(opts: { root: string; getWorkflowGlobs: () => string[]; onChange: (c: WorkflowChange) => void; debounceMs?: number }): Watcher {
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const handle = watch(opts.root, { recursive: true }, (_event, filename) => {
     if (!filename) return;
     const name = filename.toString();
     const abs = isAbsolute(name) ? name : join(opts.root, name);
-    const change = classifyChange(opts.root, abs, opts.workflowGlobs);
+    const change = classifyChange(opts.root, abs, opts.getWorkflowGlobs());
     if (!change) return;
     const key = `${change.kind}:${change.workflowFile}`;
     const prev = timers.get(key);

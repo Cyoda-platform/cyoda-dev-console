@@ -39,7 +39,7 @@ describe("createWatcher", () => {
 
   it("debounces and emits a content change when a workflow file is written", async () => {
     const seen: WorkflowChange[] = [];
-    w = createWatcher({ root, workflowGlobs: ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
+    w = createWatcher({ root, getWorkflowGlobs: () => ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
     await new Promise((r) => setTimeout(r, 50));
     await writeFile(join(root, "Pledge.json"), "{}");
     await new Promise((r) => setTimeout(r, 300));
@@ -48,7 +48,7 @@ describe("createWatcher", () => {
 
   it("emits a layout change for a .layout.json write, distinct from a content change", async () => {
     const seen: WorkflowChange[] = [];
-    w = createWatcher({ root, workflowGlobs: ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
+    w = createWatcher({ root, getWorkflowGlobs: () => ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
     await new Promise((r) => setTimeout(r, 50));
     await writeFile(join(root, "Pledge.layout.json"), "{}");
     await new Promise((r) => setTimeout(r, 300));
@@ -58,7 +58,7 @@ describe("createWatcher", () => {
 
   it("collapses rapid repeated writes to the same file into a single callback (one save -> one push)", async () => {
     const seen: WorkflowChange[] = [];
-    w = createWatcher({ root, workflowGlobs: ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 60 });
+    w = createWatcher({ root, getWorkflowGlobs: () => ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 60 });
     await new Promise((r) => setTimeout(r, 50));
     await writeFile(join(root, "Pledge.json"), "{}");
     await new Promise((r) => setTimeout(r, 10));
@@ -71,7 +71,7 @@ describe("createWatcher", () => {
 
   it("ignores a write to a file outside workflowGlobs", async () => {
     const seen: WorkflowChange[] = [];
-    w = createWatcher({ root, workflowGlobs: ["flows/**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
+    w = createWatcher({ root, getWorkflowGlobs: () => ["flows/**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
     await new Promise((r) => setTimeout(r, 50));
     await writeFile(join(root, "notes.txt"), "hi");
     await writeFile(join(root, "other.json"), "{}");
@@ -81,7 +81,7 @@ describe("createWatcher", () => {
 
   it("stops delivering after close()", async () => {
     const seen: WorkflowChange[] = [];
-    w = createWatcher({ root, workflowGlobs: ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
+    w = createWatcher({ root, getWorkflowGlobs: () => ["**/*.json"], onChange: (c) => seen.push(c), debounceMs: 30 });
     await new Promise((r) => setTimeout(r, 50));
     w.close();
     await writeFile(join(root, "Pledge.json"), "{}");

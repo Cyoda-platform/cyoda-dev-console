@@ -14,10 +14,13 @@ function ctx(files: Record<string, string>): ToolContext {
   const writes: Record<string, string> = {};
   const entry: WorkflowFileIndexEntry = { path: "/r/Pledge.json", relativePath: "Pledge.json", status: "valid-workflow", workflows: [{ name: "Pledge" }], lastModified: "t", sizeBytes: 1 };
   return {
-    root: "/r", workflowGlobs: ["**/*.json"], connectionUrl: "http://127.0.0.1:50000",
+    root: "/r", workflowGlobs: ["**/*.json"], entityGlobs: [], connectionUrl: "http://127.0.0.1:50000",
     read: vi.fn(async (rel: string) => { const c = writes[rel] ?? files[rel]; if (c === undefined) throw new Error("nf"); return { contents: c, lastModified: "t", sizeBytes: c.length }; }),
     write: vi.fn(async (rel: string, contents: string) => { writes[rel] = contents; return { path: `/r/${rel}`, lastModified: "t", sizeBytes: contents.length }; }),
+    deleteFile: vi.fn(async () => {}),
     discover: vi.fn(async () => [entry]),
+    discoverEntities: vi.fn(async () => []),
+    setGlobs: vi.fn(),
     parseImport: parseImportPayload, serializeImport: serializeImportPayload, validate: validateAll,
   };
 }

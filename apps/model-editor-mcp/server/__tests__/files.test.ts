@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile, readFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ConfinementError, readConfined, writeConfined } from "../files.js";
+import { ConfinementError, readConfined, writeConfined, rmConfined } from "../files.js";
 
 let root: string;
 beforeEach(async () => { root = await mkdtemp(join(tmpdir(), "mem-files-")); });
@@ -65,5 +65,28 @@ describe("writeConfined", () => {
     expect(after).toEqual(before);
     expect(after).toHaveLength(0);
     await rm(outside, { recursive: true, force: true });
+  });
+});
+
+describe("rmConfined", () => {
+  it("deletes a file inside the root", async () => {
+    await writeFile(join(root, "e.json"), "{}");
+    await rmConfined(root, "e.json");
+    await expect(readFile(join(root, "e.json"), "utf8")).rejects.toThrow();
+  });
+  it("rejects a traversal path without deleting anything", async () => {
+    await writeFile(join(root, "e.json"), "{}");
+    await expect(rmConfined(root, "../e.json")).rejects.toBeInstanceOf(ConfinementError);
+    expect(await readFile(join(root, "e.json"), "utf8")).toBe("{}"); // untouched
+  });
+  it("rejects deleting a path that symlinks outside the root", async () => {
+    const outside = await mkdtemp(join(tmpdir(), "mem-out-"));
+    await writeFile(join(outside, "secret.json"), "{}");
+    await symlink(join(outside, "secret.json"), join(root, "link.json"));
+    await expect(rmConfined(root, "link.json")).rejects.toBeInstanceOf(ConfinementError);
+    await rm(outside, { recursive: true, force: true });
+  });
+  it("propagates ENOENT for a nonexistent (but confined) path", async () => {
+    await expect(rmConfined(root, "nope.json")).rejects.toThrow();
   });
 });

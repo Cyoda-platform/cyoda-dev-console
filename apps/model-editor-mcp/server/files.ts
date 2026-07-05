@@ -95,3 +95,12 @@ export async function writeConfined(root: string, relativePath: string, contents
   const st = await stat(finalTarget);
   return { path: finalTarget, lastModified: st.mtime.toISOString(), sizeBytes: st.size };
 }
+
+/** Delete `relativePath` inside `root`, confined via `resolveInsideRoot` — the
+ *  same canonicalize+prefix-check every other confined op uses. Existence is the
+ *  CALLER's job (entity tools already check via `findEntityByName` before calling
+ *  this); a nonexistent-but-confined path surfaces as a normal ENOENT. */
+export async function rmConfined(root: string, relativePath: string): Promise<void> {
+  const abs = await resolveInsideRoot(root, relativePath);
+  await rm(abs, { force: false });
+}

@@ -6,6 +6,7 @@ import { randomBytes } from "node:crypto";
 import { synthesizeImportPayload } from "@cyoda/workflow-editor-host/synthesizeImportPayload";
 import { createToolContext } from "./context.js";
 import type { ToolContext } from "./context.js";
+import { DEFAULT_WORKFLOW_GLOBS, DEFAULT_ENTITY_GLOBS, parseGlobsArg } from "./cliArgs.js";
 import { createSseHub } from "./sse.js";
 import type { SseHub } from "./sse.js";
 import { createHttpServer } from "./http.js";
@@ -142,9 +143,13 @@ export async function main(argv: string[]): Promise<void> {
     process.stderr.write(`model-editor-mcp: uncaughtException: ${String((error as Error)?.stack ?? error)}\n`);
   });
 
-  const { values } = parseArgs({ args: argv, options: { project: { type: "string", short: "p" }, globs: { type: "string" } } });
+  const { values } = parseArgs({
+    args: argv,
+    options: { project: { type: "string", short: "p" }, "workflow-globs": { type: "string" }, "entity-globs": { type: "string" } },
+  });
   const root = await realpath(resolve(values.project ?? "."));
-  const workflowGlobs = (values.globs ?? "**/*.json").split(",").map((g) => g.trim()).filter(Boolean);
+  const workflowGlobs = parseGlobsArg(values["workflow-globs"], DEFAULT_WORKFLOW_GLOBS);
+  const entityGlobs = parseGlobsArg(values["entity-globs"], DEFAULT_ENTITY_GLOBS);
 
   const token = randomBytes(16).toString("hex");
   let port: number;
@@ -160,7 +165,7 @@ export async function main(argv: string[]): Promise<void> {
   const connectionUrl = `http://127.0.0.1:${port}/?token=${token}`;
 
   const hub = createSseHub();
-  const ctx = createToolContext({ root, workflowGlobs, connectionUrl });
+  const ctx = createToolContext({ root, workflowGlobs, entityGlobs, connectionUrl });
   const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "web", "dist");
 
   const nextRevision = createRevisionCounter();
@@ -181,7 +186,7 @@ export async function main(argv: string[]): Promise<void> {
 
   const http = createHttpServer({ root, distDir, token, hub, discover: ctx.discover, writeLayout });
   await new Promise<void>((r) => http.listen(port, "127.0.0.1", r));
-  const watcher = createWatcher({ root, workflowGlobs, onChange: (c) => { void onChange(c); } });
+  const watcher = createWatcher({ root, getWorkflowGlobs: () => ctx.workflowGlobs, onChange: (c) => { void onChange(c); } });
   process.on("SIGINT", () => { watcher.close(); http.close(); process.exit(0); });
 
   startMcpServer({ tools, connectionUrl });

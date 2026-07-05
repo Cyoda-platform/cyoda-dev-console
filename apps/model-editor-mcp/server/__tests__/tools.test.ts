@@ -30,6 +30,7 @@ function ctx(files: Record<string, string>, over: Partial<ToolContext> = {}): To
   return {
     root: "/r",
     workflowGlobs: ["**/*.json"],
+    entityGlobs: [],
     connectionUrl: "http://127.0.0.1:50000",
     read: vi.fn(async (rel: string) => {
       const c = writes[rel] ?? files[rel];
@@ -37,7 +38,10 @@ function ctx(files: Record<string, string>, over: Partial<ToolContext> = {}): To
       return { contents: c, lastModified: "t", sizeBytes: c.length };
     }),
     write: vi.fn(async (rel: string, contents: string) => { writes[rel] = contents; return { path: `/r/${rel}`, lastModified: "t", sizeBytes: contents.length }; }),
+    deleteFile: vi.fn(async () => {}),
     discover: vi.fn(async () => [entry()]),
+    discoverEntities: vi.fn(async () => []),
+    setGlobs: vi.fn(),
     parseImport: parseImportPayload,
     serializeImport: serializeImportPayload,
     validate: validateAll,

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { discoverWorkflows, findByName } from "../discovery.js";
+import { discoverWorkflows, findByName, discoverEntities, findEntityByName, resolveEntityCreatePath } from "../discovery.js";
 
 /** Partial mock of `node:fs/promises`: every export passes through to the real
  *  implementation EXCEPT `readdir`, which is intercepted so a specific directory
@@ -67,5 +67,50 @@ describe("findByName", () => {
     const entries = await discoverWorkflows(root, ["**/*.json"]);
     expect(findByName(entries, "Pledge")?.relativePath).toBe("Pledge.json");
     expect(findByName(entries, "nope")).toBeUndefined();
+  });
+});
+
+describe("discoverEntities", () => {
+  it("takes each entityGlobs-matched JSON OBJECT file as an entity, named by file stem", async () => {
+    await mkdir(join(root, "models/schema/v1"), { recursive: true });
+    await writeFile(join(root, "models/schema/v1/CollateralAsset.json"), JSON.stringify({ type: "object", properties: {} }));
+    await writeFile(join(root, "models/schema/v1/NotAnObject.json"), JSON.stringify(["a", "b"]));
+    await writeFile(join(root, "models/schema/v1/Broken.json"), "{not json");
+    await writeFile(join(root, "unrelated.json"), JSON.stringify({ foo: "bar" }));
+    const entities = await discoverEntities(root, ["models/schema/**/*.json"]);
+    expect(entities).toEqual([{ relativePath: "models/schema/v1/CollateralAsset.json", name: "CollateralAsset" }]);
+  });
+  it("returns nothing when entityGlobs is empty — no full-tree fallback", async () => {
+    await writeFile(join(root, "x.json"), JSON.stringify({ a: 1 }));
+    expect(await discoverEntities(root, [])).toEqual([]);
+  });
+  it("excludes node_modules/.git/dist like discoverWorkflows does", async () => {
+    await mkdir(join(root, "node_modules/pkg"), { recursive: true });
+    await writeFile(join(root, "node_modules/pkg/Fake.json"), JSON.stringify({ a: 1 }));
+    expect(await discoverEntities(root, ["**/*.json"])).toEqual([]);
+  });
+});
+
+describe("findEntityByName", () => {
+  it("matches by file stem", () => {
+    const entities = [{ relativePath: "models/schema/v1/CollateralAsset.json", name: "CollateralAsset" }];
+    expect(findEntityByName(entities, "CollateralAsset")?.relativePath).toBe("models/schema/v1/CollateralAsset.json");
+    expect(findEntityByName(entities, "Nope")).toBeUndefined();
+  });
+});
+
+describe("resolveEntityCreatePath", () => {
+  it("derives the literal directory prefix before the first wildcard segment", () => {
+    expect(resolveEntityCreatePath(["models/schema/**/*.json"], "Foo")).toBe("models/schema/Foo.json");
+    expect(resolveEntityCreatePath(["models/schema/v1/*.json"], "Foo")).toBe("models/schema/v1/Foo.json");
+  });
+  it("falls back to the project root when the pattern has no directory", () => {
+    expect(resolveEntityCreatePath(["*.json"], "Foo")).toBe("Foo.json");
+  });
+  it("uses the FIRST configured glob when several are set", () => {
+    expect(resolveEntityCreatePath(["a/*.json", "b/*.json"], "Foo")).toBe("a/Foo.json");
+  });
+  it("throws when no entityGlobs are configured", () => {
+    expect(() => resolveEntityCreatePath([], "Foo")).toThrow();
   });
 });

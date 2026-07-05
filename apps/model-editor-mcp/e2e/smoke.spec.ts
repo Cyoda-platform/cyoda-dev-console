@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { mkdtemp, cp, rm } from "node:fs/promises";
+import { mkdtemp, cp, rm, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -30,8 +30,9 @@ async function waitForUrl(): Promise<string> {
 
 test.beforeAll(async () => {
   fixture = await mkdtemp(join(tmpdir(), "mem-e2e-"));
-  await cp(join(here, "fixtures", "Pledge.json"), join(fixture, "Pledge.json"));
-  await cp(join(here, "fixtures", "LegalEntity.json"), join(fixture, "LegalEntity.json"));
+  await mkdir(join(fixture, "models", "workflow"), { recursive: true });
+  await cp(join(here, "fixtures", "Pledge.json"), join(fixture, "models", "workflow", "Pledge.json"));
+  await cp(join(here, "fixtures", "LegalEntity.json"), join(fixture, "models", "workflow", "LegalEntity.json"));
   child = spawn("node", [serverEntry, "--project", fixture], { stdio: ["pipe", "pipe", "pipe"] });
   rpc("initialize");
 });
