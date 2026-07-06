@@ -2,6 +2,7 @@ import { createInterface } from "node:readline";
 import { makeDispatcher } from "./dispatch.js";
 import type { ToolHandler } from "./envelope.js";
 import { SERVER_NAME, SERVER_VERSION } from "./version.js";
+import { SERVER_INSTRUCTIONS } from "./instructions.js";
 import { TOOL_MANIFEST } from "./manifest.js";
 
 /** Our OWN stdio request shape — deliberately not the contract's `McpToolInput`
@@ -31,7 +32,7 @@ export function startMcpServer(opts: McpServerOptions): void {
 
     switch (req.method) {
       case "initialize":
-        send({ jsonrpc: "2.0", id: req.id, result: { protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: SERVER_NAME, version: SERVER_VERSION } } });
+        send({ jsonrpc: "2.0", id: req.id, result: { protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: SERVER_NAME, version: SERVER_VERSION }, instructions: SERVER_INSTRUCTIONS } });
         return;
       case "notifications/initialized":
         return;

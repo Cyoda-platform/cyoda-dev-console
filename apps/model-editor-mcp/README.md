@@ -12,6 +12,27 @@ validated); the human arranges the canvas
 picker lets you jump between any discovered workflow or entity without asking
 Claude. Ask Claude for the URL any time via `connection_info`.
 
+## Operational model (sent as MCP `instructions`)
+
+On the `initialize` handshake the server returns a concise **`instructions`**
+block (Claude Code loads it once, ≤ 2 KB, and uses it to decide when to reach
+for these tools). It carries the cross-tool guidance below; each tool's own
+specifics live in its description, and this README is the exhaustive reference.
+
+- **Prefer element edits.** For a single change use the atomic, fail-closed
+  element tools — `update_transition`/`add_transition`/`remove_transition`,
+  `add_state`/`remove_state`/`rename_state` — over whole-document
+  `update_workflow`. Each validates the whole document and writes nothing on
+  error, so there is never a need to stage an invalid intermediate.
+- **Order structural edits.** Create a state before adding transitions into it
+  (`add_transition` to a missing target is rejected). `rename_state` cascades
+  every `next`-ref, `initialState`, lifecycle state-criterion, and the saved
+  layout position — use it instead of renaming by hand.
+- **Addressing.** A transition is `(workflow, state, name)`; a state is
+  `(workflow, code)` — the stable keys.
+- **Display & tidy.** `show_workflow`/`show_entity` make the browser show an
+  item; `optimize_layout` re-lays-out after structural edits.
+
 ## Content ownership
 
 Content is single-writer (Claude) throughout: the workflow graph pane warns on
