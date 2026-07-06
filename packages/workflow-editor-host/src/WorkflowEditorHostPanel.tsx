@@ -52,7 +52,11 @@ export function WorkflowEditorHostPanel({
       document={session.document}
       mode="editor"
       developerMode
-      enableJsonEditor
+      // Only surface the editor's built-in JSON tab when a Monaco runtime is
+      // actually configured. Enabling it without one leaves a JSON button that
+      // throws "Monaco runtime not configured" on click (the read-only MCP
+      // viewer passes no config and serves JSON via a separate pane instead).
+      enableJsonEditor={jsonEditorConfig != null}
       jsonEditor={jsonEditorConfig ?? null}
       jsonEditorPlacement="tab"
       localStorageKey={session.layoutKey}
