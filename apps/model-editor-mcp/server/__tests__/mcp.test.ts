@@ -22,10 +22,21 @@ describe("startMcpServer (stdio JSON-RPC)", () => {
       JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize" }),
       JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" }),
     ]);
-    const init = out.find((m) => m.id === 1) as { result: { serverInfo: { name: string } } };
+    const init = out.find((m) => m.id === 1) as { result: { serverInfo: { name: string }; instructions?: string } };
     expect(init.result.serverInfo.name).toBe("model-editor-mcp");
     const list = out.find((m) => m.id === 2) as { result: { tools: { name: string }[] } };
     expect(list.result.tools.map((t) => t.name)).toContain("show_workflow");
+  });
+  it("returns server instructions (operational model) that fit Claude Code's 2 KB budget", async () => {
+    const out = await drive([JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize" })]);
+    const init = out.find((m) => m.id === 1) as { result: { instructions?: string } };
+    const instructions = init.result.instructions;
+    expect(typeof instructions).toBe("string");
+    expect(instructions!.length).toBeGreaterThan(0);
+    // Claude Code truncates server instructions at 2 KB — stay under it.
+    expect(Buffer.byteLength(instructions!, "utf8")).toBeLessThanOrEqual(2048);
+    // Carries the load-bearing rule (prefer atomic, fail-closed element edits).
+    expect(instructions!).toContain("fail-closed");
   });
   it("dispatches tools/call and returns the tool's result unmodified — no blanket _connection injection", async () => {
     const out = await drive([JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "show_workflow", arguments: { name: "Pledge" } } })]);
