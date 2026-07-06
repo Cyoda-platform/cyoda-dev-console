@@ -11,6 +11,16 @@ import type { WorkflowUiMeta } from "@cyoda/workflow-core";
 interface WorkflowEditorHostPanelProps {
   session: EditorSession;
   jsonEditorConfig?: WorkflowJsonEditorConfig | null;
+  /**
+   * Whether to surface the editor's built-in, EDITABLE full-document JSON tab
+   * (default true). The Monaco runtime in `jsonEditorConfig` also powers the
+   * inspector's read/edit JSON fields (annotations, criteria), which are useful
+   * independently of that tab — so a consumer can supply a runtime for those
+   * while setting `enableJsonEditor={false}` to keep the editable tab off (the
+   * read-only MCP shell does exactly this; its full-document JSON lives in a
+   * separate read-only pane).
+   */
+  enableJsonEditor?: boolean;
   onSaveRequest?: () => void;
   onWorkflowUiChange?: (workflowUi: Record<string, WorkflowUiMeta>) => void;
 }
@@ -18,6 +28,7 @@ interface WorkflowEditorHostPanelProps {
 export function WorkflowEditorHostPanel({
   session,
   jsonEditorConfig,
+  enableJsonEditor = true,
   onSaveRequest,
   onWorkflowUiChange,
 }: WorkflowEditorHostPanelProps) {
@@ -52,11 +63,14 @@ export function WorkflowEditorHostPanel({
       document={session.document}
       mode="editor"
       developerMode
-      // Only surface the editor's built-in JSON tab when a Monaco runtime is
-      // actually configured. Enabling it without one leaves a JSON button that
-      // throws "Monaco runtime not configured" on click (the read-only MCP
-      // viewer passes no config and serves JSON via a separate pane instead).
-      enableJsonEditor={jsonEditorConfig != null}
+      // The editable built-in JSON tab requires BOTH a Monaco runtime AND the
+      // consumer opting in: enabling it without a runtime leaves a JSON button
+      // that throws "Monaco runtime not configured" on click, and a consumer
+      // may supply a runtime (for the inspector's Monaco fields) yet still want
+      // the editable full-document tab off. `jsonEditor` (below) is passed
+      // whenever a runtime exists, so the inspector's annotations/criteria
+      // render in Monaco even when this tab is disabled.
+      enableJsonEditor={enableJsonEditor && jsonEditorConfig != null}
       jsonEditor={jsonEditorConfig ?? null}
       jsonEditorPlacement="tab"
       localStorageKey={session.layoutKey}
