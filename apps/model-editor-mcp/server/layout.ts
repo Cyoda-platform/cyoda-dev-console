@@ -91,3 +91,46 @@ export async function loadRemappedLayout(
     ? remapLayoutUuids(workflowUi, _transitionIds as Record<string, TransitionPointer>, currentIds)
     : workflowUi;
 }
+
+type SidecarIO = Pick<ToolContext, "read" | "write">;
+
+function sidecarRelFor(contentRel: string): string {
+  return contentRel.replace(/\.json$/, ".layout.json");
+}
+
+/** Best-effort read→mutate→write of one workflow's `layout.nodes` state key.
+ *  Never throws: a missing/corrupt sidecar or a failed write is logged and swallowed
+ *  (the content edit already succeeded; the state just loses its saved position). */
+async function mutateSidecarNodes(io: SidecarIO, contentRel: string, workflowName: string, mutate: (nodes: Record<string, unknown>) => boolean): Promise<void> {
+  const rel = sidecarRelFor(contentRel);
+  let raw: string;
+  try { raw = (await io.read(rel)).contents; } catch { return; } // no sidecar → nothing to migrate
+  let parsed: Record<string, { layout?: { nodes?: Record<string, unknown> } }>;
+  try { parsed = JSON.parse(raw); } catch { return; } // corrupt → leave it untouched
+  const nodes = parsed[workflowName]?.layout?.nodes;
+  if (!nodes) return;
+  if (!mutate(nodes)) return; // nothing changed
+  try { await io.write(rel, JSON.stringify(parsed, null, 2)); }
+  catch (e) { process.stderr.write(`[patch] sidecar update failed for ${rel}: ${String(e)}\n`); }
+}
+
+/** Best-effort: migrates `layout.nodes[oldCode]` → `[newCode]` in the workflow's
+ *  `.layout.json` sidecar. Never throws — see {@link mutateSidecarNodes}. */
+export async function renameSidecarStateNode(io: SidecarIO, contentRel: string, workflowName: string, oldCode: string, newCode: string): Promise<void> {
+  await mutateSidecarNodes(io, contentRel, workflowName, (nodes) => {
+    if (!(oldCode in nodes)) return false;
+    nodes[newCode] = nodes[oldCode];
+    delete nodes[oldCode];
+    return true;
+  });
+}
+
+/** Best-effort: deletes `layout.nodes[code]` in the workflow's `.layout.json`
+ *  sidecar. Never throws — see {@link mutateSidecarNodes}. */
+export async function removeSidecarStateNode(io: SidecarIO, contentRel: string, workflowName: string, code: string): Promise<void> {
+  await mutateSidecarNodes(io, contentRel, workflowName, (nodes) => {
+    if (!(code in nodes)) return false;
+    delete nodes[code];
+    return true;
+  });
+}

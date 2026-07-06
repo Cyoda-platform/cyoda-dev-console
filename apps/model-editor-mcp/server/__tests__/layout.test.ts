@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mergeLayout, remapLayoutUuids, loadRemappedLayout } from "../layout.js";
+import { mergeLayout, remapLayoutUuids, loadRemappedLayout, renameSidecarStateNode, removeSidecarStateNode } from "../layout.js";
 import type { ToolContext } from "../context.js";
 
 /** Minimal ToolContext whose `read` returns canned contents (or throws). `loadRemappedLayout`
@@ -99,5 +99,35 @@ describe("loadRemappedLayout", () => {
     expect(out.Pledge!.transitionPositions).toEqual({ keepme: { x: 3, y: 4 } });
     expect(out.Pledge!.layout).toEqual({ nodes: { none: { x: 0, y: 0 } } });
     expect(out).not.toHaveProperty("_transitionIds");
+  });
+});
+
+describe("sidecar state-node helpers", () => {
+  function io(store: Record<string, string>) {
+    return {
+      read: async (rel: string) => { if (!(rel in store)) throw new Error("ENOENT"); return { contents: store[rel]!, lastModified: "t", sizeBytes: 0 }; },
+      write: async (rel: string, c: string) => { store[rel] = c; return { path: rel, lastModified: "t", sizeBytes: 0 }; },
+    };
+  }
+  it("rename migrates layout.nodes[old]→[new], preserving _transitionIds + other keys", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ _transitionIds: { u1: { workflow: "Order", state: "draft", transitionUuid: "u1" } }, Order: { layout: { nodes: { draft: { x: 1, y: 2 }, done: { x: 3, y: 4 } } } } }) };
+    await renameSidecarStateNode(io(store), "Order.json", "Order", "draft", "cart");
+    const p = JSON.parse(store["Order.layout.json"]!);
+    expect(p.Order.layout.nodes.cart).toEqual({ x: 1, y: 2 });
+    expect(p.Order.layout.nodes.draft).toBeUndefined();
+    expect(p.Order.layout.nodes.done).toEqual({ x: 3, y: 4 });
+    expect(p._transitionIds).toBeTruthy();
+  });
+  it("rename is a no-op when there is no sidecar file (never throws)", async () => {
+    const store: Record<string, string> = {};
+    await expect(renameSidecarStateNode(io(store), "Order.json", "Order", "draft", "cart")).resolves.toBeUndefined();
+    expect(store["Order.layout.json"]).toBeUndefined();
+  });
+  it("remove deletes layout.nodes[code], preserving the rest", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ Order: { layout: { nodes: { draft: { x: 1, y: 2 }, done: { x: 3, y: 4 } } } } }) };
+    await removeSidecarStateNode(io(store), "Order.json", "Order", "draft");
+    const p = JSON.parse(store["Order.layout.json"]!);
+    expect(p.Order.layout.nodes.draft).toBeUndefined();
+    expect(p.Order.layout.nodes.done).toEqual({ x: 3, y: 4 });
   });
 });
