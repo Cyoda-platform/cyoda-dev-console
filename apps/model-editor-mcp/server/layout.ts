@@ -107,8 +107,9 @@ async function mutateSidecarNodes(io: SidecarIO, contentRel: string, workflowNam
   try { raw = (await io.read(rel)).contents; } catch { return; } // no sidecar → nothing to migrate
   let parsed: Record<string, { layout?: { nodes?: Record<string, unknown> } }>;
   try { parsed = JSON.parse(raw); } catch { return; } // corrupt → leave it untouched
+  if (typeof parsed !== "object" || parsed === null) return; // not a valid sidecar shape (e.g. `null`, array, primitive)
   const nodes = parsed[workflowName]?.layout?.nodes;
-  if (!nodes) return;
+  if (!nodes || typeof nodes !== "object") return;
   if (!mutate(nodes)) return; // nothing changed
   try { await io.write(rel, JSON.stringify(parsed, null, 2)); }
   catch (e) { process.stderr.write(`[patch] sidecar update failed for ${rel}: ${String(e)}\n`); }
