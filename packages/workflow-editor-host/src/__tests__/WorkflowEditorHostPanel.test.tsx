@@ -124,12 +124,13 @@ describe("WorkflowEditorHostPanel — editor JSON-tab gating", () => {
   // built-in tab, its read-only JSON lives in a separate pane).
   beforeEach(() => vi.mocked(WorkflowEditor).mockClear());
 
-  function renderValid(jsonEditorConfig?: unknown) {
+  function renderValid(jsonEditorConfig?: unknown, enableJsonEditor?: boolean) {
     render(
       <ThemeProvider>
         <WorkflowEditorHostPanel
           session={makeSession({ parseOk: true, document: {} as unknown as WorkflowEditorDocument })}
           jsonEditorConfig={jsonEditorConfig as never}
+          enableJsonEditor={enableJsonEditor as never}
         />
       </ThemeProvider>,
     );
@@ -141,10 +142,19 @@ describe("WorkflowEditorHostPanel — editor JSON-tab gating", () => {
     expect(props?.enableJsonEditor).toBe(false);
   });
 
-  it("enables the editor's built-in JSON tab when a jsonEditorConfig is provided", () => {
+  it("enables the editor's built-in JSON tab by default when a jsonEditorConfig is provided", () => {
     const config = { monaco: {} };
     const props = renderValid(config);
     expect(props?.enableJsonEditor).toBe(true);
+    expect(props?.jsonEditor).toEqual(config);
+  });
+
+  it("passes the runtime for the inspector but keeps the editable tab off when enableJsonEditor={false}", () => {
+    // The read-only MCP shell case: supply a Monaco runtime (so the inspector's
+    // annotations/criteria render in Monaco) but disable the editable full-document tab.
+    const config = { monaco: {} };
+    const props = renderValid(config, false);
+    expect(props?.enableJsonEditor).toBe(false);
     expect(props?.jsonEditor).toEqual(config);
   });
 });

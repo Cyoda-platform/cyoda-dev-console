@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { WorkflowUiMeta } from "@cyoda/workflow-core";
 import { parseImportPayload } from "@cyoda/workflow-core";
+import type { WorkflowJsonEditorConfig } from "@cyoda/workflow-react";
 import { useEditorSession, WorkflowEditorHostPanel, ExternalChangeBanner } from "@cyoda/workflow-editor-host";
+import { getMonacoRuntime } from "./monacoRuntime.js";
 
 export function EditorView({
   token, origin, workflow, content, layout, layoutRev, externalContent, onDismissExternal, onDirtyChange,
@@ -22,6 +24,14 @@ export function EditorView({
   }), []);
 
   const session = useEditorSession({ projectId: "model-editor", filePath: `${workflow}.json`, initialContents: content, io });
+
+  // Supply the Monaco runtime so the inspector's annotations/criteria JSON
+  // fields render in a Monaco editor (formatted) rather than a plain textarea —
+  // but keep the editable full-document JSON tab OFF (`enableJsonEditor={false}`
+  // below): content is Claude-owned and the read-only JSON lives in the separate
+  // MonacoJsonViewer pane. Memoized so the config identity is stable across
+  // renders (a fresh object would remount the inspector's Monaco panes).
+  const jsonEditorConfig = useMemo<WorkflowJsonEditorConfig>(() => ({ monaco: getMonacoRuntime() }), []);
 
   // Report the session's dirty flag up to App, which uses it to decide — on a
   // content push — between silently remounting this component on Claude's new
@@ -84,6 +94,8 @@ export function EditorView({
         {layoutReady ? (
           <WorkflowEditorHostPanel
             session={session}
+            jsonEditorConfig={jsonEditorConfig}
+            enableJsonEditor={false}
             onWorkflowUiChange={onWorkflowUiChange}
             onSaveRequest={() => window.alert("Content changes go through Claude — layout drags persist, content edits do not.")}
           />

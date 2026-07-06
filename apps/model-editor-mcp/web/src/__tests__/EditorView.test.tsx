@@ -22,6 +22,11 @@ vi.mock("@cyoda/workflow-react", () => ({
   },
 }));
 
+// `EditorView` now builds a `jsonEditorConfig` from `getMonacoRuntime()`, which
+// pulls in `monaco-editor` + `?worker` imports that don't load under happy-dom —
+// mock it the way the other web shell tests do.
+vi.mock("../monacoRuntime.js", () => ({ getMonacoRuntime: vi.fn(() => ({ __marker: "monaco-runtime" })) }));
+
 const fixture = JSON.stringify({
   importMode: "MERGE",
   workflows: [
@@ -92,6 +97,18 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe("EditorView — inspector Monaco (read-only shell)", () => {
+  it("supplies a Monaco runtime to the editor but keeps the editable JSON tab off", () => {
+    wrap();
+    expect(workflowEditorProps).not.toBeNull();
+    // Editable full-document JSON tab stays OFF — content is Claude-owned.
+    expect(workflowEditorProps!.enableJsonEditor).toBe(false);
+    // ...but a runtime IS provided so the inspector's annotations/criteria render
+    // in Monaco (formatted) instead of a plain textarea.
+    expect(workflowEditorProps!.jsonEditor).toEqual({ monaco: { __marker: "monaco-runtime" } });
+  });
 });
 
 describe("EditorView — layout seeding", () => {
