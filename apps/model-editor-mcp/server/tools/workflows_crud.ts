@@ -1,4 +1,4 @@
-import { ok, err } from "../envelope.js";
+import { ok, err, validationFailed } from "../envelope.js";
 import type { McpResult } from "../envelope.js";
 import type { ToolContext } from "../context.js";
 import { createWorkflowInput, deleteWorkflowInput } from "../schemas.js";
@@ -36,7 +36,7 @@ export async function createWorkflowTool(args: unknown, ctx: ToolContext): Promi
   // diagnostic from here alone, same rule `update_workflow` follows (see its comment).
   const parsed = ctx.parseImport(content);
   if (!parsed.document || parsed.issues.some((i) => i.severity === "error")) {
-    return { content: [{ type: "text", text: `VALIDATION_FAILED: ${JSON.stringify(parsed.issues)}` }], isError: true, structuredContent: { code: "VALIDATION_FAILED", diagnostics: parsed.issues } };
+    return validationFailed(parsed.issues);
   }
 
   const canonical = ctx.serializeImport(parsed.document);
