@@ -29,7 +29,7 @@ Every content/discovery tool call re-walks the project tree from scratch
 `workflowGlobs`/`entityGlobs` (defaults: `models/workflow/**/*.json`,
 `models/schema/**/*.json` — override with `--workflow-globs`/`--entity-globs`
 at startup, or mid-session via `configure_project`). Only `connection_info`
-and `configure_project` (2 of 18 tools) never discover. A file created,
+and `configure_project` (2 of 24 tools) never discover. A file created,
 edited, or renamed on disk is picked up on the very next tool call. An
 **entity** is a separate plain-JSON *object* file (never embedded in a
 workflow); entity tools are name-based, exactly like the workflow tools
@@ -59,11 +59,11 @@ normalize toward.
 
 ## Tools
 
-18 tools, grouped below (see `server/manifest.ts`'s `TOOL_MANIFEST` for the
+24 tools, grouped below (see `server/manifest.ts`'s `TOOL_MANIFEST` for the
 authoritative list + full JSON-Schema input shapes — it's what's actually
 advertised to Claude).
 
-Workflows (9):
+Workflows (15):
 - `list_workflows()` → `{ workflows: [{ name, path, states, transitions, valid, reason? }] }` — `reason` is present ONLY when `valid` is `false` (the first error-severity diagnostic's message, or a short parse-failure note), so you can learn why a workflow is invalid without a separate `validate_workflow` round-trip
 - `show_workflow(name)` — render it in the browser + return the parsed document (**canonicalizes**: parse -> serialize renames `operatorType` -> `operation`, drops empty `context`, injects `disabled:false`)
 - `get_workflow(name)` — read the raw on-disk JSON contents, byte-faithfully — no canonicalization (unlike `show_workflow`/`update_workflow`/`create_workflow`)
@@ -73,6 +73,14 @@ Workflows (9):
 - `optimize_layout(name, options?)` — elkjs re-layout, persisted to the workflow's `.layout.json` sidecar (and pushed live to the browser via the file-watcher, not in the tool response). `options.orientation`: `"vertical"` top-to-bottom (default) or `"horizontal"` left-to-right. `options.preset`: `"websiteCompact"` (tight horizontal flow for docs embeds), `"configuratorReadable"` (balanced vertical flow for editors), or `"opsAudit"` (spread layout for ops dashboards). `options.nodeSize`/`options.pinned` override box size / fix specific node coordinates. Returns a lean `{ name, path, ok, nodeCount }` — no positions blob.
 - `validate_workflow(name)` — diagnostics, read-only
 - `validate_workflows()` — batch form of `validate_workflow`: validates EVERY discovered workflow in one call, `{ workflows: [{ name, valid, diagnostics }] }` (one entry per discovered workflow; an unreadable/unparseable file yields `valid:false` with empty `diagnostics` rather than failing the whole call). Read-only.
+- `update_transition(workflow, state, name, patch)` — patch one transition (addressed by the `(workflow, state, name)` tuple). `patch` sets any subset of `{ name, next, manual, disabled, criterion, processors, schedule, annotations }`; provided fields replace (nested values wholesale), omitted are preserved; `patch.name` renames. Writes nothing on validation failure. A rename does not auto-update lifecycle `previousTransition` references — it returns a warning.
+- `add_transition(workflow, state, transition)` — append a new transition (`transition` requires `name` + `next` + `manual`). `ALREADY_EXISTS` on a duplicate name in the state.
+- `remove_transition(workflow, state, name)` — remove the addressed transition.
+- `add_state(workflow, code, state?)` — add a new state (optionally seeded with transitions). `ALREADY_EXISTS` on a duplicate code.
+- `remove_state(workflow, code)` — remove a state; rejects if any `next`, the `initialState`, or a lifecycle state-criterion still references it. Also drops its saved layout position.
+- `rename_state(workflow, oldCode, newCode)` — rename a state code, cascading every `next`, `initialState`, and lifecycle state-criterion, and migrating its saved layout position.
+
+Element edits are Claude-owned like all content edits; each writes only the content file (plus, for state rename/remove, a best-effort layout-sidecar node migration) and live-pushes to the browser. To clear an optional transition field, use whole-doc `update_workflow`.
 
 Entities (separate plain-JSON object files; name = file stem; render in the
 browser as a **JSON tree**, never a diagram) (6):
