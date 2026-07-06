@@ -8,12 +8,16 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** `list_entities()` → `{ entities: [{ name, path }] }`. */
+/** `list_entities()` → `{ entities: [{ name, path, lastModified, sizeBytes }] }`. `lastModified`/
+ *  `sizeBytes` come straight from `discoverEntities`' own confined read during discovery — no
+ *  extra per-entity read here. */
 export async function listEntitiesTool(args: unknown, ctx: ToolContext): Promise<McpResult> {
   const input = listEntitiesInput.safeParse(args);
   if (!input.success) throw err("INVALID_ARGS", input.error.message);
   const entries = await ctx.discoverEntities();
-  return ok({ entities: entries.map((e) => ({ name: e.name, path: e.relativePath })) });
+  return ok({
+    entities: entries.map((e) => ({ name: e.name, path: e.relativePath, lastModified: e.lastModified, sizeBytes: e.sizeBytes })),
+  });
 }
 
 /** `get_entity(name)` — read a single entity's raw JSON contents. */
@@ -44,10 +48,13 @@ export async function createEntityTool(args: unknown, ctx: ToolContext): Promise
   try { parsed = JSON.parse(content); } catch { throw err("INVALID_JSON", `content for "${name}" is not valid JSON`); }
   if (!isPlainObject(parsed)) throw err("INVALID_JSON", `content for "${name}" must be a JSON object`);
 
-  const existing = findEntityByName(await ctx.discoverEntities(), name);
+  const discovered = await ctx.discoverEntities();
+  const existing = findEntityByName(discovered, name);
   if (existing) throw err("ALREADY_EXISTS", `an entity named "${name}" already exists at "${existing.relativePath}"`);
 
-  const path = resolveEntityCreatePath(ctx.entityGlobs, name);
+  // Reuse `discovered` (already fetched for the existence check above) rather than discovering
+  // again — it's also what tells the resolver where the existing entities actually live.
+  const path = resolveEntityCreatePath(ctx.entityGlobs, name, discovered);
 
   let occupied = true;
   try { await ctx.read(path); } catch { occupied = false; }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   listWorkflowsInput, showWorkflowInput, updateWorkflowInput,
-  optimizeLayoutInput, validateWorkflowInput, connectionInfoInput, layoutPostBody,
+  optimizeLayoutInput, validateWorkflowInput, validateWorkflowsInput, connectionInfoInput, layoutPostBody,
   showEntityInput,
 } from "../schemas.js";
 
@@ -22,6 +22,14 @@ describe("showWorkflowInput / validateWorkflowInput", () => {
     expect(showWorkflowInput.safeParse({}).success).toBe(false);
     expect(showWorkflowInput.safeParse({ name: "P", extra: 1 }).success).toBe(false);
     expect(validateWorkflowInput.safeParse({ name: "P", extra: 1 }).success).toBe(false);
+  });
+});
+
+describe("validateWorkflowsInput", () => {
+  it("accepts the empty object and rejects unknown props", () => {
+    expect(validateWorkflowsInput.safeParse({}).success).toBe(true);
+    expect(validateWorkflowsInput.safeParse({ name: "P" }).success).toBe(false);
+    expect(validateWorkflowsInput.safeParse({ extra: 1 }).success).toBe(false);
   });
 });
 

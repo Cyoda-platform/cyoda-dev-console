@@ -4,7 +4,7 @@ import type { WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import type { ToolContext } from "../context.js";
 import { listWorkflowsTool } from "../tools/list.js";
 import { showWorkflowTool } from "../tools/show.js";
-import { validateWorkflowTool } from "../tools/validate.js";
+import { validateWorkflowTool, validateWorkflowsTool } from "../tools/validate.js";
 import { updateWorkflowTool } from "../tools/update.js";
 
 const PLEDGE = JSON.stringify({
@@ -18,6 +18,14 @@ const DANGLING = JSON.stringify({
   importMode: "MERGE",
   workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true,
     states: { none: { transitions: [{ name: "create", next: "ghost", manual: false, disabled: false }] } } }],
+});
+
+/** Schema-valid but semantically invalid, declared name "Ghost" (distinct from PLEDGE/DANGLING's
+ *  "Pledge") so a list/batch test can carry one valid + one invalid workflow without name collision. */
+const GHOST_DANGLING = JSON.stringify({
+  importMode: "MERGE",
+  workflows: [{ version: "1", name: "Ghost", initialState: "none", active: true,
+    states: { none: { transitions: [{ name: "create", next: "vanished", manual: false, disabled: false }] } } }],
 });
 
 function entry(over: Partial<WorkflowFileIndexEntry> = {}): WorkflowFileIndexEntry {
@@ -57,6 +65,54 @@ describe("listWorkflowsTool", () => {
   });
   it("rejects unknown args", async () => {
     await expect(listWorkflowsTool({ x: 1 }, ctx({}))).rejects.toMatchObject({ isError: true });
+  });
+  it("attaches a non-empty reason to an invalid workflow's entry and omits reason entirely for a valid one", async () => {
+    const c = ctx(
+      { "Pledge.json": PLEDGE, "Bad.json": GHOST_DANGLING },
+      { discover: vi.fn(async () => [entry(), entry({ relativePath: "Bad.json", workflows: [{ name: "Ghost" }] })]) },
+    );
+    const r = await listWorkflowsTool({}, c);
+    const out = JSON.parse(r.content[0]!.text) as { workflows: Array<{ name: string; valid: boolean; reason?: string }> };
+    const good = out.workflows.find((w) => w.name === "Pledge")!;
+    const bad = out.workflows.find((w) => w.name === "Ghost")!;
+    expect(good.valid).toBe(true);
+    expect(good).not.toHaveProperty("reason");
+    expect(bad.valid).toBe(false);
+    expect(typeof bad.reason).toBe("string");
+    expect(bad.reason!.length).toBeGreaterThan(0);
+  });
+});
+
+describe("validateWorkflowsTool", () => {
+  it("returns one entry per discovered workflow, each carrying the same { name, valid, diagnostics } shape as validate_workflow", async () => {
+    const c = ctx(
+      { "Pledge.json": PLEDGE, "Bad.json": GHOST_DANGLING },
+      { discover: vi.fn(async () => [entry(), entry({ relativePath: "Bad.json", workflows: [{ name: "Ghost" }] })]) },
+    );
+    const r = await validateWorkflowsTool({}, c);
+    expect(r.isError).toBeFalsy();
+    const out = JSON.parse(r.content[0]!.text) as { workflows: Array<{ name: string; valid: boolean; diagnostics: unknown[] }> };
+    expect(out.workflows).toHaveLength(2);
+    const pledge = out.workflows.find((w) => w.name === "Pledge");
+    const ghost = out.workflows.find((w) => w.name === "Ghost");
+    expect(pledge?.valid).toBe(true);
+    expect(ghost?.valid).toBe(false);
+    expect(ghost?.diagnostics.length).toBeGreaterThan(0);
+  });
+  it("does not fail the whole batch when one discovered file is unreadable", async () => {
+    const c = ctx(
+      { "Pledge.json": PLEDGE },
+      { discover: vi.fn(async () => [entry(), entry({ relativePath: "Missing.json", workflows: [{ name: "Missing" }] })]) },
+    );
+    const r = await validateWorkflowsTool({}, c);
+    expect(r.isError).toBeFalsy();
+    const out = JSON.parse(r.content[0]!.text) as { workflows: Array<{ name: string; valid: boolean; diagnostics: unknown[] }> };
+    expect(out.workflows).toHaveLength(2);
+    const missing = out.workflows.find((w) => w.name === "Missing");
+    expect(missing).toEqual({ name: "Missing", valid: false, diagnostics: [] });
+  });
+  it("rejects unknown args", async () => {
+    await expect(validateWorkflowsTool({ x: 1 }, ctx({}))).rejects.toMatchObject({ isError: true });
   });
 });
 

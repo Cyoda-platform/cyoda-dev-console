@@ -10,7 +10,7 @@ import { createSseHub } from "../sse.js";
 
 let dist: string, server: ReturnType<typeof createHttpServer>, base: string;
 let writeLayout: Mock<(name: string, workflowUi: Record<string, unknown>, origin: string) => Promise<void>>;
-let discoverEntities: Mock<() => Promise<{ relativePath: string; name: string }[]>>;
+let discoverEntities: Mock<() => Promise<{ relativePath: string; name: string; lastModified: string; sizeBytes: number }[]>>;
 let readWorkflow: Mock<(name: string) => Promise<{ name: string; path: string; content: string; layout: Record<string, unknown> } | null>>;
 let readEntity: Mock<(name: string) => Promise<{ name: string; path: string; contents: string; lastModified: string } | null>>;
 
@@ -33,7 +33,7 @@ beforeEach(async () => {
   dist = await mkdtemp(join(tmpdir(), "mem-dist-"));
   await writeFile(join(dist, "index.html"), "<html>tok=__SESSION_TOKEN__</html>");
   writeLayout = vi.fn(async () => {});
-  discoverEntities = vi.fn(async () => [{ relativePath: "models/schema/Foo.json", name: "Foo" }]);
+  discoverEntities = vi.fn(async () => [{ relativePath: "models/schema/Foo.json", name: "Foo", lastModified: "t", sizeBytes: 1 }]);
   readWorkflow = vi.fn(async (name: string) => (name === "Pledge" ? { name: "Pledge", path: "Pledge.json", content: '{"workflows":[]}', layout: {} } : null));
   readEntity = vi.fn(async (name: string) => (name === "Foo" ? { name: "Foo", path: "models/schema/Foo.json", contents: '{"a":1}', lastModified: "2024-01-01T00:00:00.000Z" } : null));
   server = createHttpServer({

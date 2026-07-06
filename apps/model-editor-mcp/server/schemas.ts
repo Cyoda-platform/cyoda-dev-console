@@ -8,6 +8,10 @@ export const connectionInfoInput = z.object({}).strict();
 export const showWorkflowInput = z.object({ name: z.string().min(1) }).strict();
 export const validateWorkflowInput = z.object({ name: z.string().min(1) }).strict();
 
+/** `validate_workflows` — batch form of `validate_workflow`, no args (YAGNI on a name filter:
+ *  add one later if a caller actually needs to validate a subset). */
+export const validateWorkflowsInput = z.object({}).strict();
+
 /** `get_workflow` — name only, mirrors `getEntityInput`. Raw/byte-faithful read: unlike
  *  `showWorkflowInput`'s handler, this one never calls parseImport/serializeImport. */
 export const getWorkflowInput = z.object({ name: z.string().min(1) }).strict();
@@ -58,6 +62,7 @@ export type CreateWorkflowInput = z.infer<typeof createWorkflowInput>;
 export type DeleteWorkflowInput = z.infer<typeof deleteWorkflowInput>;
 export type OptimizeLayoutInput = z.infer<typeof optimizeLayoutInput>;
 export type ValidateWorkflowInput = z.infer<typeof validateWorkflowInput>;
+export type ValidateWorkflowsInput = z.infer<typeof validateWorkflowsInput>;
 export type LayoutPostBody = z.infer<typeof layoutPostBody>;
 
 /** `list_entities` — no input. */
@@ -101,3 +106,49 @@ export const configureProjectInput = z
 
 export type GetProjectInput = z.infer<typeof getProjectInput>;
 export type ConfigureProjectInput = z.infer<typeof configureProjectInput>;
+
+/** Loose transition body — deep grammar enforced at apply-time by the §5 re-parse gate. */
+const transitionBody = z.object({
+  name: z.string().min(1).optional(),
+  next: z.string().min(1).optional(),
+  manual: z.boolean().optional(),
+  disabled: z.boolean().optional(),
+  criterion: z.record(z.string(), z.unknown()).optional(),
+  processors: z.array(z.record(z.string(), z.unknown())).optional(),
+  schedule: z.record(z.string(), z.unknown()).optional(),
+  annotations: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+
+/** A NEW transition must supply the model's required fields (manual has no default). */
+const newTransitionBody = transitionBody.extend({
+  name: z.string().min(1),
+  next: z.string().min(1),
+  manual: z.boolean(),
+}).strict();
+
+/** `update_transition` — shallow field-merge onto the addressed transition (nested fields replace wholesale). */
+export const updateTransitionInput = z.object({ workflow: z.string().min(1), state: z.string().min(1), name: z.string().min(1), patch: transitionBody }).strict();
+/** `add_transition` — append a new transition; requires name + next + manual. */
+export const addTransitionInput = z.object({ workflow: z.string().min(1), state: z.string().min(1), transition: newTransitionBody }).strict();
+/** `remove_transition` — delete a transition, addressed by (workflow, state, name). */
+export const removeTransitionInput = z.object({ workflow: z.string().min(1), state: z.string().min(1), name: z.string().min(1) }).strict();
+export type UpdateTransitionInput = z.infer<typeof updateTransitionInput>;
+export type AddTransitionInput = z.infer<typeof addTransitionInput>;
+export type RemoveTransitionInput = z.infer<typeof removeTransitionInput>;
+
+/** Loose state body for `add_state` — deep grammar (including any seeded transitions'
+ *  required name+next+manual) enforced at apply-time by the §5 re-parse gate. */
+const stateBody = z.object({
+  transitions: z.array(newTransitionBody).optional(),
+  annotations: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+
+/** `add_state` — new state, optionally seeded; ALREADY_EXISTS on a duplicate code. */
+export const addStateInput = z.object({ workflow: z.string().min(1), code: z.string().min(1), state: stateBody.optional() }).strict();
+/** `remove_state` — delete a state, addressed by code. */
+export const removeStateInput = z.object({ workflow: z.string().min(1), code: z.string().min(1) }).strict();
+/** `rename_state` — cascading rename, addressed by (oldCode -> newCode). */
+export const renameStateInput = z.object({ workflow: z.string().min(1), oldCode: z.string().min(1), newCode: z.string().min(1) }).strict();
+export type AddStateInput = z.infer<typeof addStateInput>;
+export type RemoveStateInput = z.infer<typeof removeStateInput>;
+export type RenameStateInput = z.infer<typeof renameStateInput>;

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { mergeLayout, remapLayoutUuids, loadRemappedLayout } from "../layout.js";
+import { describe, it, expect, vi } from "vitest";
+import { mergeLayout, remapLayoutUuids, loadRemappedLayout, renameSidecarStateNode, removeSidecarStateNode } from "../layout.js";
 import type { ToolContext } from "../context.js";
 
 /** Minimal ToolContext whose `read` returns canned contents (or throws). `loadRemappedLayout`
@@ -99,5 +99,78 @@ describe("loadRemappedLayout", () => {
     expect(out.Pledge!.transitionPositions).toEqual({ keepme: { x: 3, y: 4 } });
     expect(out.Pledge!.layout).toEqual({ nodes: { none: { x: 0, y: 0 } } });
     expect(out).not.toHaveProperty("_transitionIds");
+  });
+});
+
+describe("sidecar state-node helpers", () => {
+  function io(store: Record<string, string>) {
+    return {
+      read: async (rel: string) => { if (!(rel in store)) throw new Error("ENOENT"); return { contents: store[rel]!, lastModified: "t", sizeBytes: 0 }; },
+      write: vi.fn(async (rel: string, c: string) => { store[rel] = c; return { path: rel, lastModified: "t", sizeBytes: 0 }; }),
+    };
+  }
+  it("rename migrates layout.nodes[old]→[new], preserving _transitionIds + other keys", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ _transitionIds: { u1: { workflow: "Order", state: "draft", transitionUuid: "u1" } }, Order: { layout: { nodes: { draft: { x: 1, y: 2 }, done: { x: 3, y: 4 } } } } }) };
+    await renameSidecarStateNode(io(store), "Order.json", "Order", "draft", "cart");
+    const p = JSON.parse(store["Order.layout.json"]!);
+    expect(p.Order.layout.nodes.cart).toEqual({ x: 1, y: 2 });
+    expect(p.Order.layout.nodes.draft).toBeUndefined();
+    expect(p.Order.layout.nodes.done).toEqual({ x: 3, y: 4 });
+    expect(p._transitionIds).toBeTruthy();
+  });
+  it("rename is a no-op when there is no sidecar file (never throws)", async () => {
+    const store: Record<string, string> = {};
+    await expect(renameSidecarStateNode(io(store), "Order.json", "Order", "draft", "cart")).resolves.toBeUndefined();
+    expect(store["Order.layout.json"]).toBeUndefined();
+  });
+  it("remove deletes layout.nodes[code], preserving the rest", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ Order: { layout: { nodes: { draft: { x: 1, y: 2 }, done: { x: 3, y: 4 } } } } }) };
+    await removeSidecarStateNode(io(store), "Order.json", "Order", "draft");
+    const p = JSON.parse(store["Order.layout.json"]!);
+    expect(p.Order.layout.nodes.draft).toBeUndefined();
+    expect(p.Order.layout.nodes.done).toEqual({ x: 3, y: 4 });
+  });
+
+  it("rename no-ops (never throws, no write) when layout.nodes is a non-object primitive", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ Order: { layout: { nodes: "bad" } } }) };
+    const ioObj = io(store);
+    await expect(renameSidecarStateNode(ioObj, "Order.json", "Order", "draft", "cart")).resolves.toBeUndefined();
+    expect(ioObj.write).not.toHaveBeenCalled();
+  });
+  it("remove no-ops (never throws, no write) when layout.nodes is a non-object primitive", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ Order: { layout: { nodes: true } } }) };
+    const ioObj = io(store);
+    await expect(removeSidecarStateNode(ioObj, "Order.json", "Order", "draft")).resolves.toBeUndefined();
+    expect(ioObj.write).not.toHaveBeenCalled();
+  });
+  it("rename no-ops (never throws) when the sidecar file content is literally null", async () => {
+    const store = { "Order.layout.json": "null" };
+    const ioObj = io(store);
+    await expect(renameSidecarStateNode(ioObj, "Order.json", "Order", "draft", "cart")).resolves.toBeUndefined();
+    expect(ioObj.write).not.toHaveBeenCalled();
+  });
+  it("remove no-ops (never throws) when the sidecar file content is corrupt (non-JSON)", async () => {
+    const store = { "Order.layout.json": "{not json" };
+    const ioObj = io(store);
+    await expect(removeSidecarStateNode(ioObj, "Order.json", "Order", "draft")).resolves.toBeUndefined();
+    expect(ioObj.write).not.toHaveBeenCalled();
+  });
+  it("rename no-ops (no write) when oldCode is absent but the sidecar exists", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ Order: { layout: { nodes: { done: { x: 3, y: 4 } } } } }) };
+    const ioObj = io(store);
+    await expect(renameSidecarStateNode(ioObj, "Order.json", "Order", "draft", "cart")).resolves.toBeUndefined();
+    expect(ioObj.write).not.toHaveBeenCalled();
+  });
+  it("remove no-ops (no write) when code is absent but the sidecar exists", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ Order: { layout: { nodes: { done: { x: 3, y: 4 } } } } }) };
+    const ioObj = io(store);
+    await expect(removeSidecarStateNode(ioObj, "Order.json", "Order", "draft")).resolves.toBeUndefined();
+    expect(ioObj.write).not.toHaveBeenCalled();
+  });
+  it("rename swallows a write failure and never throws", async () => {
+    const store = { "Order.layout.json": JSON.stringify({ Order: { layout: { nodes: { draft: { x: 1, y: 2 } } } } }) };
+    const ioObj = { read: io(store).read, write: vi.fn(async () => { throw new Error("disk full"); }) };
+    await expect(renameSidecarStateNode(ioObj, "Order.json", "Order", "draft", "cart")).resolves.toBeUndefined();
+    expect(ioObj.write).toHaveBeenCalledTimes(1);
   });
 });

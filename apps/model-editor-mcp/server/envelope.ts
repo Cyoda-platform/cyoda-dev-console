@@ -1,4 +1,5 @@
 import type { McpResult } from "@cyoda/agent-bridge-contract";
+import type { ValidationIssue } from "@cyoda/workflow-core";
 
 export type { McpResult };
 
@@ -22,6 +23,20 @@ export function err(code: string, message: string): McpResult {
   return {
     content: [{ type: "text", text: `${code}: ${message}` }],
     isError: true,
+  };
+}
+
+/**
+ * The `VALIDATION_FAILED` envelope — one source of truth for the shape that
+ * `update_workflow`, `create_workflow`, and the six patch tools all return.
+ * `err()` cannot produce this because it emits no `structuredContent.code`.
+ * Valid both returned and thrown — `makeDispatcher` forwards any `content`-bearing object.
+ */
+export function validationFailed(issues: ValidationIssue[]): McpResult {
+  return {
+    content: [{ type: "text", text: `VALIDATION_FAILED: ${JSON.stringify(issues)}` }],
+    isError: true,
+    structuredContent: { code: "VALIDATION_FAILED", diagnostics: issues },
   };
 }
 

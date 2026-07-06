@@ -20,7 +20,7 @@ export interface HttpServerOptions {
   token: string;
   hub: SseHub;
   discover: () => Promise<{ relativePath: string; workflows: { name: string }[] }[]>;
-  discoverEntities: () => Promise<{ relativePath: string; name: string }[]>;
+  discoverEntities: () => Promise<{ relativePath: string; name: string; lastModified: string; sizeBytes: number }[]>;
   readWorkflow: (name: string) => Promise<{ name: string; path: string; content: string; layout: Record<string, unknown> } | null>;
   readEntity: (name: string) => Promise<{ name: string; path: string; contents: string; lastModified: string } | null>;
   writeLayout: (name: string, workflowUi: Record<string, unknown>, origin: string) => Promise<void>;
