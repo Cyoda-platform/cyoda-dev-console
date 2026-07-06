@@ -106,3 +106,32 @@ export const configureProjectInput = z
 
 export type GetProjectInput = z.infer<typeof getProjectInput>;
 export type ConfigureProjectInput = z.infer<typeof configureProjectInput>;
+
+/** Loose transition body — deep grammar enforced at apply-time by the §5 re-parse gate. */
+const transitionBody = z.object({
+  name: z.string().min(1).optional(),
+  next: z.string().min(1).optional(),
+  manual: z.boolean().optional(),
+  disabled: z.boolean().optional(),
+  criterion: z.record(z.string(), z.unknown()).optional(),
+  processors: z.array(z.record(z.string(), z.unknown())).optional(),
+  schedule: z.record(z.string(), z.unknown()).optional(),
+  annotations: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+
+/** A NEW transition must supply the model's required fields (manual has no default). */
+const newTransitionBody = transitionBody.extend({
+  name: z.string().min(1),
+  next: z.string().min(1),
+  manual: z.boolean(),
+}).strict();
+
+/** `update_transition` — shallow field-merge onto the addressed transition (nested fields replace wholesale). */
+export const updateTransitionInput = z.object({ workflow: z.string().min(1), state: z.string().min(1), name: z.string().min(1), patch: transitionBody }).strict();
+/** `add_transition` — append a new transition; requires name + next + manual. */
+export const addTransitionInput = z.object({ workflow: z.string().min(1), state: z.string().min(1), transition: newTransitionBody }).strict();
+/** `remove_transition` — delete a transition, addressed by (workflow, state, name). */
+export const removeTransitionInput = z.object({ workflow: z.string().min(1), state: z.string().min(1), name: z.string().min(1) }).strict();
+export type UpdateTransitionInput = z.infer<typeof updateTransitionInput>;
+export type AddTransitionInput = z.infer<typeof addTransitionInput>;
+export type RemoveTransitionInput = z.infer<typeof removeTransitionInput>;

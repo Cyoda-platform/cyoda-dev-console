@@ -23,6 +23,7 @@ import type { ShownPayload } from "./tools/show.js";
 import { getWorkflowTool } from "./tools/get_workflow.js";
 import { updateWorkflowTool } from "./tools/update.js";
 import { createWorkflowTool, deleteWorkflowTool } from "./tools/workflows_crud.js";
+import { updateTransitionTool, addTransitionTool, removeTransitionTool } from "./tools/transitions.js";
 import { validateWorkflowTool, validateWorkflowsTool } from "./tools/validate.js";
 import { optimizeLayoutTool } from "./tools/optimize_layout.js";
 import { connectionInfoTool } from "./tools/connection_info.js";
@@ -222,6 +223,9 @@ export async function main(argv: string[]): Promise<void> {
     create_workflow: (a) => createWorkflowTool(a, ctx),
     update_workflow: (a) => updateWorkflowTool(a, ctx),
     delete_workflow: (a) => deleteWorkflowTool(a, ctx),
+    update_transition: (a) => updateTransitionTool(a, ctx),
+    add_transition: (a) => addTransitionTool(a, ctx),
+    remove_transition: (a) => removeTransitionTool(a, ctx),
     optimize_layout: (a) => optimizeLayoutTool(a, ctx),
     validate_workflow: (a) => validateWorkflowTool(a, ctx),
     validate_workflows: (a) => validateWorkflowsTool(a, ctx),
