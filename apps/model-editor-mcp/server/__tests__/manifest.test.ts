@@ -13,6 +13,7 @@ import { getProjectTool, configureProjectTool } from "../tools/project.js";
 const EXPECTED = [
   "list_workflows", "show_workflow", "get_workflow", "create_workflow", "update_workflow", "delete_workflow",
   "update_transition", "add_transition", "remove_transition",
+  "add_state", "remove_state", "rename_state",
   "optimize_layout", "validate_workflow", "validate_workflows", "connection_info",
   "list_entities", "get_entity", "show_entity", "create_entity", "update_entity", "delete_entity",
   "configure_project", "get_project",

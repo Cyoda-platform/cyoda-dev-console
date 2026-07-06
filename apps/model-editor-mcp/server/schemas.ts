@@ -135,3 +135,20 @@ export const removeTransitionInput = z.object({ workflow: z.string().min(1), sta
 export type UpdateTransitionInput = z.infer<typeof updateTransitionInput>;
 export type AddTransitionInput = z.infer<typeof addTransitionInput>;
 export type RemoveTransitionInput = z.infer<typeof removeTransitionInput>;
+
+/** Loose state body for `add_state` — deep grammar (including any seeded transitions'
+ *  required name+next+manual) enforced at apply-time by the §5 re-parse gate. */
+const stateBody = z.object({
+  transitions: z.array(newTransitionBody).optional(),
+  annotations: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+
+/** `add_state` — new state, optionally seeded; ALREADY_EXISTS on a duplicate code. */
+export const addStateInput = z.object({ workflow: z.string().min(1), code: z.string().min(1), state: stateBody.optional() }).strict();
+/** `remove_state` — delete a state, addressed by code. */
+export const removeStateInput = z.object({ workflow: z.string().min(1), code: z.string().min(1) }).strict();
+/** `rename_state` — cascading rename, addressed by (oldCode -> newCode). */
+export const renameStateInput = z.object({ workflow: z.string().min(1), oldCode: z.string().min(1), newCode: z.string().min(1) }).strict();
+export type AddStateInput = z.infer<typeof addStateInput>;
+export type RemoveStateInput = z.infer<typeof removeStateInput>;
+export type RenameStateInput = z.infer<typeof renameStateInput>;
