@@ -18,7 +18,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
-      - run: ./scripts/check-mcp-release-version.sh "${{ github.ref_name }}" apps/model-editor-mcp/package.json
+      # Pass the ref via env, not `${{ }}` inlined into the shell: a crafted tag
+      # (git tags may contain shell metacharacters and still match mcp-v*.*.*)
+      # would otherwise be injected into the run command. GitHub-recommended.
+      - env:
+          TAG: ${{ github.ref_name }}
+        run: ./scripts/check-mcp-release-version.sh "$TAG" apps/model-editor-mcp/package.json
 
   build-and-publish:
     needs: [guard]

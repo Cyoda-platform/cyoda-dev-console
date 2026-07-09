@@ -8,5 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   root: here,
   plugins: [react()],
-  build: { outDir: resolve(here, "dist"), emptyOutDir: true, target: "esnext", sourcemap: true },
+  // sourcemap:false — the published web bundle otherwise ships .map files that expose
+  // the source of private internal packages (console-design-system, workflow-editor-host).
+  build: { outDir: resolve(here, "dist"), emptyOutDir: true, target: "esnext", sourcemap: false },
 });

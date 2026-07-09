@@ -19,7 +19,9 @@ await build({
   platform: "node",
   format: "esm",
   target: "node22",
-  sourcemap: true,
+  // No sourcemap in the published bundle: the .map embeds the original TS of the
+  // inlined private (`0.0.0`) workspace packages, which we do not publish.
+  sourcemap: false,
   banner: { js: "#!/usr/bin/env node" },
   logLevel: "info",
 });
