@@ -161,21 +161,28 @@ export async function main(argv: string[]): Promise<void> {
   const entityGlobs = parseGlobsArg(values["entity-globs"], DEFAULT_ENTITY_GLOBS);
 
   const token = randomBytes(16).toString("hex");
+  // Resolve this instance's browser-server role. Normally it binds the project's
+  // deterministic port and serves the live editor. If another instance for THIS
+  // project already owns that port, do NOT exit — an MCP stdio server that exits
+  // reads as "failed" to the client (Claude Code). Run headless instead: serve
+  // tools over stdio and share the already-running browser (its file-watcher
+  // already propagates our on-disk edits), pointing connection_info at its URL.
   let port: number;
+  let headless = false;
+  let connectionUrl: string;
   try {
     port = await bindPort(root, root);
+    connectionUrl = `http://127.0.0.1:${port}/?token=${token}`;
   } catch (e) {
-    if (e instanceof DuplicateInstanceError) {
-      process.stderr.write(`${e.message}\n`);
-      process.exit(0);
-    }
-    throw e;
+    if (!(e instanceof DuplicateInstanceError)) throw e;
+    headless = true;
+    port = e.port;
+    connectionUrl = e.url; // the owning instance holds the token; share its URL
+    process.stderr.write(`${e.message} — running headless (tools only), sharing that browser\n`);
   }
-  const connectionUrl = `http://127.0.0.1:${port}/?token=${token}`;
 
   const hub = createSseHub();
   const ctx = createToolContext({ root, workflowGlobs, entityGlobs, connectionUrl });
-  const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "web", "dist");
 
   const nextRevision = createRevisionCounter();
   const pendingOrigins: PendingOrigins = new Map();
@@ -244,18 +251,29 @@ export async function main(argv: string[]): Promise<void> {
     get_project: (a) => getProjectTool(a, ctx),
   };
 
-  const http = createHttpServer({
-    root, distDir, token, hub,
-    discover: ctx.discover, discoverEntities: ctx.discoverEntities,
-    readWorkflow: readWorkflowForApi, readEntity: readEntityForApi,
-    writeLayout,
-  });
-  await new Promise<void>((r) => http.listen(port, "127.0.0.1", r));
-  const watcher = createWatcher({ root, getWorkflowGlobs: () => ctx.workflowGlobs, onChange: (c) => { void onChange(c); } });
-  process.on("SIGINT", () => { watcher.close(); http.close(); process.exit(0); });
+  let http: ReturnType<typeof createHttpServer> | undefined;
+  let watcher: ReturnType<typeof createWatcher> | undefined;
+  if (!headless) {
+    const distDir = join(dirname(fileURLToPath(import.meta.url)), "..", "web", "dist");
+    http = createHttpServer({
+      root, distDir, token, hub,
+      discover: ctx.discover, discoverEntities: ctx.discoverEntities,
+      readWorkflow: readWorkflowForApi, readEntity: readEntityForApi,
+      writeLayout,
+    });
+    await new Promise<void>((r) => http!.listen(port, "127.0.0.1", r));
+    watcher = createWatcher({ root, getWorkflowGlobs: () => ctx.workflowGlobs, onChange: (c) => { void onChange(c); } });
+  }
 
-  startMcpServer({ tools, connectionUrl });
-  process.stderr.write(`model-editor-mcp: ${connectionUrl}\n`);
+  // Shut down on client disconnect (stdin EOF) or signal. Without this, the browser
+  // server + watcher keep the event loop alive after Claude Code disconnects,
+  // orphaning the port so the NEXT spawn wrongly hits the duplicate path.
+  const shutdown = (): never => { watcher?.close(); http?.close(); process.exit(0); };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+
+  startMcpServer({ tools, connectionUrl, onClose: shutdown });
+  process.stderr.write(`model-editor-mcp: ${connectionUrl}${headless ? " (headless — shared browser)" : ""}\n`);
 }
 
 const entryPath = process.argv[1];

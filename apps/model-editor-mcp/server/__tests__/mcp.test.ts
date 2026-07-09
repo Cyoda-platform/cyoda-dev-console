@@ -38,6 +38,18 @@ describe("startMcpServer (stdio JSON-RPC)", () => {
     // Carries the load-bearing rule (prefer atomic, fail-closed element edits).
     expect(instructions!).toContain("fail-closed");
   });
+  it("invokes onClose when the input stream ends (client disconnect → caller can shut down, not orphan)", async () => {
+    const input = new PassThrough(), output = new PassThrough();
+    let closed = 0;
+    startMcpServer({
+      tools: {}, connectionUrl: "http://127.0.0.1:50000",
+      input, output, onClose: () => { closed += 1; },
+    });
+    input.end(); // simulate stdin EOF (Claude Code disconnected)
+    await new Promise((r) => setTimeout(r, 20));
+    expect(closed).toBe(1);
+  });
+
   it("dispatches tools/call and returns the tool's result unmodified — no blanket _connection injection", async () => {
     const out = await drive([JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "show_workflow", arguments: { name: "Pledge" } } })]);
     const call = out.find((m) => m.id === 3) as { result: { structuredContent: { echoed: unknown; _connection?: unknown } } };
