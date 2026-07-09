@@ -17,6 +17,15 @@ export default [
   js.configs.recommended,
 
   {
+    // Build/config scripts (.mjs/.js) run under Node. As with the TS block below,
+    // the core `no-undef` rule lacks Node-global awareness under flat config and
+    // false-positives on `console`, `process`, etc.; Node resolves them at runtime.
+    files: ["**/*.{mjs,js}"],
+    languageOptions: { ecmaVersion: 2022, sourceType: "module" },
+    rules: { "no-undef": "off" },
+  },
+
+  {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parser: tsParser,
