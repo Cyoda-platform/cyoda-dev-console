@@ -14,6 +14,10 @@ export interface McpServerOptions {
   connectionUrl: string;
   input?: NodeJS.ReadableStream;
   output?: NodeJS.WritableStream;
+  /** Called when the input stream closes (the MCP client disconnected). Lets the
+   *  caller shut down instead of lingering — otherwise the browser server/watcher
+   *  keep the process alive and orphan the port. */
+  onClose?: () => void;
 }
 
 export function startMcpServer(opts: McpServerOptions): void {
@@ -22,7 +26,9 @@ export function startMcpServer(opts: McpServerOptions): void {
   const dispatch = makeDispatcher(opts.tools);
   const send = (msg: unknown): void => { output.write(`${JSON.stringify(msg)}\n`); };
 
-  createInterface({ input }).on("line", (line) => { void handle(line); });
+  const rl = createInterface({ input });
+  rl.on("line", (line) => { void handle(line); });
+  if (opts.onClose) rl.on("close", opts.onClose);
 
   async function handle(line: string): Promise<void> {
     const trimmed = line.trim();
