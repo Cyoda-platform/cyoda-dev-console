@@ -1,15 +1,21 @@
 {
-  "name": "model-editor-mcp",
+  "name": "@cyoda/model-editor-mcp",
+  "version": "0.1.0",
   "description": "MCP server for a live, browser-rendered Cyoda model (workflow) editor — driven by an AI CLI via .mcp.json.",
-  "private": true,
+  "license": "MIT",
   "type": "module",
+  "bin": { "model-editor-mcp": "./dist/index.js" },
+  "files": ["dist", "web/dist", "README.md", "LICENSE"],
+  "engines": { "node": ">=22" },
+  "publishConfig": { "access": "public", "provenance": true },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && vite build --config web/vite.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@cyoda/agent-bridge-contract": "workspace:*",
     "@cyoda/console-design-system": "workspace:*",
     "@cyoda/workflow-core": "0.4.0",
@@ -18,15 +24,6 @@
     "@cyoda/workflow-graph": "0.2.2",
     "@cyoda/workflow-layout": "0.1.3",
     "@cyoda/workflow-react": "0.4.1",
-    "lucide-react": "^1.23.0",
-    "monaco-editor": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "reactflow": "catalog:",
-    "uuid": "catalog:",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
     "@playwright/test": "catalog:",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "catalog:",
@@ -35,8 +32,15 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "happy-dom": "^20.10.6",
+    "lucide-react": "^1.23.0",
+    "monaco-editor": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "reactflow": "catalog:",
     "typescript": "catalog:",
+    "uuid": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "catalog:"
   }
 }

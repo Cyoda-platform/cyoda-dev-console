@@ -206,7 +206,7 @@ importers:
         version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
 
   apps/model-editor-mcp:
-    dependencies:
+    devDependencies:
       '@cyoda/agent-bridge-contract':
         specifier: workspace:*
         version: link:../../packages/agent-bridge-contract
@@ -231,28 +231,6 @@ importers:
       '@cyoda/workflow-react':
         specifier: 0.4.1
         version: 0.4.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
-      lucide-react:
-        specifier: ^1.23.0
-        version: 1.23.0(react@19.2.7)
-      monaco-editor:
-        specifier: 'catalog:'
-        version: 0.55.1
-      react:
-        specifier: 'catalog:'
-        version: 19.2.7
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.7(react@19.2.7)
-      reactflow:
-        specifier: 'catalog:'
-        version: 11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      uuid:
-        specifier: 'catalog:'
-        version: 14.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.61.1
@@ -277,15 +255,36 @@ importers:
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
+      lucide-react:
+        specifier: ^1.23.0
+        version: 1.23.0(react@19.2.7)
+      monaco-editor:
+        specifier: 'catalog:'
+        version: 0.55.1
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.7(react@19.2.7)
+      reactflow:
+        specifier: 'catalog:'
+        version: 11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      uuid:
+        specifier: 'catalog:'
+        version: 14.0.1
       vite:
         specifier: 'catalog:'
         version: 8.1.2(@types/node@26.1.0)
       vitest:
         specifier: 'catalog:'
         version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/agent-bridge-contract:
     devDependencies:

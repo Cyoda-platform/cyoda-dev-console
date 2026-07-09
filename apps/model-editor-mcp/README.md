@@ -161,6 +161,6 @@ restart. Only `connection_info` and `get_project` ever return the URL in a
 tool result — no other tool response carries it.
 
 ## Develop
-- `pnpm --filter model-editor-mcp build` — compile the server (`dist/`) and the web bundle (`web/dist/`)
-- `pnpm --filter model-editor-mcp test` — unit/integration (vitest, node + happy-dom)
-- `pnpm --filter model-editor-mcp test:e2e` — headless-chromium render smoke (build first)
+- `pnpm --filter @cyoda/model-editor-mcp build` — compile the server (`dist/`) and the web bundle (`web/dist/`)
+- `pnpm --filter @cyoda/model-editor-mcp test` — unit/integration (vitest, node + happy-dom)
+- `pnpm --filter @cyoda/model-editor-mcp test:e2e` — headless-chromium render smoke (build first)
