@@ -1,0 +1,59 @@
+name: Release MCP
+on:
+  push:
+    tags: ["mcp-v*.*.*"]
+  workflow_dispatch: {}   # build + pack rehearsal; never publishes
+
+concurrency:
+  group: release-mcp-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write         # lets npm mint the provenance attestation
+
+jobs:
+  guard:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      # Pass the ref via env, not `${{ }}` inlined into the shell: a crafted tag
+      # (git tags may contain shell metacharacters and still match mcp-v*.*.*)
+      # would otherwise be injected into the run command. GitHub-recommended.
+      - env:
+          TAG: ${{ github.ref_name }}
+        run: ./scripts/check-mcp-release-version.sh "$TAG" apps/model-editor-mcp/package.json
+
+  build-and-publish:
+    needs: [guard]
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.guard.result == 'success') }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org   # writes the .npmrc that reads NODE_AUTH_TOKEN
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter './packages/*' build        # workspace deps first — esbuild resolves their dist/
+      - run: pnpm --filter @cyoda/model-editor-mcp build
+
+      - name: Rehearse (pack + assert) — dispatch only, never publishes
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: ./scripts/check-mcp-pack.sh
+
+      - name: Publish to npm — tag push only
+        if: ${{ github.event_name == 'push' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          version="$(jq -r .version apps/model-editor-mcp/package.json)"
+          case "$version" in
+            *-*) dist_tag=next ;;    # prerelease -> next
+            *)   dist_tag=latest ;;  # stable -> latest
+          esac
+          echo "publishing ${version} to dist-tag '${dist_tag}'"
+          pnpm --filter @cyoda/model-editor-mcp publish --no-git-checks --tag "$dist_tag"

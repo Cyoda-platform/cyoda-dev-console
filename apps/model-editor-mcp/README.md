@@ -134,18 +134,33 @@ for content, browsable in both directions for navigation.
 
 ## Register with Claude Code
 
-Build the server, then copy the example config to the repo root:
+**Consumers** — no clone, no build. Add this to `.mcp.json` at your project root
+(or run `claude mcp add model-editor -- npx -y @cyoda/model-editor-mcp --project . --workflow-globs "models/workflow/**/*.json" --entity-globs "models/schema/**/*.json"`):
 
-```bash
-pnpm --filter model-editor-mcp build
-cp apps/model-editor-mcp/.mcp.json.example .mcp.json
+```json
+{
+  "mcpServers": {
+    "model-editor": {
+      "command": "npx",
+      "args": ["-y", "@cyoda/model-editor-mcp", "--project", ".",
+               "--workflow-globs", "models/workflow/**/*.json",
+               "--entity-globs", "models/schema/**/*.json"]
+    }
+  }
+}
 ```
 
-Claude Code reads `.mcp.json` at the repo root and starts the server over
-stdio the next time you run it there. Watch stderr for the line
-`model-editor-mcp: http://127.0.0.1:<port>/?token=<hex>` and open that URL in
-a browser to see the live editor — it updates as Claude calls tools, with no
-reload needed.
+Claude Code starts it over stdio the next time you run it there. Watch stderr for
+`model-editor-mcp: http://127.0.0.1:<port>/?token=<hex>` and open that URL to see
+the live editor.
+
+**Contributors (monorepo dev)** — run the local build instead of the published
+package, using `.mcp.json.example` (which points `node` at `dist/index.js`):
+
+```bash
+pnpm --filter @cyoda/model-editor-mcp build
+cp apps/model-editor-mcp/.mcp.json.example .mcp.json
+```
 
 ## Port & token
 
@@ -161,6 +176,6 @@ restart. Only `connection_info` and `get_project` ever return the URL in a
 tool result — no other tool response carries it.
 
 ## Develop
-- `pnpm --filter model-editor-mcp build` — compile the server (`dist/`) and the web bundle (`web/dist/`)
-- `pnpm --filter model-editor-mcp test` — unit/integration (vitest, node + happy-dom)
-- `pnpm --filter model-editor-mcp test:e2e` — headless-chromium render smoke (build first)
+- `pnpm --filter @cyoda/model-editor-mcp build` — compile the server (`dist/`) and the web bundle (`web/dist/`)
+- `pnpm --filter @cyoda/model-editor-mcp test` — unit/integration (vitest, node + happy-dom)
+- `pnpm --filter @cyoda/model-editor-mcp test:e2e` — headless-chromium render smoke (build first)

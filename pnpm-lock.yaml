@@ -97,7 +97,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
 
   apps/dev-console:
     dependencies:
@@ -114,8 +114,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/entity-model-viewer
       '@cyoda/workflow-core':
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.5.0
+        version: 0.5.0
       '@cyoda/workflow-editor-host':
         specifier: workspace:*
         version: link:../../packages/workflow-editor-host
@@ -123,23 +123,23 @@ importers:
         specifier: workspace:*
         version: link:../../packages/workflow-file-indexer
       '@cyoda/workflow-graph':
-        specifier: 0.2.2
-        version: 0.2.2
+        specifier: 0.3.0
+        version: 0.3.0
       '@cyoda/workflow-layout':
-        specifier: 0.1.3
-        version: 0.1.3
+        specifier: 0.1.4
+        version: 0.1.4
       '@cyoda/workflow-monaco':
-        specifier: 0.2.1
-        version: 0.2.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 0.2.2
+        version: 0.2.2(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@cyoda/workflow-project-model':
         specifier: workspace:*
         version: link:../../packages/workflow-project-model
       '@cyoda/workflow-react':
-        specifier: 0.4.1
-        version: 0.4.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+        specifier: 0.5.0
+        version: 0.5.0(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       '@cyoda/workflow-viewer':
-        specifier: 0.3.1
-        version: 0.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 0.4.0
+        version: 0.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tanstack/react-query':
         specifier: ^5.101.2
         version: 5.101.2(react@19.2.7)
@@ -191,7 +191,7 @@ importers:
         version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
-        version: 6.0.3(vite@8.1.2(@types/node@26.1.0))
+        version: 6.0.3(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
@@ -200,13 +200,13 @@ importers:
         version: 6.0.3
       vite:
         specifier: 'catalog:'
-        version: 8.1.2(@types/node@26.1.0)
+        version: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
 
   apps/model-editor-mcp:
-    dependencies:
+    devDependencies:
       '@cyoda/agent-bridge-contract':
         specifier: workspace:*
         version: link:../../packages/agent-bridge-contract
@@ -214,8 +214,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/console-design-system
       '@cyoda/workflow-core':
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.5.0
+        version: 0.5.0
       '@cyoda/workflow-editor-host':
         specifier: workspace:*
         version: link:../../packages/workflow-editor-host
@@ -223,36 +223,14 @@ importers:
         specifier: workspace:*
         version: link:../../packages/workflow-file-indexer
       '@cyoda/workflow-graph':
-        specifier: 0.2.2
-        version: 0.2.2
+        specifier: 0.3.0
+        version: 0.3.0
       '@cyoda/workflow-layout':
-        specifier: 0.1.3
-        version: 0.1.3
+        specifier: 0.1.4
+        version: 0.1.4
       '@cyoda/workflow-react':
-        specifier: 0.4.1
-        version: 0.4.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
-      lucide-react:
-        specifier: ^1.23.0
-        version: 1.23.0(react@19.2.7)
-      monaco-editor:
-        specifier: 'catalog:'
-        version: 0.55.1
-      react:
-        specifier: 'catalog:'
-        version: 19.2.7
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.7(react@19.2.7)
-      reactflow:
-        specifier: 'catalog:'
-        version: 11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      uuid:
-        specifier: 'catalog:'
-        version: 14.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
+        specifier: 0.5.0
+        version: 0.5.0(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.61.1
@@ -273,19 +251,43 @@ importers:
         version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
-        version: 6.0.3(vite@8.1.2(@types/node@26.1.0))
+        version: 6.0.3(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.1
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
+      lucide-react:
+        specifier: ^1.23.0
+        version: 1.23.0(react@19.2.7)
+      monaco-editor:
+        specifier: 'catalog:'
+        version: 0.55.1
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.7(react@19.2.7)
+      reactflow:
+        specifier: 'catalog:'
+        version: 11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      uuid:
+        specifier: 'catalog:'
+        version: 14.0.1
       vite:
         specifier: 'catalog:'
-        version: 8.1.2(@types/node@26.1.0)
+        version: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
   packages/agent-bridge-contract:
     devDependencies:
@@ -294,7 +296,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
 
   packages/console-design-system:
     dependencies:
@@ -325,7 +327,7 @@ importers:
         version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
-        version: 6.0.3(vite@8.1.2(@types/node@26.1.0))
+        version: 6.0.3(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
@@ -337,7 +339,7 @@ importers:
         version: 19.2.7(react@19.2.7)
       vite:
         specifier: 'catalog:'
-        version: 8.1.2(@types/node@26.1.0)
+        version: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
 
   packages/console-shell:
     dependencies:
@@ -362,7 +364,7 @@ importers:
         version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
-        version: 6.0.3(vite@8.1.2(@types/node@26.1.0))
+        version: 6.0.3(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
@@ -374,7 +376,7 @@ importers:
         version: 19.2.7(react@19.2.7)
       vite:
         specifier: 'catalog:'
-        version: 8.1.2(@types/node@26.1.0)
+        version: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
 
   packages/entity-model-viewer:
     dependencies:
@@ -393,7 +395,7 @@ importers:
         version: 19.2.3(@types/react@19.2.17)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
-        version: 6.0.3(vite@8.1.2(@types/node@26.1.0))
+        version: 6.0.3(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
       happy-dom:
         specifier: ^20.10.6
         version: 20.10.6
@@ -408,10 +410,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: 'catalog:'
-        version: 8.1.2(@types/node@26.1.0)
+        version: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
 
   packages/workflow-editor-host:
     dependencies:
@@ -419,11 +421,11 @@ importers:
         specifier: workspace:*
         version: link:../console-design-system
       '@cyoda/workflow-core':
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.5.0
+        version: 0.5.0
       '@cyoda/workflow-react':
-        specifier: 0.4.1
-        version: 0.4.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+        specifier: 0.5.0
+        version: 0.5.0(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       zustand:
         specifier: ^5.0.0
         version: 5.0.14(@types/react@19.2.17)(immer@11.1.8)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
@@ -457,13 +459,13 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
 
   packages/workflow-file-indexer:
     dependencies:
       '@cyoda/workflow-core':
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.5.0
+        version: 0.5.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -473,7 +475,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
 
   packages/workflow-project-model:
     dependencies:
@@ -489,7 +491,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0))
+        version: 4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
 
 packages:
 
@@ -567,17 +569,17 @@ packages:
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
 
-  '@cyoda/workflow-core@0.4.0':
-    resolution: {integrity: sha512-dp2ldG4i+2Fnlz+kEN1Rl7AEz+eEXpBbJcV4DRGQTW0MgO68JhZ7Ay/PC7RxaVuxCzplajmZ66LcDMljRDdrVQ==}
+  '@cyoda/workflow-core@0.5.0':
+    resolution: {integrity: sha512-Uu7o2h/YxZG/Nv1nWR4T9/GcPdVAaIRMY9sNPKg2UevoRrer7/pNsvhGIJNsljlX9/WKnDdJsTjdofs5PonMnw==}
 
-  '@cyoda/workflow-graph@0.2.2':
-    resolution: {integrity: sha512-6kGSb8gZOzjNJ0D70klnHAtDdnInh1ZwrYQFiVEs4oIQgo48MYzAx4LqvL+4uWY1QpvFyA6M6EWm9dUByPGm7g==}
+  '@cyoda/workflow-graph@0.3.0':
+    resolution: {integrity: sha512-XBpIkFCn4F3SL4MFx0QQA/aM4XkkYcKpcFzT4DIQw7+1PiRw8MADa0db06Nv3mLWJYXRZY3JprGalFv4cF9jcw==}
 
-  '@cyoda/workflow-layout@0.1.3':
-    resolution: {integrity: sha512-i/LPQZgIfjiymf83lr46iq3c4zU4NIAxzLVV5r6G31T/hyserRZT1TNQgD+dMrsG7fW8+XGMKsXu7Ig3U2tdSg==}
+  '@cyoda/workflow-layout@0.1.4':
+    resolution: {integrity: sha512-jdm1bRmW7bjoH4arAh5+Wk64OuuDrTduBzqbkr0kjKby0VG8sd29rNJjlxALdva0COdzFIdrvKQMAaOXV4hRgw==}
 
-  '@cyoda/workflow-monaco@0.2.1':
-    resolution: {integrity: sha512-qP4/MUftY3CAb2V3MGX8dAYf/bVwVfikgYdkZlGBeLrFMqz0cPaIDnuWT8jGQXMrbGTgkayUzdfJEVRTqYXE9w==}
+  '@cyoda/workflow-monaco@0.2.2':
+    resolution: {integrity: sha512-NV9ooifyfS8I2ylwD8kwO4LC51WGGFp2LMTkup08ZPby9wdGuUmfrcnf5tB7YxtT+97mbWhsr0j5HMr77GFxaQ==}
     peerDependencies:
       monaco-editor: '>=0.45 <0.56'
       react: ^18.3.1 || ^19.0.0
@@ -588,15 +590,15 @@ packages:
       react-dom:
         optional: true
 
-  '@cyoda/workflow-react@0.4.1':
-    resolution: {integrity: sha512-XKSCh8L4Mw9qVjhEKzxeqYEcPBgGRhzC4pw05XqwmrWs4FHJmF+A5faEQhRI+zPpHDsRC96hKyZDAABiWEgNbg==}
+  '@cyoda/workflow-react@0.5.0':
+    resolution: {integrity: sha512-qTe1V9X8bLX63ANZChdEcEW5cEjXhmj2ktlwVUcidCmg8Zx3xFH3Zn5ydy8/eBCkVKRcazPX3CMULuiH5obucA==}
     peerDependencies:
       react: ^18.3.1 || ^19.0.0
       react-dom: ^18.3.1 || ^19.0.0
       reactflow: ^11
 
-  '@cyoda/workflow-viewer@0.3.1':
-    resolution: {integrity: sha512-wnPsqUjxnM9xEA0I52Eyfn5wkE7H0aLOV4wHvyhYjP39P86F7zlfsJoXzfRR0zQSquGkUOdQRnANHtjoFkVsig==}
+  '@cyoda/workflow-viewer@0.4.0':
+    resolution: {integrity: sha512-PWEwxQzPujNs3pdLaKy/t8WdbLEHmMzWyjVwcM4LqPWFDCeEAVHJozldA1iUNkiMsDMNLd9CGOLp/+mCGTtuqw==}
     peerDependencies:
       react: ^18.3.1 || ^19.0.0
       react-dom: ^18.3.1 || ^19.0.0
@@ -609,6 +611,162 @@ packages:
 
   '@emnapi/wasi-threads@1.2.2':
     resolution: {integrity: sha512-c95qOXkHdydNKhscBTebqEC1CVAZpyqOfVfBzQ1qgzyl3gfeldUjIggDbIZgDKsHLgnsM+igH7TJ/eAasaVuMA==}
+
+  '@esbuild/aix-ppc64@0.28.1':
+    resolution: {integrity: sha512-Svl7tq8k/08+p6CXPpRjQ1fKX+1odH/BQbb48fV6fj3CWHhsoIOoY87w1oHXm0qEpkIK3ZfVgp0hed3XBXzXMQ==}
+    engines: {node: '>=18'}
+    cpu: [ppc64]
+    os: [aix]
+
+  '@esbuild/android-arm64@0.28.1':
+    resolution: {integrity: sha512-34EGEbCIAgosYz6goLcopX6Mo7NyGv9tfwEM2/7Ce2VcVRk568iSvniGWcUXIy7wEDR1wzolcxcriFVrWYcwBg==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [android]
+
+  '@esbuild/android-arm@0.28.1':
+    resolution: {integrity: sha512-0k2F129Xdio1TdJfzJ8sy1Q47vUD2NnwdhiAf7drUN1EBTfPf4hsFCtmMgu/6m8JSzsBrlmVjudMBQqOfG8usQ==}
+    engines: {node: '>=18'}
+    cpu: [arm]
+    os: [android]
+
+  '@esbuild/android-x64@0.28.1':
+    resolution: {integrity: sha512-dbwY7ltSMDWsRatcRpCnES4F+im88OCUgGZjy52shC7GqHRE/cYlxNbB4Z4UpJswpcc4Qxd2oE/ufM0p61IKng==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [android]
+
+  '@esbuild/darwin-arm64@0.28.1':
+    resolution: {integrity: sha512-TZbWkQY7kvTAXbXUT7uVACR5cMHsDiSz9z7ZKAX/RTq/WJEk3QyRr0wZpNhBDX+/0CtdqUIJlOiodQcta6tY3Q==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@esbuild/darwin-x64@0.28.1':
+    resolution: {integrity: sha512-zfdzgK9ACBNZLI/CyHTOx81SyNbM6YXn7rxSgX97VjyiPl9W1i4Ka4fgKECEoFCKGpvBj5qArWIGgQjOwkgskQ==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@esbuild/freebsd-arm64@0.28.1':
+    resolution: {integrity: sha512-wG2EA8ENdEI0qhkSZMjfqrdY+ziCYCPMmtZjjIwOmXFjmyzEHn+UUxk5of+SYsjtfs3VpnlC7QLzSI5hY/rOAw==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [freebsd]
+
+  '@esbuild/freebsd-x64@0.28.1':
+    resolution: {integrity: sha512-i7dZ9vQgnvSCzi/rYCXNgtF/U+eKZNJBzu3eTQbRgHnM7tNSizLOkRFAl3qzVc/Op/u5YkHHa4pf/3DOYHthLQ==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@esbuild/linux-arm64@0.28.1':
+    resolution: {integrity: sha512-yHs+0uc8+nvEAfAfxrWQKK5peSNzBc4PegcMO0EJ2hT71uA7vB8Ihg2e77R2P7SG5uYjPbHlLLmve4LLLRCf0g==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@esbuild/linux-arm@0.28.1':
+    resolution: {integrity: sha512-qVXBOHQS+d5Y722GwJzJUtOLlX7km3CraOaGormF1pDtPd2C/l1SHRPgjLunLGe51Sh5YYWKMFDyV4SxgMQYTQ==}
+    engines: {node: '>=18'}
+    cpu: [arm]
+    os: [linux]
+
+  '@esbuild/linux-ia32@0.28.1':
+    resolution: {integrity: sha512-d1z4ZuP0ajrfz/FhGT4vv278rX8KnPPJx8i5+AtK7TYbx9Le9F1hyzurZpkEyjkGa9dUGhQow4C1NmeGvqxN2w==}
+    engines: {node: '>=18'}
+    cpu: [ia32]
+    os: [linux]
+
+  '@esbuild/linux-loong64@0.28.1':
+    resolution: {integrity: sha512-M5sRjUVZrkm1OAPR3dlOYzNmN+loZKGVi1VUQGrwuqLcbR6qeAz+famMhjASeH3YVKvZz+zT1jlh/keC3Rj/lg==}
+    engines: {node: '>=18'}
+    cpu: [loong64]
+    os: [linux]
+
+  '@esbuild/linux-mips64el@0.28.1':
+    resolution: {integrity: sha512-mRObBZeHh2OxcBFPWE/FjylkRgZdYuiTR3vaTozquCGOH14iP9oN4x4Ge81CoIDYQrXmIxpFumJBu5MtZpnQJQ==}
+    engines: {node: '>=18'}
+    cpu: [mips64el]
+    os: [linux]
+
+  '@esbuild/linux-ppc64@0.28.1':
+    resolution: {integrity: sha512-slScBsMAb3GFDcdrCgLwZtPYRoH2H/youv10QiZyRjmsP48fznoveWytSgCI/R0ZcUgpc0ZhIUEx6LHts8yrfQ==}
+    engines: {node: '>=18'}
+    cpu: [ppc64]
+    os: [linux]
+
+  '@esbuild/linux-riscv64@0.28.1':
+    resolution: {integrity: sha512-kw0owk1o0GFETUJyW0jc0G4Yzs0BHZn0JDZ8JRT088vjJYX777BAs1fDGxAC+q831qOs2DTC96mNsG2opdfyyQ==}
+    engines: {node: '>=18'}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@esbuild/linux-s390x@0.28.1':
+    resolution: {integrity: sha512-/lAIjX8aYFRByhh6L5rYtPEDRqa9de/4V/juOXcta5frjvzXO4/sqEtyytse0g3zZFuWu5cDN0MkLz2qRDD2Ag==}
+    engines: {node: '>=18'}
+    cpu: [s390x]
+    os: [linux]
+
+  '@esbuild/linux-x64@0.28.1':
+    resolution: {integrity: sha512-u/anNYF2mmVOEDwLtnQ1wOr3EZ9sTNGLWrsYGYwHWzGA3Si84IOkHXlbWTD1NB+9/1lcnweYKO54uhxZydNzfA==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [linux]
+
+  '@esbuild/netbsd-arm64@0.28.1':
+    resolution: {integrity: sha512-oks0DYbLwWMmaakTsCb+zL4E+aHRVLom9IJZOAthMQEPiQmydXHkziYEsGYRx0uNV/IjEKGAV941JzH02pflqw==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [netbsd]
+
+  '@esbuild/netbsd-x64@0.28.1':
+    resolution: {integrity: sha512-aeL6lAnN89Hz43Mlh1G8ARasbuoYvSITDEx0tHh5b7jJnHcssqgjy9Yx430GDpmCa6OyrKoS0aNRjKundRizGg==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [netbsd]
+
+  '@esbuild/openbsd-arm64@0.28.1':
+    resolution: {integrity: sha512-MEFJe5C3R8pwXdZ5Y21oo6m7ePiS0d9pWucn99O/wvyJZChoIQKrQDxKrGeW8F5+T0okTHesAmDeiHDTIq0V/Q==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [openbsd]
+
+  '@esbuild/openbsd-x64@0.28.1':
+    resolution: {integrity: sha512-i/ZLIOafE0Z8cI/XANJAixoJL/uRAoS2xOA3rb0xN+KK0K177cMAsQYkzHtBrtMXAKuAc7HGgcWiZ/sRC1Nxgw==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [openbsd]
+
+  '@esbuild/openharmony-arm64@0.28.1':
+    resolution: {integrity: sha512-ge+Z7EXFNt2BO1oAMsVpiQ8EwndV9i1xXerAeTIK7AtPs3bKFXQM7nlRxDSIUIMeueR1CNXxqztLzdNeReKBJg==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [openharmony]
+
+  '@esbuild/sunos-x64@0.28.1':
+    resolution: {integrity: sha512-BEjgtECkL3vY+SaSQ6nzVfiALUeFxpawyp8Jmf5PtYhf1Ug40N1h/hxlhts+f1FvSvarEigdxS3BlSMI2PJLcQ==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [sunos]
+
+  '@esbuild/win32-arm64@0.28.1':
+    resolution: {integrity: sha512-lCv9eK/H6ZJWbE7bh2nw54CZ9M2nupBxJcTsdk/QQnWkdSjKGuxmmH8/GWrlT1eMmZfn4dGcCjRte397WqfQXA==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@esbuild/win32-ia32@0.28.1':
+    resolution: {integrity: sha512-zvb/mB2bSCoJOpoCBgYKKpX6YM6mJBlBUVUtVj41DlZJVEB6/0CKlRYxP5wWl1C1ILiCoAU5wZZ4q1P3qeS6Eg==}
+    engines: {node: '>=18'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@esbuild/win32-x64@0.28.1':
+    resolution: {integrity: sha512-bm4Mowrv+GXMlpWX++EcXw/iLyd1o3+bJkC2DkWXYVvgZCqD/bSj9ctZeAMC3cIxgjRVR2Dufaiu4YPxr5gW1A==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [win32]
 
   '@eslint-community/eslint-utils@4.9.1':
     resolution: {integrity: sha512-phrYmNiYppR7znFEdqgfWHXR6NCkZEK7hwWDHZUjit/2/U0r6XvkDl0SYnoM51Hq7FhCGdLDT6zxCCOY1hexsQ==}
@@ -1474,6 +1632,11 @@ packages:
   es-to-primitive@1.3.1:
     resolution: {integrity: sha512-CxN9N56HYfd2m/acc/NOFrZQsN9kU4eh+2kk6A707Kz1krH8tKmfrs5RnftB8WNX80T0NS7vSQsDOlg23diR2g==}
     engines: {node: '>= 0.4'}
+
+  esbuild@0.28.1:
+    resolution: {integrity: sha512-HrJrvZv5ayxBzPfwphOoNzkzOIIlifzk0KJrGK2c8R4+LKpMtpYLQeUdjnwjWv/LZlkH2laZk+4w78pi99D4Vw==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   escalade@3.2.0:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
@@ -2590,25 +2753,25 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@cyoda/workflow-core@0.4.0':
+  '@cyoda/workflow-core@0.5.0':
     dependencies:
       immer: 11.1.8
       uuid: 14.0.0
       zod: 4.4.3
 
-  '@cyoda/workflow-graph@0.2.2':
+  '@cyoda/workflow-graph@0.3.0':
     dependencies:
-      '@cyoda/workflow-core': 0.4.0
+      '@cyoda/workflow-core': 0.5.0
 
-  '@cyoda/workflow-layout@0.1.3':
+  '@cyoda/workflow-layout@0.1.4':
     dependencies:
-      '@cyoda/workflow-core': 0.4.0
-      '@cyoda/workflow-graph': 0.2.2
+      '@cyoda/workflow-core': 0.5.0
+      '@cyoda/workflow-graph': 0.3.0
       elkjs: 0.11.1
 
-  '@cyoda/workflow-monaco@0.2.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@cyoda/workflow-monaco@0.2.2(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
-      '@cyoda/workflow-core': 0.4.0
+      '@cyoda/workflow-core': 0.5.0
       jsonc-parser: 3.3.1
       monaco-editor: 0.55.1
       zod: 4.4.3
@@ -2616,24 +2779,24 @@ snapshots:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
 
-  '@cyoda/workflow-react@0.4.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
+  '@cyoda/workflow-react@0.5.0(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reactflow@11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
     dependencies:
-      '@cyoda/workflow-core': 0.4.0
-      '@cyoda/workflow-graph': 0.2.2
-      '@cyoda/workflow-layout': 0.1.3
-      '@cyoda/workflow-monaco': 0.2.1(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@cyoda/workflow-viewer': 0.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@cyoda/workflow-core': 0.5.0
+      '@cyoda/workflow-graph': 0.3.0
+      '@cyoda/workflow-layout': 0.1.4
+      '@cyoda/workflow-monaco': 0.2.2(monaco-editor@0.55.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@cyoda/workflow-viewer': 0.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
       reactflow: 11.11.4(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     transitivePeerDependencies:
       - monaco-editor
 
-  '@cyoda/workflow-viewer@0.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@cyoda/workflow-viewer@0.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
-      '@cyoda/workflow-core': 0.4.0
-      '@cyoda/workflow-graph': 0.2.2
-      '@cyoda/workflow-layout': 0.1.3
+      '@cyoda/workflow-core': 0.5.0
+      '@cyoda/workflow-graph': 0.3.0
+      '@cyoda/workflow-layout': 0.1.4
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
 
@@ -2651,6 +2814,84 @@ snapshots:
   '@emnapi/wasi-threads@1.2.2':
     dependencies:
       tslib: 2.8.1
+    optional: true
+
+  '@esbuild/aix-ppc64@0.28.1':
+    optional: true
+
+  '@esbuild/android-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/android-arm@0.28.1':
+    optional: true
+
+  '@esbuild/android-x64@0.28.1':
+    optional: true
+
+  '@esbuild/darwin-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/darwin-x64@0.28.1':
+    optional: true
+
+  '@esbuild/freebsd-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/freebsd-x64@0.28.1':
+    optional: true
+
+  '@esbuild/linux-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/linux-arm@0.28.1':
+    optional: true
+
+  '@esbuild/linux-ia32@0.28.1':
+    optional: true
+
+  '@esbuild/linux-loong64@0.28.1':
+    optional: true
+
+  '@esbuild/linux-mips64el@0.28.1':
+    optional: true
+
+  '@esbuild/linux-ppc64@0.28.1':
+    optional: true
+
+  '@esbuild/linux-riscv64@0.28.1':
+    optional: true
+
+  '@esbuild/linux-s390x@0.28.1':
+    optional: true
+
+  '@esbuild/linux-x64@0.28.1':
+    optional: true
+
+  '@esbuild/netbsd-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/netbsd-x64@0.28.1':
+    optional: true
+
+  '@esbuild/openbsd-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/openbsd-x64@0.28.1':
+    optional: true
+
+  '@esbuild/openharmony-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/sunos-x64@0.28.1':
+    optional: true
+
+  '@esbuild/win32-arm64@0.28.1':
+    optional: true
+
+  '@esbuild/win32-ia32@0.28.1':
+    optional: true
+
+  '@esbuild/win32-x64@0.28.1':
     optional: true
 
   '@eslint-community/eslint-utils@4.9.1(eslint@10.6.0)':
@@ -3223,10 +3464,10 @@ snapshots:
       '@typescript-eslint/types': 8.62.1
       eslint-visitor-keys: 5.0.1
 
-  '@vitejs/plugin-react@6.0.3(vite@8.1.2(@types/node@26.1.0))':
+  '@vitejs/plugin-react@6.0.3(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.1.2(@types/node@26.1.0)
+      vite: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
 
   '@vitest/expect@4.1.9':
     dependencies:
@@ -3237,13 +3478,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.9(vite@8.1.2(@types/node@26.1.0))':
+  '@vitest/mocker@4.1.9(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))':
     dependencies:
       '@vitest/spy': 4.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.1.2(@types/node@26.1.0)
+      vite: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
 
   '@vitest/pretty-format@4.1.9':
     dependencies:
@@ -3632,6 +3873,35 @@ snapshots:
       is-callable: 1.2.7
       is-date-object: 1.1.0
       is-symbol: 1.1.1
+
+  esbuild@0.28.1:
+    optionalDependencies:
+      '@esbuild/aix-ppc64': 0.28.1
+      '@esbuild/android-arm': 0.28.1
+      '@esbuild/android-arm64': 0.28.1
+      '@esbuild/android-x64': 0.28.1
+      '@esbuild/darwin-arm64': 0.28.1
+      '@esbuild/darwin-x64': 0.28.1
+      '@esbuild/freebsd-arm64': 0.28.1
+      '@esbuild/freebsd-x64': 0.28.1
+      '@esbuild/linux-arm': 0.28.1
+      '@esbuild/linux-arm64': 0.28.1
+      '@esbuild/linux-ia32': 0.28.1
+      '@esbuild/linux-loong64': 0.28.1
+      '@esbuild/linux-mips64el': 0.28.1
+      '@esbuild/linux-ppc64': 0.28.1
+      '@esbuild/linux-riscv64': 0.28.1
+      '@esbuild/linux-s390x': 0.28.1
+      '@esbuild/linux-x64': 0.28.1
+      '@esbuild/netbsd-arm64': 0.28.1
+      '@esbuild/netbsd-x64': 0.28.1
+      '@esbuild/openbsd-arm64': 0.28.1
+      '@esbuild/openbsd-x64': 0.28.1
+      '@esbuild/openharmony-arm64': 0.28.1
+      '@esbuild/sunos-x64': 0.28.1
+      '@esbuild/win32-arm64': 0.28.1
+      '@esbuild/win32-ia32': 0.28.1
+      '@esbuild/win32-x64': 0.28.1
 
   escalade@3.2.0: {}
 
@@ -4562,7 +4832,7 @@ snapshots:
 
   uuid@14.0.1: {}
 
-  vite@8.1.2(@types/node@26.1.0):
+  vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1):
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.4
@@ -4571,12 +4841,13 @@ snapshots:
       tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 26.1.0
+      esbuild: 0.28.1
       fsevents: 2.3.3
 
-  vitest@4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)):
+  vitest@4.1.9(@types/node@26.1.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1)):
     dependencies:
       '@vitest/expect': 4.1.9
-      '@vitest/mocker': 4.1.9(vite@8.1.2(@types/node@26.1.0))
+      '@vitest/mocker': 4.1.9(vite@8.1.2(@types/node@26.1.0)(esbuild@0.28.1))
       '@vitest/pretty-format': 4.1.9
       '@vitest/runner': 4.1.9
       '@vitest/snapshot': 4.1.9
@@ -4593,7 +4864,7 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 8.1.2(@types/node@26.1.0)
+      vite: 8.1.2(@types/node@26.1.0)(esbuild@0.28.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 26.1.0

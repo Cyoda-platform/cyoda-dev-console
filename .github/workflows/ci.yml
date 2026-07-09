@@ -19,9 +19,9 @@ jobs:
       # mounts React Flow nodes over a live MCP stdio session. `pnpm -r build` above already
       # produced dist/ + web/dist/, but the filtered build here is cheap and keeps this step's
       # prerequisite explicit rather than implicit in an earlier, unrelated step.
-      - run: pnpm --filter model-editor-mcp build
-      - run: pnpm --filter model-editor-mcp exec playwright install --with-deps chromium
-      - run: pnpm --filter model-editor-mcp test:e2e
+      - run: pnpm --filter @cyoda/model-editor-mcp build
+      - run: pnpm --filter @cyoda/model-editor-mcp exec playwright install --with-deps chromium
+      - run: pnpm --filter @cyoda/model-editor-mcp test:e2e
   rust:
     runs-on: macos-14
     defaults: { run: { working-directory: apps/dev-console/src-tauri } }

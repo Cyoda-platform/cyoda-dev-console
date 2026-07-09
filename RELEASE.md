@@ -49,3 +49,54 @@ The bundle lands under `apps/dev-console/src-tauri/target/release/bundle/`. The 
 ## No in-app auto-update
 
 Updates are delivered via `brew upgrade` (macOS) or re-running the Linux installer. See `docs/specs.md` §5.3.
+
+---
+
+## model-editor-mcp (npm)
+
+The `@cyoda/model-editor-mcp` MCP server ships to public npm independently of the
+desktop app, on its own `mcp-v*` tags via `.github/workflows/release-mcp.yml`.
+
+### How an MCP release flows
+1. Bump `version` in `apps/model-editor-mcp/package.json` (SemVer; a prerelease
+   carries the suffix literally, e.g. `0.1.0-rc.1`), commit.
+2. Push a tag `mcp-vX.Y.Z` (or `mcp-vX.Y.Z-rc.N`).
+3. `release-mcp.yml` runs: `guard` (tag == package.json version, suffix included)
+   → build workspace deps → esbuild-bundle the server + Vite-build `web/dist`
+   → `pnpm publish` with provenance. A stable version publishes to the `latest`
+   dist-tag; a prerelease publishes to `next`.
+
+### Rehearsing without publishing
+Trigger it manually (**Actions → Release MCP → Run workflow**) on any branch: it
+builds and runs `scripts/check-mcp-pack.sh` (pack + shape assertions) and
+**publishes nothing, consumes no version**. This is the primary gate — npm
+versions are immutable.
+
+### Prerequisites (one-time)
+- **`NPM_TOKEN`** repo secret: a granular npm access token with **read+write on the
+  `@cyoda` scope** (scope-level so the first publish can create the package). If
+  npm rejects the very first publish of the brand-new name, use a classic
+  Automation token for that one publish, then switch back. Provenance additionally
+  requires this repo stay **public**.
+
+### First release
+The **first-ever** publish must be a stable `0.1.0` (not an rc), so a `latest`
+dist-tag exists — otherwise a bare `npx @cyoda/model-editor-mcp` has nothing to
+resolve. Use rc→`next` only for later versions.
+
+### Bad-publish recovery
+npm versions can't be overwritten and `unpublish` is restricted (72h window;
+blocked once anything depends on it). Recover with
+`npm deprecate @cyoda/model-editor-mcp@x.y.z "reason"` **plus a patch release** —
+never rely on unpublish.
+
+## Coordinated release (desktop + MCP together)
+
+A "release" is an event, not one trigger. To cut both artifacts:
+1. Bump `apps/dev-console/src-tauri/tauri.conf.json` `.version` **and**
+   `apps/model-editor-mcp/package.json` `.version` (independent SemVers), commit.
+2. Push both tags: `git push origin vX.Y.Z mcp-vA.B.C`.
+3. `release.yml` and `release-mcp.yml` run independently and in parallel; neither
+   gates the other. A failure in one does not roll back the other — re-run the
+   failed side (the two are not a single transaction). The desktop half needs the
+   Apple secrets provisioned (see Prerequisites above); the MCP half does not.
