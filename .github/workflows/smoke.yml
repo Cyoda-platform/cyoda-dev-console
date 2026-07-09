@@ -37,3 +37,14 @@ jobs:
       # Bundles are pinned by tauri.conf.json `bundle.targets` (appimage on Linux).
       # Do NOT pass `-- --bundles X`: the `--` shunts it to cargo, which rejects it.
       - run: pnpm --filter dev-console tauri:build
+  mcp:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter './packages/*' build
+      - run: pnpm --filter @cyoda/model-editor-mcp build
+      - run: ./scripts/check-mcp-pack.sh
