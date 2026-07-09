@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "description": "MCP server for a live, browser-rendered Cyoda model (workflow) editor — driven by an AI CLI via .mcp.json.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cyoda/cyoda-dev-console.git",
+    "directory": "apps/model-editor-mcp"
+  },
   "type": "module",
   "bin": { "model-editor-mcp": "./dist/index.js" },
   "files": ["dist", "web/dist", "README.md", "LICENSE"],
