@@ -48,7 +48,7 @@ The bundle lands under `apps/dev-console/src-tauri/target/release/bundle/`. The 
 
 ## No in-app auto-update
 
-Updates are delivered via `brew upgrade` (macOS) or re-running the Linux installer. See `docs/specs.md` §5.3.
+Updates are delivered via `brew upgrade` (macOS) or re-running the Linux installer. See `docs/archive/2026-05-30-specs.md` §5.3.
 
 ---
 
