@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Find or create the draft release
         id: rel
-        uses: actions/github-script@v9
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553  # v9
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
@@ -207,7 +207,7 @@ jobs:
           echo "intel=${intel}" >> "$GITHUB_OUTPUT"
       - name: Mint tap token
         id: token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3
         with:
           app-id: ${{ vars.HOMEBREW_TAP_APP_ID }}
           private-key: ${{ secrets.HOMEBREW_TAP_APP_KEY }}
