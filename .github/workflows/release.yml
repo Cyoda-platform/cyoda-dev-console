@@ -56,7 +56,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [aarch64-apple-darwin, x86_64-apple-darwin]
+        # arch drives the DMG asset name: tauri's native token for the intel
+        # DMG is `x64`, but the cask + publish-cask require `x86_64`, so pin it
+        # here rather than relying on the pattern's [arch] placeholder.
+        include:
+          - target: aarch64-apple-darwin
+            arch: aarch64
+          - target: x86_64-apple-darwin
+            arch: x86_64
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -85,7 +92,7 @@ jobs:
           tauriScript: pnpm exec tauri
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target ${{ matrix.target }} --bundles dmg
-          assetNamePattern: cyoda-dev-console_[version]_[arch].[ext]
+          releaseAssetNamePattern: cyoda-dev-console_[version]_${{ matrix.arch }}.[ext]
 
   build-linux:
     needs: create-release
@@ -119,7 +126,7 @@ jobs:
           tauriScript: pnpm exec tauri
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --bundles appimage
-          assetNamePattern: cyoda-dev-console_[version]_[arch].[ext]
+          releaseAssetNamePattern: cyoda-dev-console_[version]_[arch].[ext]
 
   build-windows:
     needs: create-release
