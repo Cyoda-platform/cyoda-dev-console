@@ -93,6 +93,29 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target ${{ matrix.target }} --bundles dmg
           releaseAssetNamePattern: cyoda-dev-console_[version]_${{ matrix.arch }}.[ext]
+      # tauri notarizes + staples the .app but not the DMG. Apple recommends
+      # stapling the distributed disk image so Gatekeeper validates offline on
+      # first open (direct downloads), and so publish-cask's `stapler validate`
+      # passes. Re-upload the stapled DMG over tauri-action's un-stapled one.
+      - name: Notarize and staple the DMG
+        if: ${{ github.event_name == 'push' }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          dmg="$(ls apps/dev-console/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg)"
+          ver="$(jq -r .version apps/dev-console/src-tauri/tauri.conf.json)"
+          asset="cyoda-dev-console_${ver}_${{ matrix.arch }}.dmg"
+          echo "notarizing ${dmg} -> ${asset}"
+          xcrun notarytool submit "${dmg}" \
+            --apple-id "${APPLE_ID}" --password "${APPLE_PASSWORD}" --team-id "${APPLE_TEAM_ID}" --wait
+          xcrun stapler staple "${dmg}"
+          xcrun stapler validate "${dmg}"
+          cp "${dmg}" "${asset}"
+          gh release upload "${{ github.ref_name }}" "${asset}" --repo "${{ github.repository }}" --clobber
 
   build-linux:
     needs: create-release
