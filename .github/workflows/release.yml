@@ -73,6 +73,7 @@ jobs:
       - run: pnpm --filter './packages/*' build
       - uses: tauri-apps/tauri-action@v1
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -111,6 +112,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter './packages/*' build
       - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: apps/dev-console
           tauriScript: pnpm exec tauri
