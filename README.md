@@ -86,6 +86,34 @@ pnpm --filter @cyoda/model-editor-mcp test       # unit / integration
 pnpm --filter @cyoda/model-editor-mcp test:e2e   # headless-Chromium render smoke (build first)
 ```
 
+### Verify the packaged build locally (before cutting a release)
+
+`pnpm tauri:dev` is **not** representative of what users run. In dev the frontend
+is served from the Vite dev server with **no CSP**; the packaged app serves
+bundled assets over the `tauri://` protocol with the `tauri.conf.json` CSP
+**enforced** (and Tauri auto-injects nonces/hashes into `script-src`/`style-src`).
+So production-only breakage — CSP-refused resources (e.g. Monaco's runtime inline
+`<style>` tags, whose `'unsafe-inline'` is nullified by Tauri's injected style
+nonce unless `dangerousDisableAssetCspModification` opts `style-src` out), plus
+asset-path/custom-protocol/worker-loading issues — **cannot appear under
+`tauri:dev`**. Validate against the real packaged conditions without consuming a
+release:
+
+```bash
+cd apps/dev-console
+pnpm tauri build --debug --bundles app   # bundled assets + CSP enforced; DevTools ON; no DMG
+open "src-tauri/target/debug/bundle/macos/Cyoda Dev Console.app"
+```
+
+- `--debug` keeps **DevTools** enabled (right-click → *Inspect Element*) — check the
+  Console for `securitypolicyviolation`. A release `tauri build` disables DevTools.
+- `--bundles app` leaves the runnable `.app` in `target/debug/bundle/macos/`. A full
+  `tauri build` bundles a DMG and **deletes** the `.app` from that folder (it ends up
+  inside the DMG), so `open …/bundle/macos/*.app` would fail.
+- This faithfully exercises CSP / bundling / workers / protocol, but the `--debug`
+  app is **unsigned and not notarized** — Gatekeeper/notarization is verified
+  separately at release time (`spctl` on the release DMGs).
+
 ## Monorepo structure
 
 ```
