@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "tauri:dev": ". \"$HOME/.cargo/env\" && tauri dev",
     "tauri:build": ". \"$HOME/.cargo/env\" && tauri build",
-    "lint:rust": ". \"$HOME/.cargo/env\" && cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings"
+    "lint:rust": ". \"$HOME/.cargo/env\" && cargo fmt --check --manifest-path src-tauri/Cargo.toml && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings",
+    "test:e2e": "node e2e/packaged-monaco.e2e.mjs"
   },
   "dependencies": {
     "@cyoda/agent-bridge-contract": "workspace:*",
@@ -45,6 +46,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "happy-dom": "^20.10.6",
+    "selenium-webdriver": "^4.28.1",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
