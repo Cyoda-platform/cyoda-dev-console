@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "model-editor": {
+      "command": "node",
+      "args": ["apps/model-editor-mcp/dist/index.js", "--project", "apps/model-editor-mcp/examples"]
+    }
+  }
+}

@@ -57,3 +57,33 @@ jobs:
           esac
           echo "publishing ${version} to dist-tag '${dist_tag}'"
           pnpm --filter @cyoda/model-editor-mcp publish --no-git-checks --tag "$dist_tag"
+
+  # Surface the npm release on the repo's Releases page (npm publish alone
+  # leaves only a git tag). Runs after a successful publish, tag pushes only.
+  github-release:
+    needs: [build-and-publish]
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create GitHub Release for the MCP tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="$(jq -r .version apps/model-editor-mcp/package.json)"
+          case "$version" in
+            *-*) pre=(--prerelease); dist_tag=next ;;   # prerelease -> next
+            *)   pre=();             dist_tag=latest ;;  # stable -> latest
+          esac
+          notes="Published to npm as \`@cyoda/model-editor-mcp@${version}\` (dist-tag \`${dist_tag}\`)."
+          notes="${notes} Install: \`npm install -g @cyoda/model-editor-mcp@${version}\`."
+          notes="${notes} https://www.npmjs.com/package/@cyoda/model-editor-mcp/v/${version}"
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "model-editor-mcp $version" \
+            --notes "$notes" \
+            "${pre[@]}"
