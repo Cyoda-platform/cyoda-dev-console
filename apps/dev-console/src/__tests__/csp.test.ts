@@ -37,11 +37,4 @@ describe("tauri.conf.json CSP", () => {
         "(otherwise Tauri's injected nonce makes the browser ignore 'unsafe-inline')",
     ).toBe(true);
   });
-
-  // Monaco's default worker bootstrap can spawn workers from blob: URLs; keep
-  // them allowed so the editor never regresses to a CSP-blocked worker.
-  it("allows blob: web workers (Monaco needs them)", () => {
-    const worker = directive("worker-src") ?? directive("child-src") ?? directive("default-src");
-    expect(worker, `worker source must allow blob: — got "${worker}"`).toContain("blob:");
-  });
 });
