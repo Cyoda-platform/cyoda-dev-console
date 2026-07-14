@@ -91,10 +91,13 @@ pnpm --filter @cyoda/model-editor-mcp test:e2e   # headless-Chromium render smok
 `pnpm tauri:dev` is **not** representative of what users run. In dev the frontend
 is served from the Vite dev server with **no CSP**; the packaged app serves
 bundled assets over the `tauri://` protocol with the `tauri.conf.json` CSP
-**enforced**. So production-only breakage — a CSP-blocked resource (e.g. Monaco's
-`blob:` web workers), asset-path or custom-protocol resolution, worker loading —
-**cannot appear under `tauri:dev`**. Validate against the real packaged
-conditions without consuming a release:
+**enforced** (and Tauri auto-injects nonces/hashes into `script-src`/`style-src`).
+So production-only breakage — CSP-refused resources (e.g. Monaco's runtime inline
+`<style>` tags, whose `'unsafe-inline'` is nullified by Tauri's injected style
+nonce unless `dangerousDisableAssetCspModification` opts `style-src` out), plus
+asset-path/custom-protocol/worker-loading issues — **cannot appear under
+`tauri:dev`**. Validate against the real packaged conditions without consuming a
+release:
 
 ```bash
 cd apps/dev-console
