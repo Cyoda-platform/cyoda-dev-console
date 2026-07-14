@@ -1,0 +1,55 @@
+{
+  "importMode": "MERGE",
+  "workflows": [
+    {
+      "version": "1",
+      "name": "Pledge",
+      "initialState": "none",
+      "active": true,
+      "criterion": {
+        "type": "simple",
+        "jsonPath": "$.status",
+        "operation": "EQUALS",
+        "value": "ok"
+      },
+      "criterionAnnotations": {
+        "note": "seed annotation for the e2e Monaco editor",
+        "owner": "e2e"
+      },
+      "states": {
+        "none": {
+          "transitions": [
+            {
+              "name": "create",
+              "next": "created",
+              "manual": false,
+              "disabled": false,
+              "criterion": {
+                "type": "simple",
+                "jsonPath": "$.ready",
+                "operation": "EQUALS",
+                "value": true
+              },
+              "criterionAnnotations": {
+                "note": "transition-level annotation"
+              }
+            }
+          ]
+        },
+        "created": {
+          "transitions": [
+            {
+              "name": "settle",
+              "next": "settled",
+              "manual": false,
+              "disabled": false
+            }
+          ]
+        },
+        "settled": {
+          "transitions": []
+        }
+      }
+    }
+  ]
+}
