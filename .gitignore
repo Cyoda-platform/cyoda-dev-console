@@ -27,3 +27,7 @@ docs/phases/
 # Local environment overrides — use apps/dev-console/.env.example as the template
 apps/dev-console/.env
 .playwright-mcp/
+
+# Personal / local dev files — never commit (were swept in accidentally once)
+/SAFEHOUSE_SETUP.md
+/.mcp.json
