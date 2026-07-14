@@ -10,7 +10,11 @@
 
 - The release tooling is merged to the `staging` branch of `Cyoda/cyoda-dev-console` (the default branch). The repo already lives under the **`Cyoda`** org (legacy `Cyoda-platform` URLs redirect).
 - `release.yml` is implemented and **build-validated on real runners** via build-only `workflow_dispatch` rehearsals: macOS x64/arm64 compile + bundle the `.app`, Linux x64/arm64 build the AppImage, Windows builds nsis/msi, and the publish-path jobs correctly skip on dispatch.
-- **What remains is exactly this runbook:** the Apple credentials, the Homebrew tap, the release-bot token, action-pinning, and the first tagged release. The macOS *signing* step is the only build behavior not yet exercised (no secrets during the rehearsals).
+- **✅ SHIPPED — v0.1.0 released 2026-07-13.** The full runbook below was executed: `APPLE_*` org secrets, the `Cyoda/homebrew-cyoda` tap, the `cyoda-release-bot` App, SHA-pinned actions, and the first tagged release (`v0.1.0`). The GitHub Release carries the 2 DMGs + 2 AppImages + `SHA256SUMS` + `install.sh` + icon, and `Casks/cyoda-dev-console.rb` was committed to the tap by `cyoda-release-bot` with matching per-arch SHAs. DMGs verify `Notarized Developer ID`.
+- **Three workflow requirements surfaced only on the first *real* tag** (the build-only `workflow_dispatch` rehearsal can't exercise them, because it never uploads or publishes). All are now fixed in `release.yml`; keep them in mind for cyoda-go (§7):
+  1. **`GITHUB_TOKEN` must be in the `env` of every uploading `tauri-action` step** (the ones with `releaseId`) — else the upload fails `GITHUB_TOKEN is required` (#49).
+  2. **The asset-rename input is `releaseAssetNamePattern`, not `assetNamePattern`** — and its `[arch]` placeholder yields tauri's native token (`x64` for the intel DMG), so the DMG arch is driven from a matrix `arch` field to get the `x86_64` the cask/`publish-cask` expect; Linux keeps `[arch]` (→ `amd64`/`aarch64`, what `install.sh` wants) (#50).
+  3. **tauri notarizes + staples only the `.app`, not the DMG.** A separate `notarytool submit` + `stapler staple` step notarizes the distributed disk image, so `publish-cask`'s `stapler validate` passes and direct DMG downloads are Gatekeeper-clean (#51).
 
 ## Prerequisites / access you need
 
@@ -150,20 +154,24 @@ rm -f app-private-key.pem
 
 ## 4. Harden the workflow: pin sensitive actions to commit SHAs
 
+> **Done for v0.1.0** (#48). Recorded here for future re-pinning when the actions are bumped.
+
 Pin to immutable SHAs the action that **mints the tap token** (`actions/create-github-app-token`, used by `publish-cask`) and, as defense-in-depth, `actions/github-script` (used by `create-release`). The remaining build actions can stay on major tags; Dependabot keeps them current. Do this as a PR to `staging`.
+
+Note the majors actually in the workflow are **`create-github-app-token@v3`** and **`github-script@v9`** (newer than the `v1`/`v7` an earlier draft of this runbook named) — resolve the SHA for whichever major is currently in `release.yml`:
 
 ```bash
 git clone https://github.com/Cyoda/cyoda-dev-console && cd cyoda-dev-console
 git checkout -b chore/pin-privileged-actions
 
-# Resolve current SHAs:
-gh api repos/actions/create-github-app-token/git/ref/tags/v1 --jq .object.sha
-gh api repos/actions/github-script/git/ref/tags/v7        --jq .object.sha
+# Resolve current SHAs (match the major already used in release.yml):
+gh api repos/actions/create-github-app-token/git/ref/tags/v3 --jq .object.sha
+gh api repos/actions/github-script/git/ref/tags/v9        --jq .object.sha
 ```
 
 In `.github/workflows/release.yml`, change:
-- `uses: actions/create-github-app-token@v1` → `uses: actions/create-github-app-token@<sha>  # v1`
-- `uses: actions/github-script@v7` → `uses: actions/github-script@<sha>  # v7`
+- `uses: actions/create-github-app-token@v3` → `uses: actions/create-github-app-token@<sha>  # v3`
+- `uses: actions/github-script@v9` → `uses: actions/github-script@<sha>  # v9`
 
 Then:
 ```bash
@@ -243,5 +251,6 @@ To be worked out later, **after** the `APPLE_*` org secrets exist (§1) so the s
 1. **Tap consolidation:** retarget cyoda-go's GoReleaser `brews:` from `homebrew-cyoda-go` → `Cyoda/homebrew-cyoda` writing into `Formula/`; dual-publish to the old tap for ≥1 cycle; update its README/install docs to `cyoda/cyoda`. (Track as a coordination issue on `Cyoda/cyoda-go`.) Retire `homebrew-cyoda-go` once migrated.
 2. **Switch to the new bot:** point cyoda-go at the new **`cyoda-release-bot`** app (install it on `homebrew-cyoda` if not already) and the org `HOMEBREW_TAP_APP_ID`/`HOMEBREW_TAP_APP_KEY` credentials, replacing its current `cyoda-go-release-bot` app. Retire `cyoda-go-release-bot` once cyoda-go no longer publishes to the old tap.
 3. **Optional macOS notarization (removes the one-time "Open Anyway" on its CLI):** add a GoReleaser `notarize` step using the shared Developer ID cert (or App Store Connect API key) so the cross-compiled darwin binaries are signed + notarized. Free fallback if not notarizing: have the darwin leg ad-hoc-sign (build on a macOS runner, or sign in a post-build hook) to stop Apple Silicon refusing an unsigned binary.
+   - **Lesson from dev-console (§0):** notarize + **staple the artifact you actually distribute** (the archive/binary users download), not just an inner payload — Gatekeeper's offline first-open check reads the ticket on the downloaded file. dev-console had to add an explicit `notarytool submit` + `stapler staple` on the DMG because tauri stapled only the inner `.app`.
 
 Everything in §7 is a **cyoda-go-repo change**, out of scope for this runbook.
