@@ -181,20 +181,31 @@ async function main() {
       const block = document.querySelector('[data-testid="inspector-criterion-annotations"]');
       const ed = block && block.querySelector('.monaco-editor');
       const lines = block ? Array.from(block.querySelectorAll('.view-line')).map(l => l.textContent) : [];
-      const mtk = block ? block.querySelector('[class^="mtk"], [class*=" mtk"]') : null;
+      const spans = block ? Array.from(block.querySelectorAll('[class^="mtk"], [class*=" mtk"]')) : [];
+      const colors = spans.map((s) => getComputedStyle(s).color);
       return {
         editorHeight: ed ? ed.offsetHeight : 0,
         lineCount: lines.length,
         text: lines.join('\\n'),
-        tokenColor: mtk ? getComputedStyle(mtk).color : null,
+        tokenCount: spans.length,
+        coloredTokens: colors.filter((c) => c && c !== 'rgb(0, 0, 0)'),
       };
     `);
     log("editor state:", JSON.stringify(editorState));
     assert.ok(editorState.editorHeight > 0, "Monaco editor has zero height");
     assert.ok(editorState.lineCount > 0, "Monaco rendered no view lines");
+    // Monaco word-wraps long values across view-lines and renders spaces as
+    // non-breaking spaces, so normalize all whitespace before matching.
+    const normText = editorState.text.replace(/\s+/g, " ");
     assert.ok(
-      /seed annotation/.test(editorState.text),
+      /seed annotation/.test(normText),
       `Monaco did not render the seeded annotation JSON — got: ${editorState.text}`,
+    );
+    // At least one colored (non-black) token is strong proof Monaco's syntax
+    // highlighting CSS (injected inline <style>) actually applied.
+    assert.ok(
+      editorState.coloredTokens.length > 0,
+      `no colored Monaco tokens (highlighting CSS not applied) — ${editorState.tokenCount} tokens, all default color`,
     );
 
     // (c) No style-src CSP violations, no console errors (allowlist Monaco's benign Canceled).
