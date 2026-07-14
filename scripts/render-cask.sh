@@ -22,7 +22,7 @@ cask "cyoda-dev-console" do
   homepage "https://cyoda.com"
 
   auto_updates false
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   app "Cyoda Dev Console.app"
 

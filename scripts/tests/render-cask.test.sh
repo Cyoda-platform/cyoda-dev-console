@@ -12,6 +12,6 @@ has "intel sha"              'intel: "BBBBINTEL222"'
 has "arch map"               'arch arm: "aarch64", intel: "x86_64"'
 has "dmg url scheme"         'cyoda-dev-console_#{version}_#{arch}.dmg'
 has "cyoda org in url"       'github.com/cyoda/cyoda-dev-console/releases'
-has "monterey floor"         'depends_on macos: ">= :monterey"'
+has "monterey floor"         'depends_on macos: :monterey'
 has "app stanza"             'app "Cyoda Dev Console.app"'
 [[ "$fail" == 0 ]] && echo "ALL PASS"
