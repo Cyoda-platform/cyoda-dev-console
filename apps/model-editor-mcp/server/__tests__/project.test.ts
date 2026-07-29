@@ -15,7 +15,7 @@ describe("getProjectTool", () => {
     await mkdir(join(root, "models/schema"), { recursive: true });
     await writeFile(
       join(root, "models/workflow/Pledge.json"),
-      JSON.stringify({ importMode: "MERGE", workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true, states: { none: { transitions: [] } } }] }),
+      JSON.stringify({ importMode: "MERGE", workflows: [{ version: "1.3", name: "Pledge", initialState: "none", active: true, states: { none: { transitions: [] } } }] }),
     );
     await writeFile(join(root, "models/schema/Foo.json"), JSON.stringify({ type: "object" }));
     const ctx = createToolContext({ root, workflowGlobs: ["models/workflow/**/*.json"], entityGlobs: ["models/schema/**/*.json"], connectionUrl: "http://x" });

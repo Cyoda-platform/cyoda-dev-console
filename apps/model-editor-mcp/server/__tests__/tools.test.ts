@@ -9,14 +9,14 @@ import { updateWorkflowTool } from "../tools/update.js";
 
 const PLEDGE = JSON.stringify({
   importMode: "MERGE",
-  workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true,
+  workflows: [{ version: "1.3", name: "Pledge", initialState: "none", active: true,
     states: { none: { transitions: [{ name: "create", next: "created", manual: false, disabled: false }] }, created: { transitions: [] } } }],
 });
 
 /** Schema-valid but semantically invalid: `create` targets a state that does not exist. */
 const DANGLING = JSON.stringify({
   importMode: "MERGE",
-  workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true,
+  workflows: [{ version: "1.3", name: "Pledge", initialState: "none", active: true,
     states: { none: { transitions: [{ name: "create", next: "ghost", manual: false, disabled: false }] } } }],
 });
 
@@ -24,7 +24,7 @@ const DANGLING = JSON.stringify({
  *  "Pledge") so a list/batch test can carry one valid + one invalid workflow without name collision. */
 const GHOST_DANGLING = JSON.stringify({
   importMode: "MERGE",
-  workflows: [{ version: "1", name: "Ghost", initialState: "none", active: true,
+  workflows: [{ version: "1.3", name: "Ghost", initialState: "none", active: true,
     states: { none: { transitions: [{ name: "create", next: "vanished", manual: false, disabled: false }] } } }],
 });
 

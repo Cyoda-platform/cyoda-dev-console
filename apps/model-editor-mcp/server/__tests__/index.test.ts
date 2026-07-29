@@ -8,7 +8,7 @@ import type { PendingOrigins } from "../index.js";
 
 const PLEDGE = JSON.stringify({
   importMode: "MERGE",
-  workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true,
+  workflows: [{ version: "1.3", name: "Pledge", initialState: "none", active: true,
     states: { none: { transitions: [{ name: "create", next: "created", manual: false, disabled: false }] }, created: { transitions: [] } } }],
 });
 

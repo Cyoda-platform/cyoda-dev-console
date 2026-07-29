@@ -22,7 +22,7 @@ vi.mock("../monacoRuntime.js", () => ({ getMonacoRuntime: vi.fn().mockReturnValu
 const FIXTURE = JSON.stringify({
   importMode: "MERGE",
   workflows: [
-    { version: "1.0", name: "demo", initialState: "S", active: true, states: { S: { transitions: [] } } },
+    { version: "1.3", name: "demo", initialState: "S", active: true, states: { S: { transitions: [] } } },
   ],
 });
 

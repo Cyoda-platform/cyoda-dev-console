@@ -3,7 +3,7 @@
   "modelVersion": 2,
   "workflows": [
     {
-      "version": "1.0",
+      "version": "1.3",
       "name": "order-flow",
       "initialState": "New",
       "active": true,

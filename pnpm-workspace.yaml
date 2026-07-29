@@ -3,10 +3,21 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
-# Catalog mirrors cyoda-workflow-editor's catalog so the workspace-member
-# library packages (included above) can resolve their `catalog:` specifiers,
-# and so this app stays in lockstep on shared deps. Keep in sync with
-# ../cyoda-workflow-editor/pnpm-workspace.yaml.
+# Shared dependency catalog for this repo's own workspace members — the internal
+# `packages/*` and both apps resolve their `catalog:` specifiers from here.
+#
+# It tracks ../cyoda-workflow-editor/pnpm-workspace.yaml but is NOT a mirror and
+# need not match entry-for-entry. The @cyoda/workflow-* packages come from public
+# npm with their own deps already resolved, so this catalog governs only our
+# resolutions. This repo may lead the editor repo on shared dev tooling (it
+# currently does) — never downgrade an entry here just to match it.
+#
+# What alignment does buy: `react`, `react-dom`, `reactflow` and `monaco-editor`
+# are PEER dependencies of @cyoda/workflow-react / -viewer / -monaco, satisfied
+# from this catalog. Keep those four inside the published peer ranges when
+# bumping. `monaco-editor` is the tight one — workflow-monaco declares
+# `>=0.45 <0.56`, so 0.55.1 sits just under the ceiling and going to 0.56 needs a
+# workflow-monaco release first.
 catalog:
   "@changesets/cli": 2.31.0
   "@playwright/test": 1.61.1

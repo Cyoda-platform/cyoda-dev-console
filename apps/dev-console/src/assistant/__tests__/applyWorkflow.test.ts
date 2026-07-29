@@ -5,7 +5,7 @@ const VALID = JSON.stringify({
   importMode: "MERGE",
   workflows: [
     {
-      version: "1.0",
+      version: "1.3",
       name: "minimal",
       initialState: "start",
       active: true,
@@ -49,7 +49,7 @@ describe("validateAndCanonicalize", () => {
       importMode: "MERGE",
       workflows: [
         {
-          version: "1.0",
+          version: "1.3",
           name: "annotated",
           initialState: "start",
           active: true,

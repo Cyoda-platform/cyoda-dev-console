@@ -14,7 +14,7 @@ import { getWorkflowTool } from "../tools/get_workflow.js";
 const RAW = JSON.stringify({
   importMode: "MERGE",
   workflows: [{
-    version: "1", name: "Pledge", initialState: "none", active: true,
+    version: "1.3", name: "Pledge", initialState: "none", active: true,
     states: {
       none: {
         transitions: [{

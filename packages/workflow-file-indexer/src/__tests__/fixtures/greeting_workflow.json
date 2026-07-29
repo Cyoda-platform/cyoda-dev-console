@@ -2,7 +2,7 @@
   "importMode": "REPLACE",
   "workflows": [
     {
-      "version": "1.0",
+      "version": "1.3",
       "name": "greeting_workflow",
       "desc": "Greeting demo workflow with externalized Cyoda criteria and processors.",
       "initialState": "START",

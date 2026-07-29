@@ -43,7 +43,7 @@ export const WF_FIXTURE = JSON.stringify({
   importMode: "MERGE",
   workflows: [
     {
-      version: "1", name: "Order", initialState: "draft", active: true,
+      version: "1.3", name: "Order", initialState: "draft", active: true,
       states: {
         draft: { transitions: [{ name: "submit", next: "review", manual: false, disabled: false }] },
         review: { transitions: [{ name: "approve", next: "done", manual: true, disabled: false,

@@ -2,7 +2,7 @@
   "importMode": "REPLACE",
   "workflows": [
     {
-      "version": "1.0",
+      "version": "1.3",
       "name": "shipment_workflow",
       "desc": "Shipment workflow for the order fulfilment demo.",
       "initialState": "CREATED",
