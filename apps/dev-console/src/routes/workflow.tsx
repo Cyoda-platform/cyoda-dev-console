@@ -178,7 +178,12 @@ export function WorkflowRoute({
       })
       .catch(() => { /* no layout file yet — that's fine */ })
       .finally(() => { setLayoutReady(true); });
-  }, [layoutFilePath, layoutKey]); // currentIds captured at mount — intentionally runs once
+    // `currentIds` is read once, at mount, on purpose: it seeds localStorage before the
+    // editor first reads it, and re-running on every id change would clobber layout the
+    // user has since dragged. Safe because useEditorSession parses `initialContents`
+    // synchronously, so session.document is already populated on first render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutFilePath, layoutKey]);
 
   // AI assistant scoped to this open file. Owned here (not in the panel) so the conversation
   // survives the drawer being toggled closed/open. Proposals are applied to the in-memory

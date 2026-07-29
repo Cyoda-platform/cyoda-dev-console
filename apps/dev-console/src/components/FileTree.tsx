@@ -20,6 +20,11 @@ export function FileTree({
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  // TanStack Virtual returns functions the React Compiler can't safely memoize, so it
+  // skips memoizing this component. That's fine here — `v`'s values are consumed only by
+  // this component's own JSX below. If you ever pass them to a memoized child or hook,
+  // remove this suppression and deal with the staleness it warns about.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const v = useVirtualizer({
     count: entries.length,
     getScrollElement: () => parentRef.current,
