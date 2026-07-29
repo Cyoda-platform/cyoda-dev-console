@@ -30,7 +30,7 @@ gh workflow run Release --ref <your-branch>
 
 ## Build from source on Windows
 
-No prebuilt Windows binaries are published. Requirements: [Rust](https://rustup.rs) (the repo pins the toolchain via `rust-toolchain.toml`), Node 22, pnpm 9, and the **MSVC C++ Build Tools** (Visual Studio "Desktop development with C++").
+No prebuilt Windows binaries are published. Requirements: [Rust](https://rustup.rs) (the repo pins the toolchain via `rust-toolchain.toml`), Node 22, pnpm 11, and the **MSVC C++ Build Tools** (Visual Studio "Desktop development with C++").
 
 ```powershell
 pnpm install --frozen-lockfile

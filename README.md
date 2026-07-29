@@ -55,13 +55,21 @@ This is a pnpm workspace holding both apps and every shared package.
 | Tool | Version | Needed for |
 |---|---|---|
 | Node.js | ≥ 22 | both |
-| pnpm | ≥ 9 | both |
+| pnpm | ≥ 11 | both |
 | Rust (stable) | via [rustup](https://rustup.rs) | Dev Console (compiles a Rust/Tauri backend) |
 | Xcode Command Line Tools | macOS only | Dev Console |
 
 Rust is only required for the desktop app; the MCP server is pure Node. The Tauri
 CLI ships as the `@tauri-apps/cli` dev dependency, so `pnpm install` provides it —
 no separate `cargo install` needed.
+
+The exact pnpm version is pinned in `packageManager`, so with Corepack enabled you
+get it automatically. Two things `pnpm-workspace.yaml` enforces on install: package
+build scripts run only for packages listed under `allowBuilds`, and
+`minimumReleaseAge` keeps any release younger than 14 days out of the lockfile
+(`@cyoda/*` is exempt, since adopting our own releases same-day is routine). Coming
+from pnpm 9, the first install asks to purge `node_modules` — that's the expected
+one-time relayout, not a problem.
 
 ### Commands
 
