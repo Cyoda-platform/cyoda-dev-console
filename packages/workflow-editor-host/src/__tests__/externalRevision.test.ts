@@ -7,7 +7,7 @@ import { synthesizeImportPayload } from "../synthesizeImportPayload.js";
 const fixture = JSON.stringify({
   importMode: "MERGE",
   workflows: [
-    { version: "1.0", name: "demo", initialState: "S", active: true, states: { S: { transitions: [] } } },
+    { version: "1.3", name: "demo", initialState: "S", active: true, states: { S: { transitions: [] } } },
   ],
 });
 
@@ -15,7 +15,7 @@ const fixture = JSON.stringify({
 // no { importMode, workflows } wrapper. App.tsx synthesizes the wrapper for
 // `initialContents`, but the file on disk stays in this bare shape.
 const bareWorkflow = {
-  version: "1.0",
+  version: "1.3",
   name: "nda",
   initialState: "S",
   active: true,

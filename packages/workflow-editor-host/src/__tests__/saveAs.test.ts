@@ -4,7 +4,7 @@ import { useEditorSession } from "../useEditorSession.js";
 
 const FIXTURE = JSON.stringify({
   importMode: "MERGE",
-  workflows: [{ version: "1.0", name: "demo", initialState: "S",
+  workflows: [{ version: "1.3", name: "demo", initialState: "S",
     active: true, states: { S: { transitions: [] } } }],
 });
 

@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cyoda/workflow-core": "0.5.0"
+    "@cyoda/workflow-core": "0.6.0"
   },
   "devDependencies": {
     "typescript": "catalog:",

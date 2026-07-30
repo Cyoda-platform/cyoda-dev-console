@@ -1,8 +1,8 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import "@testing-library/jest-dom";
 import { ThemeProvider } from "@cyoda/console-design-system";
-import type { ValidationIssue, WorkflowEditorDocument } from "@cyoda/workflow-core";
+import type { WorkflowEditorDocument } from "@cyoda/workflow-core";
 import { WorkflowEditor } from "@cyoda/workflow-react";
 import { WorkflowEditorHostPanel } from "../WorkflowEditorHostPanel.js";
 import type { EditorSession } from "../useEditorSession.js";
@@ -12,30 +12,6 @@ import type { EditorSession } from "../useEditorSession.js";
 // `vi.fn` (not a bare `() => null`) so the JSON-editor-gating tests below can
 // read the props it was rendered with.
 vi.mock("@cyoda/workflow-react", () => ({ WorkflowEditor: vi.fn(() => null) }));
-
-const nullCriteriaRaw = JSON.stringify({
-  importMode: "MERGE",
-  workflows: [
-    {
-      version: "1.0",
-      name: "w",
-      initialState: "A",
-      active: true,
-      criterion: null,
-      states: {
-        A: { transitions: [{ name: "T", next: "B", manual: true, disabled: false, processors: [], criterion: null }] },
-        B: { transitions: [] },
-      },
-    },
-  ],
-});
-
-const error = (path: (string | number)[]): ValidationIssue => ({
-  severity: "error",
-  code: "schema-invalid_union",
-  message: "Invalid input",
-  detail: { path },
-});
 
 function makeSession(overrides: Partial<EditorSession>): EditorSession {
   return {
@@ -49,7 +25,6 @@ function makeSession(overrides: Partial<EditorSession>): EditorSession {
     setDocument: vi.fn(),
     applyExternalDocument: vi.fn(),
     externalRevision: 0,
-    remediateNullCriteria: vi.fn(),
     canUndoAi: false,
     undoAiApply: vi.fn(),
     save: vi.fn(),
@@ -67,50 +42,14 @@ function wrap(session: EditorSession) {
   );
 }
 
-describe("WorkflowEditorHostPanel — null-criterion remediation", () => {
-  it("shows the remediation popup when the parse failure is due to null criteria", () => {
-    wrap(
-      makeSession({
-        rawContent: nullCriteriaRaw,
-        issues: [error(["workflows", 0, "criterion"]), error(["workflows", 0, "states", "A", "transitions", 0, "criterion"])],
-      }),
-    );
-    expect(screen.getByRole("button", { name: /drop null criteria/i })).toBeInTheDocument();
-  });
-
-  it("invokes remediateNullCriteria when the drop button is clicked", () => {
-    const remediateNullCriteria = vi.fn();
-    wrap(
-      makeSession({
-        rawContent: nullCriteriaRaw,
-        issues: [error(["workflows", 0, "criterion"])],
-        remediateNullCriteria,
-      }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /drop null criteria/i }));
-    expect(remediateNullCriteria).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows the generic parse-error view (no popup) for unrelated failures", () => {
+describe("WorkflowEditorHostPanel — parse failure", () => {
+  it("shows the parse-error view when the document cannot be parsed", () => {
     wrap(
       makeSession({
         rawContent: "{}",
         issues: [{ severity: "error", code: "schema-invalid_type", message: "Required", detail: { path: ["workflows", 0, "initialState"] } }],
       }),
     );
-    expect(screen.getByText(/Workflow JSON could not be parsed/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /drop null criteria/i })).not.toBeInTheDocument();
-  });
-
-  it("hides the popup after dismiss, leaving the parse-error view", () => {
-    wrap(
-      makeSession({
-        rawContent: nullCriteriaRaw,
-        issues: [error(["workflows", 0, "criterion"])],
-      }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /dismiss/i }));
-    expect(screen.queryByRole("button", { name: /drop null criteria/i })).not.toBeInTheDocument();
     expect(screen.getByText(/Workflow JSON could not be parsed/)).toBeInTheDocument();
   });
 });

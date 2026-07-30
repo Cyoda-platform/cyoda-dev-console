@@ -11,14 +11,14 @@ import { listWorkflowsTool } from "../tools/list.js";
 
 const PLEDGE = JSON.stringify({
   importMode: "MERGE",
-  workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true,
+  workflows: [{ version: "1.3", name: "Pledge", initialState: "none", active: true,
     states: { none: { transitions: [{ name: "create", next: "created", manual: false, disabled: false }] }, created: { transitions: [] } } }],
 });
 
 /** Schema-valid but semantically invalid: `create` targets a state that does not exist. */
 const DANGLING = JSON.stringify({
   importMode: "MERGE",
-  workflows: [{ version: "1", name: "Pledge", initialState: "none", active: true,
+  workflows: [{ version: "1.3", name: "Pledge", initialState: "none", active: true,
     states: { none: { transitions: [{ name: "create", next: "ghost", manual: false, disabled: false }] } } }],
 });
 
@@ -153,7 +153,7 @@ describe("create_workflow + delete_workflow, end-to-end against real fs + discov
     await mkdir(join(root, "models/workflow/v1"), { recursive: true });
     const foo = JSON.stringify({
       importMode: "MERGE",
-      workflows: [{ version: "1", name: "Foo", initialState: "none", active: true,
+      workflows: [{ version: "1.3", name: "Foo", initialState: "none", active: true,
         states: { none: { transitions: [{ name: "create", next: "created", manual: false, disabled: false }] }, created: { transitions: [] } } }],
     });
     await writeFile(join(root, "models/workflow/v1/Foo.json"), foo);

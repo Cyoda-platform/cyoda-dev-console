@@ -2,7 +2,7 @@
   "importMode": "REPLACE",
   "workflows": [
     {
-      "version": "1.0",
+      "version": "1.3",
       "name": "payment_workflow",
       "desc": "Payment workflow for deterministic authorisation, capture, failure, retry, and refund paths.",
       "initialState": "INITIATED",

@@ -14,7 +14,7 @@ describe("synthesizeImportPayload", () => {
   });
 
   it("wraps a standalone workflow object (block-portal format) into a workflows array", () => {
-    const workflow = { version: "1.0", name: "nda", initialState: "S", states: { S: { transitions: [] } } };
+    const workflow = { version: "1.3", name: "nda", initialState: "S", states: { S: { transitions: [] } } };
     const contents = JSON.stringify(workflow);
     const result = JSON.parse(synthesizeImportPayload(contents));
     expect(result).toEqual({ importMode: "MERGE", workflows: [workflow] });

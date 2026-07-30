@@ -2,7 +2,7 @@
   "importMode": "MERGE",
   "workflows": [
     {
-      "version": "1",
+      "version": "1.3",
       "name": "Order",
       "initialState": "cart",
       "active": true,

@@ -2,15 +2,15 @@
   "importMode": "MERGE",
   "workflows": [
     {
-      "version": "1",
+      "version": "1.3",
       "name": "Payment",
       "initialState": "initiated",
       "active": true,
       "states": {
         "initiated": {
           "transitions": [
-            { "name": "authorize", "next": "authorized", "manual": false, "disabled": false },
-            { "name": "fail", "next": "failed", "manual": false, "disabled": false }
+            { "name": "fail", "next": "failed", "manual": false, "disabled": false, "criterion": { "type": "simple", "jsonPath": "$.status", "operation": "EQUALS", "value": "declined" } },
+            { "name": "authorize", "next": "authorized", "manual": false, "disabled": false }
           ]
         },
         "authorized": {

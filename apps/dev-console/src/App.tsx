@@ -16,6 +16,7 @@ import { scanProject } from "./ipc/project.js";
 import { useProjectWatcher } from "./hooks/useProjectWatcher.js";
 import { classifyWorkflowFile, WORKFLOW_STATUSES, type WorkflowFileIndexEntry } from "@cyoda/workflow-file-indexer";
 import { synthesizeImportPayload } from "@cyoda/workflow-editor-host";
+import { getDialect, LATEST_CYODA_VERSION } from "@cyoda/workflow-core";
 import { HeaderContext } from "./components/HeaderContext.js";
 import { ProjectExplorer } from "./components/ProjectExplorer.js";
 import { ErrorBoundary } from "./components/ErrorBoundary.js";
@@ -108,7 +109,10 @@ function DevConsoleApp() {
       importMode: "REPLACE",
       workflows: [{
         name: baseName,
-        version: "1.0",
+        // Sourced from the dialect, not hardcoded: cyoda-go validates this tag
+        // strictly and rejects anything below its minimum, so a literal here
+        // silently rots the moment the schema minor moves.
+        version: getDialect(LATEST_CYODA_VERSION).schemaVersionTag,
         initialState: "CREATED",
         active: true,
         states: { CREATED: { transitions: [] } },
