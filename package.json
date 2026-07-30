@@ -1,10 +1,10 @@
 {
   "name": "cyoda-dev-console",
   "private": true,
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@11.18.0",
   "engines": {
     "node": ">=22",
-    "pnpm": ">=9"
+    "pnpm": ">=11"
   },
   "scripts": {
     "build": "pnpm --filter './apps/**' --filter './packages/**' -r build",
@@ -25,12 +25,5 @@
     "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "pnpm": {
-    "overrides": {
-      "brace-expansion@<1.1.16": "1.1.16",
-      "brace-expansion@>=3.0.0 <5.0.7": "5.0.7",
-      "dompurify@<3.4.12": "3.4.12"
-    }
   }
 }

@@ -58,7 +58,12 @@ and after any pull that touches `packages/*`.
   `@modelcontextprotocol/sdk`); serves a Vite-built web bundle over loopback HTTP + SSE
 - **Design:** Carbon-inspired, light mode; Cyoda green `#004235`, warning/production-risk
   orange `#F58220`
-- **Package manager:** pnpm (Node ≥ 22, pnpm 9.15.4 pinned via `packageManager`)
+- **Package manager:** pnpm (Node ≥ 22, pnpm 11.18.0 pinned via `packageManager`).
+  Install scripts are blocked unless the package is listed under `allowBuilds` in
+  `pnpm-workspace.yaml`, and `minimumReleaseAge` there keeps releases younger than
+  14 days out of the lockfile (`@cyoda/*` is exempt). Transitive version pins go in
+  that file's `overrides:` — **not** `package.json`'s `pnpm.overrides`, which pnpm 11
+  silently ignores.
 
 ---
 
