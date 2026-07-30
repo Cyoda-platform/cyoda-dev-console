@@ -45,18 +45,50 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: ./scripts/check-mcp-pack.sh
 
+      # pnpm packs, npm publishes. Each does the half the other can't:
+      #
+      # - `pnpm pack` rewrites the pnpm-only specifiers in the manifest
+      #   (`workspace:*` on the four internal packages, `catalog:` on 15 devDeps)
+      #   into real versions. npm doesn't understand either, so packing with npm
+      #   would publish those literals.
+      # - `npm publish --provenance` mints the SLSA attestation. pnpm 9 got this
+      #   for free by shelling out to npm, which honoured `publishConfig.provenance`;
+      #   pnpm 10+ publishes natively, ignores that field, and exposes no flag of its
+      #   own — which is how 0.2.0 shipped unattested.
       - name: Publish to npm — tag push only
         if: ${{ github.event_name == 'push' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          set -euo pipefail
           version="$(jq -r .version apps/model-editor-mcp/package.json)"
           case "$version" in
             *-*) dist_tag=next ;;    # prerelease -> next
             *)   dist_tag=latest ;;  # stable -> latest
           esac
-          echo "publishing ${version} to dist-tag '${dist_tag}'"
-          pnpm --filter @cyoda/model-editor-mcp publish --no-git-checks --tag "$dist_tag"
+          out="$(mktemp -d)"
+          pnpm --filter @cyoda/model-editor-mcp pack --pack-destination "$out"
+          tgz="$(ls "$out"/*.tgz)"
+          echo "publishing ${version} (${tgz##*/}) to dist-tag '${dist_tag}'"
+          npm publish "$tgz" --provenance --tag "$dist_tag"
+
+      # npm exits 0 when provenance was requested but not attached, so assert it
+      # rather than discovering another unattested release on the registry later.
+      - name: Assert the release is attested — tag push only
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          set -euo pipefail
+          version="$(jq -r .version apps/model-editor-mcp/package.json)"
+          for i in 1 2 3 4 5 6; do
+            if npm view "@cyoda/model-editor-mcp@${version}" dist.attestations.url 2>/dev/null | grep -q .; then
+              echo "provenance-ok: ${version}"
+              exit 0
+            fi
+            echo "attestation not visible yet (attempt ${i}/6) — retrying in 10s"
+            sleep 10
+          done
+          echo "::error::published ${version} but no provenance attestation is registered"
+          exit 1
 
   # Surface the npm release on the repo's Releases page (npm publish alone
   # leaves only a git tag). Runs after a successful publish, tag pushes only.
