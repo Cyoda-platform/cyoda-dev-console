@@ -9,7 +9,7 @@
   "scripts": {
     "build": "pnpm --filter './apps/**' --filter './packages/**' -r build",
     "test": "pnpm --filter './apps/**' --filter './packages/**' -r test",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "pnpm --filter './apps/**' --filter './packages/**' -r typecheck",
     "format": "prettier --write .",
     "tauri:dev": "pnpm --filter dev-console tauri:dev",
