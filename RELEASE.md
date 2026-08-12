@@ -60,6 +60,10 @@ desktop app, on its own `mcp-v*` tags via `.github/workflows/release-mcp.yml`.
 ### How an MCP release flows
 1. Bump `version` in `apps/model-editor-mcp/package.json` (SemVer; a prerelease
    carries the suffix literally, e.g. `0.1.0-rc.1`), commit.
+   For a **stable** release, also bump the pinned `@cyoda/model-editor-mcp@X.Y.Z`
+   in the `.mcp.json` examples in `README.md` and `apps/model-editor-mcp/README.md`
+   (`grep -rn 'model-editor-mcp@' README.md apps/model-editor-mcp/README.md`);
+   prereleases don't touch the READMEs.
 2. Push a tag `mcp-vX.Y.Z` (or `mcp-vX.Y.Z-rc.N`).
 3. `release-mcp.yml` runs: `guard` (tag == package.json version, suffix included)
    → build workspace deps → esbuild-bundle the server + Vite-build `web/dist`
