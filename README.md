@@ -27,20 +27,24 @@ auto-update is intentionally NOT enabled in this release (see
 ### model-editor-mcp (for AI CLIs)
 
 No clone or build — add it to `.mcp.json` at your project root (or run
-`claude mcp add model-editor -- npx -y @cyoda/model-editor-mcp --project . …`):
+`claude mcp add model-editor -- npx -y @cyoda/model-editor-mcp@0.2.1 --project .`):
 
 ```json
 {
   "mcpServers": {
     "model-editor": {
       "command": "npx",
-      "args": ["-y", "@cyoda/model-editor-mcp", "--project", ".",
-               "--workflow-globs", "models/workflow/**/*.json",
-               "--entity-globs", "models/schema/**/*.json"]
+      "args": ["-y", "@cyoda/model-editor-mcp@0.2.1", "--project", "."]
     }
   }
 }
 ```
+
+Models are discovered under `models/workflow/**/*.json` and
+`models/schema/**/*.json` by default. Don't pass `--workflow-globs`/
+`--entity-globs` here unless you need different locations — shells expand the
+`**` patterns into file paths once matching files exist, which crashes the
+server at startup (quote the values if you must override).
 
 Full usage and tool reference: [`apps/model-editor-mcp/README.md`](apps/model-editor-mcp/README.md).
 

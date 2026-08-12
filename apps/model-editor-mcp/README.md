@@ -135,20 +135,25 @@ for content, browsable in both directions for navigation.
 ## Register with Claude Code
 
 **Consumers** — no clone, no build. Add this to `.mcp.json` at your project root
-(or run `claude mcp add model-editor -- npx -y @cyoda/model-editor-mcp --project . --workflow-globs "models/workflow/**/*.json" --entity-globs "models/schema/**/*.json"`):
+(or run `claude mcp add model-editor -- npx -y @cyoda/model-editor-mcp@0.2.1 --project .`):
 
 ```json
 {
   "mcpServers": {
     "model-editor": {
       "command": "npx",
-      "args": ["-y", "@cyoda/model-editor-mcp", "--project", ".",
-               "--workflow-globs", "models/workflow/**/*.json",
-               "--entity-globs", "models/schema/**/*.json"]
+      "args": ["-y", "@cyoda/model-editor-mcp@0.2.1", "--project", "."]
     }
   }
 }
 ```
+
+The default discovery globs (see **Discovery model** above) cover the
+conventional `models/` layout, so most projects need no glob flags. If your
+models live elsewhere, pass `--workflow-globs`/`--entity-globs` — but beware
+that clients launching the command through a shell will expand unquoted `**`
+patterns into file paths once files match, which crashes startup; prefer
+`configure_project` mid-session, or make sure the values stay quoted.
 
 Claude Code starts it over stdio the next time you run it there. Watch stderr for
 `model-editor-mcp: http://127.0.0.1:<port>/?token=<hex>` and open that URL to see
